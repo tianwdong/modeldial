@@ -1,0 +1,31 @@
+{
+  "counterexamples": [
+    {
+      "name": "state_boundaries_and_wakeup",
+      "records": [
+        {"job_id": "revision", "group": "g1", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 9},
+        {"job_id": "revision", "group": "g1", "revision": 2, "status": "failed", "attempt": 0, "ready_at": 20, "priority": 9},
+        {"job_id": "tie", "group": "g2", "revision": 5, "status": "failed", "attempt": 0, "ready_at": null, "priority": 8},
+        {"job_id": "tie", "group": "g2", "revision": 5, "status": "succeeded", "attempt": 0, "ready_at": null, "priority": 8},
+        {"job_id": "terminal", "group": "g3", "revision": 1, "status": "timeout", "attempt": 0, "ready_at": null, "priority": 7},
+        {"job_id": "terminal", "group": "g3", "revision": 2, "status": "cancelled", "attempt": 0, "ready_at": null, "priority": 7},
+        {"job_id": "attempt", "group": "g4", "revision": 1, "status": "failed", "attempt": 3, "ready_at": 11, "priority": 6},
+        {"job_id": "boundary", "group": "g5", "revision": 1, "status": "failed", "attempt": 0, "ready_at": 10, "priority": 5},
+        {"job_id": "none", "group": "g6", "revision": 1, "status": "timeout", "attempt": 0, "ready_at": null, "priority": 4},
+        {"job_id": "future_early", "group": "g7", "revision": 1, "status": "failed", "attempt": 0, "ready_at": 15, "priority": 3},
+        {"job_id": "future_late", "group": "g8", "revision": 1, "status": "failed", "attempt": 0, "ready_at": 25, "priority": 2}
+      ],
+      "params": {"now": 10, "max_attempts": 3, "global_limit": 10, "per_group_limit": 10}
+    },
+    {
+      "name": "group_quota_backfills_global_slots",
+      "records": [
+        {"job_id": "a", "group": "g1", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 100},
+        {"job_id": "b", "group": "g1", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 90},
+        {"job_id": "c", "group": "g2", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 80},
+        {"job_id": "d", "group": "g3", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 70}
+      ],
+      "params": {"now": 0, "max_attempts": 3, "global_limit": 3, "per_group_limit": 1}
+    }
+  ]
+}

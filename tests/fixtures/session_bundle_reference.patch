@@ -1,0 +1,194 @@
+*** Begin Patch
+*** Update File: session_store.py
+<<<<<<< SEARCH
+from __future__ import annotations
+
+import json
+=======
+from __future__ import annotations
+
+import copy
+import json
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+class BundleValidationError(ValueError):
+    def __init__(self, bundle_path: str | Path, errors: Iterable[str]) -> None:
+        self.bundle_path = str(bundle_path)
+        self.errors = tuple(errors)
+        super().__init__("invalid bundle")
+=======
+class BundleValidationError(ValueError):
+    def __init__(self, bundle_path: str | Path, errors: Iterable[str]) -> None:
+        self.bundle_path = Path(bundle_path)
+        self.errors = list(errors)
+        super().__init__("; ".join(self.errors))
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+def _exact_int(value: object) -> bool:
+    return isinstance(value, int)
+
+
+def _schema_errors(metadata: object, events: list[object]) -> list[str]:
+    errors: list[str] = []
+=======
+def _exact_int(value: object) -> bool:
+    return type(value) is int
+
+
+def _schema_errors(
+    metadata: object,
+    events: list[object],
+    *,
+    event_positions: list[int] | None = None,
+    physical_event_count: int | None = None,
+) -> list[str]:
+    errors: list[str] = []
+    if event_positions is None:
+        event_positions = list(range(1, len(events) + 1))
+    if physical_event_count is None:
+        physical_event_count = len(events)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            if not _exact_int(count) or count != len(events):
+                errors.append("event_count must equal the number of events")
+
+    sequences: list[int] = []
+    for index, event in enumerate(events, start=1):
+=======
+            if not _exact_int(count) or count != physical_event_count:
+                errors.append("event_count must equal the number of events")
+
+    for index, event in zip(event_positions, events):
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        seq = event.get("seq")
+        if _exact_int(seq):
+            sequences.append(seq)
+        else:
+            errors.append(f"{prefix} seq must be an integer")
+=======
+        seq = event.get("seq")
+        if not _exact_int(seq) or seq != index:
+            errors.append(f"{prefix} seq must be {index}")
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    if sorted(sequences) != list(range(1, len(events) + 1)):
+        errors.append("event sequence is not contiguous")
+    return errors
+=======
+    return errors
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    metadata: object = None
+    events: list[object] = []
+    try:
+=======
+    metadata: object = None
+    events: list[object] = []
+    event_positions: list[int] = []
+    physical_event_count = 0
+    try:
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+                else:
+                    for line_number, line in enumerate(text.splitlines(), start=1):
+                        if not line.strip():
+                            errors.append(f"events.jsonl line {line_number} is blank")
+                            continue
+                        try:
+                            events.append(_loads(line))
+                        except ValueError as exc:
+                            errors.append(f"events.jsonl line {line_number} is invalid: {exc}")
+    except (FileNotFoundError, BadZipFile, OSError) as exc:
+        errors.append(f"bundle cannot be read: {exc}")
+    errors.extend(_schema_errors(metadata, events))
+=======
+                else:
+                    lines = text.splitlines()
+                    physical_event_count = len(lines)
+                    for line_number, line in enumerate(lines, start=1):
+                        if not line.strip():
+                            errors.append(f"events.jsonl line {line_number} is blank")
+                            continue
+                        try:
+                            events.append(_loads(line))
+                            event_positions.append(line_number)
+                        except ValueError as exc:
+                            errors.append(f"events.jsonl line {line_number} is invalid: {exc}")
+    except (FileNotFoundError, BadZipFile, OSError) as exc:
+        errors.append(f"bundle cannot be read: {exc}")
+    errors.extend(
+        _schema_errors(
+            metadata,
+            events,
+            event_positions=event_positions,
+            physical_event_count=physical_event_count,
+        )
+    )
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    raw_events = list(events)
+    metadata_to_write = dict(metadata)
+    events_to_write = [dict(event) if isinstance(event, MappingABC) else event for event in raw_events]
+=======
+    metadata_to_write = copy.deepcopy(dict(metadata))
+    events_to_write = [
+        copy.deepcopy(dict(event)) if isinstance(event, MappingABC) else event
+        for event in events
+    ]
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    with ZipFile(temporary_path, "w", compression=ZIP_DEFLATED) as archive:
+        archive.writestr("metadata.json", json.dumps(metadata_to_write, sort_keys=True))
+        archive.writestr(
+            "events.jsonl",
+            "".join(json.dumps(event, sort_keys=True) + "\n" for event in events_to_write),
+        )
+    os.replace(temporary_path, bundle_path)
+=======
+    try:
+        with ZipFile(temporary_path, "w", compression=ZIP_DEFLATED) as archive:
+            archive.writestr(
+                "metadata.json",
+                json.dumps(metadata_to_write, allow_nan=False, sort_keys=True),
+            )
+            archive.writestr(
+                "events.jsonl",
+                "".join(
+                    json.dumps(event, allow_nan=False, sort_keys=True) + "\n"
+                    for event in events_to_write
+                ),
+            )
+        os.replace(temporary_path, bundle_path)
+    except BaseException:
+        temporary_path.unlink(missing_ok=True)
+        raise
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    outcomes: list[dict[str, object]] = []
+    for event in events:
+        shell.run_cell(event["code"], store_history=True)
+        success = bool(event["success"])
+        outcomes.append({"seq": event["seq"], "success": success})
+        if stop_on_error and not success:
+            break
+    if not store_history:
+        shell.execution_count = original_execution_count
+    return outcomes
+=======
+    outcomes: list[dict[str, object]] = []
+    try:
+        for event in events:
+            result = shell.run_cell(event["code"], store_history=store_history)
+            success = bool(result.success)
+            outcomes.append({"seq": event["seq"], "success": success})
+            if not store_history:
+                shell.execution_count = original_execution_count
+            if stop_on_error and not success:
+                break
+    finally:
+        if not store_history:
+            shell.execution_count = original_execution_count
+    return outcomes
+>>>>>>> REPLACE
+*** End Patch

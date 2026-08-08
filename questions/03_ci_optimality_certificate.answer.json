@@ -1,0 +1,8 @@
+{
+  "grader": {
+    "kind": "ci_adversarial_audit",
+    "test_suite": "ci_adversarial_audit_v2",
+    "pass_threshold": 20,
+    "max_score": 20
+  }
+}

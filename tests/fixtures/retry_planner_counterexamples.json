@@ -1,0 +1,30 @@
+{
+  "counterexamples": [
+    {
+      "name": "merge_deferred_and_wakeup",
+      "records": [
+        {"job_id": "latest", "group": "g1", "revision": 1, "status": "failed", "attempt": 0, "ready_at": 100, "priority": 9},
+        {"job_id": "latest", "group": "g1", "revision": 2, "status": "failed", "attempt": 0, "ready_at": 110, "priority": 9},
+        {"job_id": "tie", "group": "g2", "revision": 3, "status": "failed", "attempt": 0, "ready_at": null, "priority": 9},
+        {"job_id": "tie", "group": "g2", "revision": 3, "status": "failed", "attempt": 0, "ready_at": null, "priority": 1},
+        {"job_id": "rival", "group": "g3", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 5},
+        {"job_id": "terminal_tie", "group": "g4", "revision": 4, "status": "succeeded", "attempt": 0, "ready_at": null, "priority": 4},
+        {"job_id": "terminal_tie", "group": "g4", "revision": 4, "status": "timeout", "attempt": 0, "ready_at": null, "priority": 4},
+        {"job_id": "attempt", "group": "g5", "revision": 1, "status": "timeout", "attempt": 3, "ready_at": null, "priority": 10},
+        {"job_id": "z_future", "group": "g6", "revision": 1, "status": "failed", "attempt": 0, "ready_at": 106, "priority": 100},
+        {"job_id": "exhausted_future", "group": "g7", "revision": 1, "status": "failed", "attempt": 3, "ready_at": 105, "priority": 2}
+      ],
+      "params": {"now": 100, "max_attempts": 3, "global_limit": 2, "per_group_limit": 2}
+    },
+    {
+      "name": "quota_backfills_global_slots",
+      "records": [
+        {"job_id": "a", "group": "g1", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 100},
+        {"job_id": "b", "group": "g1", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 90},
+        {"job_id": "c", "group": "g2", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 80},
+        {"job_id": "d", "group": "g3", "revision": 1, "status": "failed", "attempt": 0, "ready_at": null, "priority": 70}
+      ],
+      "params": {"now": 0, "max_attempts": 3, "global_limit": 3, "per_group_limit": 1}
+    }
+  ]
+}

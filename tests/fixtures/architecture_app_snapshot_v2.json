@@ -1,0 +1,270 @@
+{
+  "schema_version": 2,
+  "config": {
+    "model_ingress": {
+      "sources": [],
+      "connections": []
+    },
+    "provider_catalog": [],
+    "detected_local_providers": [],
+    "recommendation": {
+      "current_model_mode": "auto",
+      "preference": "smart",
+      "source_mode_by_configuration_id": {},
+      "project_profile": {
+        "project_name": "Fixture Project V2",
+        "task_mode": "综合推荐"
+      },
+      "current_model_source": "unavailable",
+      "current_model_detection_status": "unavailable",
+      "detected_active_session_count": 0,
+      "detected_active_models": [],
+      "detected_active_sessions": [],
+      "active_model_sessions": []
+    },
+    "scheduler": {
+      "enabled": false,
+      "mode": "daily",
+      "interval_seconds": 1800,
+      "daily_hour": 9,
+      "daily_minute": 0,
+      "weekly_weekday": 1,
+      "weekly_hour": 9,
+      "weekly_minute": 0
+    },
+    "scan_budget": {
+      "enabled": false,
+      "max_duration_seconds": 900,
+      "max_reference_cost_usd": 1
+    },
+    "system": {
+      "use_mock_results": true,
+      "auto_open_browser": false,
+      "history_limit": 50,
+      "language": "zh-CN",
+      "attempts_per_target": 1,
+      "max_concurrent_targets": 1,
+      "execution_timeout_seconds": 1200,
+      "timeout_retry_count": 0
+    },
+    "rules": {}
+  },
+  "dashboard": {
+    "run_count": 1,
+    "hits_516": 0,
+    "hit_rate_516": 0,
+    "pass_rate": 100,
+    "reasoning_tokens_total": 0,
+    "cards": [],
+    "leaderboard": [],
+    "statistics": {
+      "trend_series": [
+        {
+          "candidate_id": "fixture-candidate",
+          "overall_score_run_indices": [0, 2],
+          "overall_score_values": [80, 90]
+        }
+      ]
+    },
+    "run_metadata": {
+      "run_id": "fixture-dashboard-run",
+      "question_pack_id": "fixture-pack",
+      "question_pack_version": "fixture-v1",
+      "started_at": "2026-07-28T00:00:00Z",
+      "completed_at": "2026-07-28T00:01:00Z",
+      "candidate_count": 1,
+      "question_count": 1,
+      "status": "completed",
+      "selection_mode": "regular",
+      "requested_candidate_ids": [
+        "fixture-candidate"
+      ],
+      "regular_candidate_ids": [
+        "fixture-candidate"
+      ],
+      "comparison_group_id": "fixture-group",
+      "comparison_group_mode": "regular",
+      "appended_candidate_ids": [],
+      "skipped_candidate_ids": [],
+      "aggregate_wall_clock_seconds": 60,
+      "evaluation_profile_id": "full",
+      "evaluation_profile_label": "完整评测",
+      "evaluation_result_level": "final",
+      "evaluation_score_max": 20,
+      "question_ids": [
+        "fixture-question"
+      ],
+      "upgrade_from_run_id": null,
+      "upgrade_target_profile_id": null
+    }
+  },
+  "stable_dashboard": null,
+  "runtime": {
+    "enabled_target_count": 0,
+    "history_count": 0,
+    "is_running": false,
+    "last_run_count": 0,
+    "last_error": null,
+    "last_run_mode": "mock",
+    "completed_targets": 0,
+    "total_targets": 0,
+    "progress_percent": 0,
+    "current_target": null,
+    "run_entries": [],
+    "current_run_id": null,
+    "has_resumable_run": false,
+    "resumable_run_id": null,
+    "resumable_operation_kind": null,
+    "resumable_operation_run_id": null,
+    "resumable_candidate_ids": [],
+    "resumable_question_id": null,
+    "current_phase": null,
+    "current_phase_completed_targets": 0,
+    "current_phase_total_targets": 0,
+    "progress_completed": 0,
+    "progress_total": 0,
+    "progress_unit": "evaluationUnit",
+    "active_evaluation_count": 0,
+    "queued_evaluation_count": 0,
+    "oldest_active_evaluation_started_at": null,
+    "execution_timeout_seconds": 1200,
+    "lifecycle_state": "idle",
+    "state_changed_at": null,
+    "finalizing_started_at": null,
+    "last_phase": null,
+    "last_phase_completed": 0,
+    "last_phase_total": 0,
+    "updated_at": null,
+    "lease_expires_at": null
+  },
+  "question_pack": {
+    "id": "fixture-pack",
+    "version": "fixture-v1",
+    "question_count": 1,
+    "questions": [
+      {
+        "id": "fixture-question",
+        "question_number": 1,
+        "title": "Fixture Question",
+        "capability_id": "fixture",
+        "capability_label": "Fixture",
+        "detail_label": "Fixture detail",
+        "score_max": 20
+      }
+    ],
+    "default_evaluation_profile_id": "full",
+    "evaluation_profiles": [
+      {
+        "id": "full",
+        "label": "完整评测",
+        "summary": "Fixture profile",
+        "question_ids": [
+          "fixture-question"
+        ],
+        "question_count": 1,
+        "result_level": "final",
+        "score_presentation": "overall",
+        "score_max": 20,
+        "upgrade_to": null
+      }
+    ]
+  },
+  "codex_insights": null,
+  "advisor": null,
+  "diagnostics": null,
+  "advisor_v2_evidence": {
+    "schema_version": 2,
+    "source_mode": "official_snapshot",
+    "resolved_data_source": "official_snapshot",
+    "source_reason": "fixture",
+    "source_snapshot_id": "fixture-snapshot",
+    "current_model_configuration_id": null,
+    "current_status": "needs_test",
+    "eligible_candidate_ids": [],
+    "testable_candidate_ids": [],
+    "candidate_decisions": [],
+    "resolved_result_rows": []
+  },
+  "recommendation_portfolio_v2": {
+    "schema_version": 2,
+    "source_mode": "official_snapshot",
+    "source_mode_by_configuration_id": {},
+    "resolved_data_source": "official_snapshot",
+    "source_resolution_reason": "fixture",
+    "preference": "smart",
+    "representative_configuration_id": null,
+    "representative_reason": "fixture",
+    "status": "needs_test",
+    "decisions": [],
+    "testable_candidate_ids": [],
+    "unmapped_active_session_count": 0
+  },
+  "reference_snapshot_feed": {
+    "schema_version": 1,
+    "status": "empty",
+    "kind": "first_party",
+    "latest": null,
+    "snapshots": [],
+    "delivery": null
+  },
+  "recommendation_use": {
+    "schema_version": 1,
+    "epochs": [],
+    "representative_epoch": null,
+    "benefit_summary": null,
+    "value_summary": null
+  },
+  "settings_projection": {
+    "schema_version": 1,
+    "connections": [
+      {
+        "connection_id": "fixture-connection",
+        "source_id": "fixture-source",
+        "operational_status": "operational",
+        "reason": "ready",
+        "action": "none",
+        "enabled_candidate_ids": [
+          "fixture-candidate"
+        ],
+        "available_candidate_ids": [
+          "fixture-candidate"
+        ],
+        "recommendation_status": "ready",
+        "recommendation_reason": "ready",
+        "recommendation_action": "none",
+        "completed_step_count": 4,
+        "baseline_candidate_ids": [
+          "fixture-candidate"
+        ]
+      }
+    ],
+    "scan_scope": {
+      "regular_candidate_ids": [
+        "fixture-candidate"
+      ],
+      "custom_candidate_ids": [
+        "fixture-candidate"
+      ],
+      "source_count": 1,
+      "model_count": 1,
+      "candidate_count": 1,
+      "blocked_reasons": []
+    },
+    "candidates": [
+      {
+        "candidate_id": "fixture-candidate",
+        "source_id": "fixture-source",
+        "connection_id": "fixture-connection",
+        "provider_id": null,
+        "family_id": "fixture-family",
+        "variant_id": "fixture-variant",
+        "model_id": "gpt-fixture",
+        "display_model": "GPT Fixture",
+        "scan_profile": "high",
+        "display_scan_profile": "High",
+        "enabled": true,
+        "available": true
+      }
+    ]
+  }
+}

@@ -1,0 +1,52 @@
+{
+  "scenarios": [
+    {
+      "name": "propagation_fallback_and_cost",
+      "modules": [
+        {"id": "A", "deps": [], "propagates": true, "weight": 11},
+        {"id": "B", "deps": [], "propagates": false, "weight": 10},
+        {"id": "C", "deps": ["B"], "propagates": true, "weight": 9},
+        {"id": "D", "deps": [], "propagates": true, "weight": 8},
+        {"id": "E", "deps": ["D"], "propagates": false, "weight": 7},
+        {"id": "F", "deps": ["E"], "propagates": true, "weight": 6}
+      ],
+      "changes": {"A": "private", "B": "public", "D": "public"},
+      "jobs": [
+        {"id": "Z", "duration": 3, "environment": "root", "priority": 6, "covers": ["A"], "requires": []},
+        {"id": "Bjob", "duration": 2, "environment": "middle", "priority": 5, "covers": ["B"], "requires": ["Z"]},
+        {"id": "Ajob", "duration": 1, "environment": "leaf", "priority": 4, "covers": ["C"], "requires": ["Bjob"]},
+        {"id": "L", "duration": 2, "environment": "tie-left", "priority": 3, "covers": ["D"], "requires": []},
+        {"id": "R", "duration": 2, "environment": "tie-right", "priority": 3, "covers": ["D"], "requires": []},
+        {"id": "S1", "duration": 1, "environment": "db", "priority": 2, "covers": ["E"], "requires": []},
+        {"id": "S2", "duration": 2, "environment": "db", "priority": 1, "covers": ["E"], "requires": []}
+      ],
+      "plans": {
+        "chain": ["Z", "Bjob", "Ajob"],
+        "tie": ["L", "R"],
+        "setup": ["S1", "S2"]
+      },
+      "setup_costs": {"root": 0, "middle": 0, "leaf": 0, "tie-left": 0, "tie-right": 0, "db": 4},
+      "workers": 3
+    },
+    {
+      "name": "completion_and_backfill",
+      "modules": [
+        {"id": "M", "deps": [], "propagates": true, "weight": 1}
+      ],
+      "changes": {"M": "public"},
+      "jobs": [
+        {"id": "R", "duration": 4, "environment": "db", "priority": 10, "covers": ["M"], "requires": []},
+        {"id": "D", "duration": 1, "environment": "unit", "priority": 9, "covers": [], "requires": ["R"]},
+        {"id": "X", "duration": 2, "environment": "browser", "priority": 1, "covers": [], "requires": []},
+        {"id": "S", "duration": 2, "environment": "db", "priority": 9, "covers": [], "requires": []},
+        {"id": "U", "duration": 1, "environment": "unit", "priority": 8, "covers": [], "requires": []}
+      ],
+      "plans": {
+        "dependency": ["R", "D", "X"],
+        "backfill": ["R", "S", "U"]
+      },
+      "setup_costs": {"db": 0, "unit": 0, "browser": 5},
+      "workers": 2
+    }
+  ]
+}

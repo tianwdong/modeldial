@@ -1,0 +1,84 @@
+{
+  "id": "coding-fast",
+  "version": "coding-fast-v4.10",
+  "default_evaluation_profile_id": "quick",
+  "evaluation_profiles": [
+    {
+      "id": "quick",
+      "label": "快速对比",
+      "summary": "当前使用配置与建议配置各运行完整五题，生成本机对比",
+      "question_selector": {
+        "kind": "all_enabled"
+      },
+      "result_level": "complete",
+      "score_presentation": "percent"
+    },
+    {
+      "id": "full",
+      "label": "全量扫描",
+      "summary": "全部已启用配置各运行完整五题，生成本机榜单",
+      "question_selector": {
+        "kind": "all_enabled"
+      },
+      "result_level": "complete",
+      "score_presentation": "percent"
+    }
+  ],
+  "questions": [
+    {
+      "id": "01_session_bundle_repair",
+      "title": "Black-box Regression Audit",
+      "capability_id": "black_box_regression_testing",
+      "capability_label": "契约测试",
+      "detail_label": "边界场景",
+      "enabled": true,
+      "prompt_path": "01_session_bundle_repair.prompt.md",
+      "answer_path": "01_session_bundle_repair.answer.json",
+      "tags": ["contract-test-design", "black-box-regression", "mutation-testing", "json-output"]
+    },
+    {
+      "id": "02_code_counterexample_maxgap",
+      "title": "Retry Planner Counterexamples",
+      "capability_id": "debug_counterexample",
+      "capability_label": "反例构造",
+      "detail_label": "重试调度",
+      "enabled": true,
+      "prompt_path": "02_code_counterexample_maxgap.prompt.md",
+      "answer_path": "02_code_counterexample_maxgap.answer.json",
+      "tags": ["counterexample-design", "mutation-testing", "retry-planning", "json-output"]
+    },
+    {
+      "id": "03_ci_optimality_certificate",
+      "title": "CI Adversarial Audit",
+      "capability_id": "ci_plan_audit",
+      "capability_label": "方案审计",
+      "detail_label": "对抗场景",
+      "enabled": true,
+      "prompt_path": "03_ci_optimality_certificate.prompt.md",
+      "answer_path": "03_ci_optimality_certificate.answer.json",
+      "tags": ["ci-planning", "adversarial-audit", "mutation-testing", "json-output"]
+    },
+    {
+      "id": "04_transaction_regression_design",
+      "title": "Transaction Regression Design",
+      "capability_id": "state_machine_testing",
+      "capability_label": "状态机",
+      "detail_label": "事务回归",
+      "enabled": true,
+      "prompt_path": "04_transaction_regression_design.prompt.md",
+      "answer_path": "04_transaction_regression_design.answer.json",
+      "tags": ["test-design", "state-machine", "transactions", "json-output"]
+    },
+    {
+      "id": "05_cache_regression_test_design",
+      "title": "Cache Regression Test Design",
+      "capability_id": "regression_validation",
+      "capability_label": "测试设计",
+      "detail_label": "缓存回归",
+      "enabled": true,
+      "prompt_path": "05_unified_diff_patch_applicator.prompt.md",
+      "answer_path": "05_unified_diff_patch_applicator.answer.json",
+      "tags": ["test-design", "mutation-testing", "cache"]
+    }
+  ]
+}

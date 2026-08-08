@@ -1,0 +1,77 @@
+{
+  "tests": [
+    {
+      "name": "identity_graph_and_order",
+      "frames": [
+        {"id": "X", "after": [], "ops": [], "write_retries": 0},
+        {"id": "X", "after": [], "ops": [], "write_retries": 1},
+        {"id": "Y", "after": ["X"], "ops": []},
+        {"id": "A", "after": ["B"], "ops": []},
+        {"id": "B", "after": ["A"], "ops": []},
+        {"id": "C", "after": ["A"], "ops": []},
+        {"id": "Z", "after": [], "ops": [{"op": "put", "key": "o", "value": "Z"}]},
+        {"id": "D", "after": [], "ops": [{"op": "put", "key": "o", "value": "D"}]}
+      ]
+    },
+    {
+      "name": "atomic_staging_and_tombstone",
+      "frames": [
+        {
+          "id": "A",
+          "after": [],
+          "ops": [
+            {"op": "put", "key": "x", "value": 1, "if_version": 0},
+            {"op": "put", "key": "y", "value": 1, "if_version": 1}
+          ]
+        },
+        {
+          "id": "B",
+          "after": [],
+          "ops": [
+            {"op": "put", "key": "s", "value": 1, "if_version": 0},
+            {"op": "check", "key": "s", "if_version": 1}
+          ]
+        },
+        {
+          "id": "C",
+          "after": ["B"],
+          "ops": [{"op": "delete", "key": "gone", "if_version": 0}]
+        }
+      ]
+    },
+    {
+      "name": "conflict_retry_and_check_claims",
+      "frames": [
+        {
+          "id": "A",
+          "after": [],
+          "ops": [
+            {"op": "put", "key": "x", "value": "A"},
+            {"op": "put", "key": "y", "value": "A"}
+          ]
+        },
+        {
+          "id": "B",
+          "after": [],
+          "ops": [{"op": "put", "key": "x", "value": "B", "if_version": 0}],
+          "write_retries": 1
+        },
+        {
+          "id": "C",
+          "after": [],
+          "ops": [{"op": "put", "key": "y", "value": "C"}]
+        },
+        {
+          "id": "D",
+          "after": [],
+          "ops": [{"op": "check", "key": "z", "if_version": 0}]
+        },
+        {
+          "id": "E",
+          "after": [],
+          "ops": [{"op": "put", "key": "z", "value": "E"}]
+        }
+      ]
+    }
+  ]
+}

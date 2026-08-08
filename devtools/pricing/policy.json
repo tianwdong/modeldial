@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "source_name": "LiteLLM",
+  "source_url": "https://raw.githubusercontent.com/BerriAI/litellm/b45b4b73004261b47369d7d12c97d58b137a732e/model_prices_and_context_window.json",
+  "source_revision": "b45b4b73004261b47369d7d12c97d58b137a732e",
+  "source_sha256": "sha256:960279570fc4d2bdd56258a58ce30d124097cee61fdec6fdc483d4a057a4909b",
+  "minimum_upstream_entry_count": 1000,
+  "minimum_model_count": 30,
+  "minimum_fresh_model_count": 15,
+  "maximum_cost_per_token": 0.01,
+  "required_priceable_prefixes": [
+    "gpt-",
+    "claude-",
+    "gemini-",
+    "deepseek-",
+    "grok-",
+    "kimi-",
+    "glm-",
+    "minimax-"
+  ],
+  "reviewed_matches": {
+    "claude-sonnet-4": "claude-sonnet-4-20250514",
+    "gemini-3-flash": "gemini-3-flash-preview",
+    "gemini-3.1-pro": "gemini-3.1-pro-preview"
+  }
+}

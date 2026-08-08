@@ -1,0 +1,50 @@
+{
+  "run_metadata": {
+    "run_id": "run-20260710-degraded-fixture",
+    "question_pack_id": "coding-fast",
+    "question_pack_version": "coding-fast-v1.3",
+    "started_at": "2026-07-10T07:30:00+08:00",
+    "completed_at": "2026-07-10T08:34:00+08:00",
+    "candidate_count": 6,
+    "question_count": 4,
+    "status": "completed"
+  },
+  "candidates": [
+    {
+      "candidate_id": "codex-local-default:gpt-5.4:medium",
+      "model": "gpt-5.4",
+      "effort": "medium",
+      "outcomes": ["error", "error", "error", "error"]
+    },
+    {
+      "candidate_id": "codex-local-default:gpt-5.4:high",
+      "model": "gpt-5.4",
+      "effort": "high",
+      "outcomes": ["error", "error", "error", "error"]
+    },
+    {
+      "candidate_id": "codex-local-default:gpt-5.4:xhigh",
+      "model": "gpt-5.4",
+      "effort": "xhigh",
+      "outcomes": ["error", "error", "error", "error"]
+    },
+    {
+      "candidate_id": "codex-local-default:gpt-5.5:medium",
+      "model": "gpt-5.5",
+      "effort": "medium",
+      "outcomes": ["error", "error", "error", "error"]
+    },
+    {
+      "candidate_id": "codex-local-default:gpt-5.5:high",
+      "model": "gpt-5.5",
+      "effort": "high",
+      "outcomes": ["error", "error", "error", "error"]
+    },
+    {
+      "candidate_id": "codex-local-default:gpt-5.5:xhigh",
+      "model": "gpt-5.5",
+      "effort": "xhigh",
+      "outcomes": ["error", "error", "wrong", "ok"]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "grader": {
+    "kind": "retry_counterexample_design",
+    "test_suite": "retry_planner_mutants_v3",
+    "pass_threshold": 20,
+    "max_score": 20
+  }
+}

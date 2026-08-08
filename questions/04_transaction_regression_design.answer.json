@@ -1,0 +1,8 @@
+{
+  "grader": {
+    "kind": "transaction_regression_design",
+    "test_suite": "transaction_replay_mutants_v2",
+    "pass_threshold": 20,
+    "max_score": 20
+  }
+}

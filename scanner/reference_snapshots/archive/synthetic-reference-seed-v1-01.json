@@ -1,0 +1,1094 @@
+{
+  "schema_version": 1,
+  "kind": "development_seed",
+  "batch_id": "synthetic-reference-seed-v1-01",
+  "revision": 1,
+  "run_date": "2000-01-01",
+  "status": "complete",
+  "generated_at": "2000-01-01T00:00:00Z",
+  "published_at": "2000-01-01T00:00:00Z",
+  "question_pack_id": "coding-fast",
+  "question_pack_version": "coding-fast-v4.10",
+  "grader_version": "scoring-mode:semantic_q1_q5_equal_v2",
+  "evaluation_profile": "full",
+  "score_baseline_id": "coding-fast-v4.10:synthetic-v1",
+  "pricing_snapshot_id": "synthetic-pricing-v1",
+  "retry_policy": {
+    "mode": "synthetic_app_policy_v1",
+    "max_attempts_per_question": null,
+    "selective_score_retry": null
+  },
+  "provenance": {
+    "kind": "development_seed",
+    "source": "synthetic_fixture",
+    "public_official_snapshot": false
+  },
+  "question_ids": [
+    "01_session_bundle_repair",
+    "02_code_counterexample_maxgap",
+    "03_ci_optimality_certificate",
+    "04_transaction_regression_design",
+    "05_cache_regression_test_design"
+  ],
+  "entry_count": 12,
+  "entries": [
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-sol:ultra",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-sol",
+        "canonical_model_id": "gpt-5.6-sol",
+        "display_name": "gpt-5.6-sol / ultra",
+        "reasoning_effort": "ultra",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 92,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 19,
+        "02_code_counterexample_maxgap": 19,
+        "03_ci_optimality_certificate": 18,
+        "04_transaction_regression_design": 18,
+        "05_cache_regression_test_design": 18
+      },
+      "elapsed_ms": 235000,
+      "usage": {
+        "input_tokens": 18200,
+        "cached_input_tokens": 3640,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4100,
+        "reasoning_tokens": 2075
+      },
+      "estimated_api_cost_usd": 0.21,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 1,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-sol:xhigh",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-sol",
+        "canonical_model_id": "gpt-5.6-sol",
+        "display_name": "gpt-5.6-sol / xhigh",
+        "reasoning_effort": "xhigh",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 90,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 18,
+        "02_code_counterexample_maxgap": 18,
+        "03_ci_optimality_certificate": 18,
+        "04_transaction_regression_design": 18,
+        "05_cache_regression_test_design": 18
+      },
+      "elapsed_ms": 270000,
+      "usage": {
+        "input_tokens": 19300,
+        "cached_input_tokens": 3860,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4450,
+        "reasoning_tokens": 2325
+      },
+      "estimated_api_cost_usd": 0.285,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 0,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-sol:max",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-sol",
+        "canonical_model_id": "gpt-5.6-sol",
+        "display_name": "gpt-5.6-sol / max",
+        "reasoning_effort": "max",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 88,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 18,
+        "02_code_counterexample_maxgap": 18,
+        "03_ci_optimality_certificate": 18,
+        "04_transaction_regression_design": 17,
+        "05_cache_regression_test_design": 17
+      },
+      "elapsed_ms": 305000,
+      "usage": {
+        "input_tokens": 20400,
+        "cached_input_tokens": 4080,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 4800,
+        "reasoning_tokens": 2575
+      },
+      "estimated_api_cost_usd": 0.36,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 1,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-terra:max",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-terra",
+        "canonical_model_id": "gpt-5.6-terra",
+        "display_name": "gpt-5.6-terra / max",
+        "reasoning_effort": "max",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 86,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 18,
+        "02_code_counterexample_maxgap": 17,
+        "03_ci_optimality_certificate": 17,
+        "04_transaction_regression_design": 17,
+        "05_cache_regression_test_design": 17
+      },
+      "elapsed_ms": 340000,
+      "usage": {
+        "input_tokens": 21500,
+        "cached_input_tokens": 4300,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5150,
+        "reasoning_tokens": 2825
+      },
+      "estimated_api_cost_usd": 0.435,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 0,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-terra:ultra",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-terra",
+        "canonical_model_id": "gpt-5.6-terra",
+        "display_name": "gpt-5.6-terra / ultra",
+        "reasoning_effort": "ultra",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 84,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 17,
+        "02_code_counterexample_maxgap": 17,
+        "03_ci_optimality_certificate": 17,
+        "04_transaction_regression_design": 17,
+        "05_cache_regression_test_design": 16
+      },
+      "elapsed_ms": 375000,
+      "usage": {
+        "input_tokens": 22600,
+        "cached_input_tokens": 4520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5500,
+        "reasoning_tokens": 3075
+      },
+      "estimated_api_cost_usd": 0.51,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 1,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-sol:medium",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-sol",
+        "canonical_model_id": "gpt-5.6-sol",
+        "display_name": "gpt-5.6-sol / medium",
+        "reasoning_effort": "medium",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 82,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 17,
+        "02_code_counterexample_maxgap": 17,
+        "03_ci_optimality_certificate": 16,
+        "04_transaction_regression_design": 16,
+        "05_cache_regression_test_design": 16
+      },
+      "elapsed_ms": 410000,
+      "usage": {
+        "input_tokens": 23700,
+        "cached_input_tokens": 4740,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5850,
+        "reasoning_tokens": 3325
+      },
+      "estimated_api_cost_usd": 0.585,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 0,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-sol:high",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-sol",
+        "canonical_model_id": "gpt-5.6-sol",
+        "display_name": "gpt-5.6-sol / high",
+        "reasoning_effort": "high",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 80,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 16,
+        "02_code_counterexample_maxgap": 16,
+        "03_ci_optimality_certificate": 16,
+        "04_transaction_regression_design": 16,
+        "05_cache_regression_test_design": 16
+      },
+      "elapsed_ms": 445000,
+      "usage": {
+        "input_tokens": 24800,
+        "cached_input_tokens": 4960,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6200,
+        "reasoning_tokens": 3575
+      },
+      "estimated_api_cost_usd": 0.66,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 1,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-luna:xhigh",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-luna",
+        "canonical_model_id": "gpt-5.6-luna",
+        "display_name": "gpt-5.6-luna / xhigh",
+        "reasoning_effort": "xhigh",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 78,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 16,
+        "02_code_counterexample_maxgap": 16,
+        "03_ci_optimality_certificate": 16,
+        "04_transaction_regression_design": 15,
+        "05_cache_regression_test_design": 15
+      },
+      "elapsed_ms": 480000,
+      "usage": {
+        "input_tokens": 25900,
+        "cached_input_tokens": 5180,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6550,
+        "reasoning_tokens": 3825
+      },
+      "estimated_api_cost_usd": 0.735,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 0,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.5:xhigh",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.5",
+        "canonical_model_id": "gpt-5.5",
+        "display_name": "gpt-5.5 / xhigh",
+        "reasoning_effort": "xhigh",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 76,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 16,
+        "02_code_counterexample_maxgap": 15,
+        "03_ci_optimality_certificate": 15,
+        "04_transaction_regression_design": 15,
+        "05_cache_regression_test_design": 15
+      },
+      "elapsed_ms": 515000,
+      "usage": {
+        "input_tokens": 27000,
+        "cached_input_tokens": 5400,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 6900,
+        "reasoning_tokens": 4075
+      },
+      "estimated_api_cost_usd": 0.81,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 1,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-luna:max",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-luna",
+        "canonical_model_id": "gpt-5.6-luna",
+        "display_name": "gpt-5.6-luna / max",
+        "reasoning_effort": "max",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 74,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 15,
+        "02_code_counterexample_maxgap": 15,
+        "03_ci_optimality_certificate": 15,
+        "04_transaction_regression_design": 15,
+        "05_cache_regression_test_design": 14
+      },
+      "elapsed_ms": 550000,
+      "usage": {
+        "input_tokens": 28100,
+        "cached_input_tokens": 5620,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 7250,
+        "reasoning_tokens": 4325
+      },
+      "estimated_api_cost_usd": 0.885,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 0,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-terra:xhigh",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-terra",
+        "canonical_model_id": "gpt-5.6-terra",
+        "display_name": "gpt-5.6-terra / xhigh",
+        "reasoning_effort": "xhigh",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 72,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 15,
+        "02_code_counterexample_maxgap": 15,
+        "03_ci_optimality_certificate": 14,
+        "04_transaction_regression_design": 14,
+        "05_cache_regression_test_design": 14
+      },
+      "elapsed_ms": 585000,
+      "usage": {
+        "input_tokens": 29200,
+        "cached_input_tokens": 5840,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 7600,
+        "reasoning_tokens": 4575
+      },
+      "estimated_api_cost_usd": 0.96,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 1,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    },
+    {
+      "model_configuration_id": "codex-local-default:gpt-5.6-sol:low",
+      "model_configuration": {
+        "provider_id": "openai",
+        "raw_model_id": "gpt-5.6-sol",
+        "canonical_model_id": "gpt-5.6-sol",
+        "display_name": "gpt-5.6-sol / low",
+        "reasoning_effort": "low",
+        "service_tier": "chatgpt_subscription",
+        "route_type": "official_login"
+      },
+      "advisor_eligible": true,
+      "score_integrity": "synthetic_fixture",
+      "route_identity": "synthetic_fixture",
+      "route_fingerprint": null,
+      "score": 70,
+      "max_score": 100,
+      "question_scores": {
+        "01_session_bundle_repair": 14,
+        "02_code_counterexample_maxgap": 14,
+        "03_ci_optimality_certificate": 14,
+        "04_transaction_regression_design": 14,
+        "05_cache_regression_test_design": 14
+      },
+      "elapsed_ms": 620000,
+      "usage": {
+        "input_tokens": 30300,
+        "cached_input_tokens": 6060,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 7950,
+        "reasoning_tokens": 4825
+      },
+      "estimated_api_cost_usd": 1.035,
+      "cost_coverage": "complete",
+      "attempt_count": 5,
+      "failure_count": 0,
+      "hard_failure_count": 0,
+      "completed_at": "2000-01-01T00:00:00Z",
+      "source_evidence_group_id": null
+    }
+  ],
+  "revision_reason": null,
+  "leaderboard_projection": {
+    "schema_version": 2,
+    "source": "publisher",
+    "ranking_rule": "score_desc_hard_failure_asc_elapsed_asc_cost_asc_identity_v1",
+    "trend_rule": "latest_6_same_configuration_protocol_route_v1",
+    "questions": [
+      {
+        "id": "01_session_bundle_repair",
+        "short_label": "Q1",
+        "title": "Black-box Regression Audit",
+        "capability_id": "black_box_regression_testing",
+        "capability_label": "契约测试",
+        "detail_label": "边界场景",
+        "ordinal": 1
+      },
+      {
+        "id": "02_code_counterexample_maxgap",
+        "short_label": "Q2",
+        "title": "Retry Planner Counterexamples",
+        "capability_id": "debug_counterexample",
+        "capability_label": "反例构造",
+        "detail_label": "重试调度",
+        "ordinal": 2
+      },
+      {
+        "id": "03_ci_optimality_certificate",
+        "short_label": "Q3",
+        "title": "CI Adversarial Audit",
+        "capability_id": "ci_plan_audit",
+        "capability_label": "方案审计",
+        "detail_label": "对抗场景",
+        "ordinal": 3
+      },
+      {
+        "id": "04_transaction_regression_design",
+        "short_label": "Q4",
+        "title": "Transaction Regression Design",
+        "capability_id": "state_machine_testing",
+        "capability_label": "状态机",
+        "detail_label": "事务回归",
+        "ordinal": 4
+      },
+      {
+        "id": "05_cache_regression_test_design",
+        "short_label": "Q5",
+        "title": "Cache Regression Test Design",
+        "capability_id": "regression_validation",
+        "capability_label": "测试设计",
+        "detail_label": "缓存回归",
+        "ordinal": 5
+      }
+    ],
+    "rows": [
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-sol:ultra",
+        "rank": 1,
+        "target_labels": [
+          {
+            "id": "highest_score",
+            "label": "Highest score"
+          },
+          {
+            "id": "fastest",
+            "label": "Fastest"
+          },
+          {
+            "id": "lowest_cost",
+            "label": "Lowest cost"
+          }
+        ],
+        "decision_tags": [
+          {
+            "kind": "recommended"
+          }
+        ],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 19.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 19.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 18.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 18.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 18.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:02565951eb55164179e6e83049ebde1f7c48c5141daa7b7b94998907a418c863",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 92.0,
+              "elapsed_ms": 235000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-sol:xhigh",
+        "rank": 2,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 18.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 18.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 18.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 18.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 18.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:484c6201f93aa1c61237ec75b6843f83511c936121b89c62c638a7d7088429c5",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 90.0,
+              "elapsed_ms": 270000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-sol:max",
+        "rank": 3,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 18.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 18.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 18.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 17.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 17.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:7ac822369809eb9f3fcfc3637ae1f1a3fb378b761f2fcfe76b3925bca4ad5960",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 88.0,
+              "elapsed_ms": 305000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-terra:max",
+        "rank": 4,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 18.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 17.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 17.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 17.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 17.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:813c74ffcc4c42e8415a69efaf9ef526bc7f3566f9db480d6cba1fc0d3ba7b3b",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 86.0,
+              "elapsed_ms": 340000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-terra:ultra",
+        "rank": 5,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 17.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 17.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 17.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 17.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 16.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:c2cc9e6a1a4e5418eb2f00b53c5e0a701f40b69b4c1bcbb140c90e9ba3aed8ad",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 84.0,
+              "elapsed_ms": 375000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-sol:medium",
+        "rank": 6,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 17.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 17.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 16.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 16.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 16.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:6e45a67e6a04f4fe5d999355e5cb5905b4be3cd29828a384e6d3b66d47fa5ea3",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 82.0,
+              "elapsed_ms": 410000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-sol:high",
+        "rank": 7,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 16.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 16.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 16.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 16.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 16.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:7e726a6d352a6706f039b230c3c50e53c0737c5ca5f9032e6fd280a49a2fb6ed",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 80.0,
+              "elapsed_ms": 445000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-luna:xhigh",
+        "rank": 8,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 16.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 16.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 16.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 15.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 15.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:0314961129a4da15854304f24976b1867d599ec51878883370e9029e65548de5",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 78.0,
+              "elapsed_ms": 480000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.5:xhigh",
+        "rank": 9,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 16.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 15.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 15.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 15.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 15.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:ade15742c8c5535757aecc52ec8774cd13a0d9d3ea3098ad970ea608e04a7e5e",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 76.0,
+              "elapsed_ms": 515000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-luna:max",
+        "rank": 10,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 15.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 15.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 15.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 15.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 14.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:547768fc71c3d4e437fb7c45ecca69f50801441dd2f3c1cf00379beb67a536e6",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 74.0,
+              "elapsed_ms": 550000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-terra:xhigh",
+        "rank": 11,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 15.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 15.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 14.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 14.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 14.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:c1e384c3b8410f1b9cbd63d894e08202702c2157005abe5e2648f7670e45a380",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 72.0,
+              "elapsed_ms": 585000.0
+            }
+          ]
+        }
+      },
+      {
+        "model_configuration_id": "codex-local-default:gpt-5.6-sol:low",
+        "rank": 12,
+        "target_labels": [],
+        "decision_tags": [],
+        "question_scores": [
+          {
+            "question_id": "01_session_bundle_repair",
+            "score": 14.0
+          },
+          {
+            "question_id": "02_code_counterexample_maxgap",
+            "score": 14.0
+          },
+          {
+            "question_id": "03_ci_optimality_certificate",
+            "score": 14.0
+          },
+          {
+            "question_id": "04_transaction_regression_design",
+            "score": 14.0
+          },
+          {
+            "question_id": "05_cache_regression_test_design",
+            "score": 14.0
+          }
+        ],
+        "trend": {
+          "compatibility_key": "sha256:8ffb1cf77a9e341cee8db3ecb6b19fc11e96c7759fadc6c97abb3ce29d91f36c",
+          "sample_count": 1,
+          "comparable": false,
+          "stable_ranking_eligible": false,
+          "points": [
+            {
+              "batch_id": "synthetic-reference-seed-v1-01",
+              "published_at": "2000-01-01T00:00:00Z",
+              "score": 70.0,
+              "elapsed_ms": 620000.0
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "batch_sha256": "sha256:9416ade0c3178d1ea6e7a44cf7a85e9970f658fdcce0624f23618acff1388f15"
+}

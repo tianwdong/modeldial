@@ -1,0 +1,12 @@
+{
+  "deployment_target": "13.0",
+  "framework_version": "3.14",
+  "installer_filename": "python-3.14.3-macos11.pkg",
+  "installer_signer": "Developer ID Installer: Python Software Foundation (BMM5U3QVKW)",
+  "release_page": "https://www.python.org/downloads/release/python-3143/",
+  "schema_version": 1,
+  "sha256": "50b709f72cb5ed87d5882901923face981dd657569717761832c36db3bf08238",
+  "target_arch": "arm64",
+  "url": "https://www.python.org/ftp/python/3.14.3/python-3.14.3-macos11.pkg",
+  "version": "3.14.3"
+}

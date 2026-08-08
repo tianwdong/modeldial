@@ -1,0 +1,25 @@
+# macOS and language caches
+.DS_Store
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local tooling
+.codegraph/
+.playwright-cli/
+.superpowers/
+.wrangler/
+.venv/
+
+# Generated builds and runtime data
+build/
+.build/
+artifacts/
+output/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key

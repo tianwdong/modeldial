@@ -1,0 +1,16 @@
+{
+  "comparisons": {
+    "B": {"field": "fallback", "winner": "A", "a_value": 11, "other_value": 10},
+    "C": {"field": "normal", "winner": "A", "a_value": 26, "other_value": 20},
+    "D": {"field": "makespan", "winner": "A", "a_value": 7, "other_value": 8},
+    "E": {"field": "cost", "winner": "A", "a_value": 17, "other_value": 18},
+    "F": {"field": "lexicographic", "winner": "A", "a_value": ["P", "T", "U"], "other_value": ["R", "T", "Z"]}
+  },
+  "counterfactuals": {
+    "private_b_public_d": {"dirty": ["B", "D", "F", "G", "H"], "winner": "D", "runner_up": "C", "field": "fallback", "winner_value": 15, "runner_up_value": 12},
+    "private_a_public_d": {"dirty": ["A", "D", "F", "G", "H"], "winner": "B", "runner_up": "A", "field": "cost", "winner_value": 16, "runner_up_value": 17},
+    "private_e_public_f": {"dirty": ["E", "F", "H"], "winner": "F", "runner_up": "D", "field": "makespan", "winner_value": 7, "runner_up_value": 8},
+    "public_b_public_c": {"dirty": ["B", "C", "D", "E", "F", "H"], "winner": "C", "runner_up": "E", "field": "fallback", "winner_value": 28, "runner_up_value": 21},
+    "private_b_public_c": {"dirty": ["B", "C", "E", "F", "H"], "winner": "E", "runner_up": "D", "field": "makespan", "winner_value": 7, "runner_up_value": 8}
+  }
+}

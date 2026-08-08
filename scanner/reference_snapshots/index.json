@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "kind": "development_seed",
+  "generated_at": "2000-01-01T00:00:00Z",
+  "latest_batch_id": "synthetic-reference-seed-v1-04",
+  "latest_path": "latest.json",
+  "snapshots": [
+    {
+      "batch_id": "synthetic-reference-seed-v1-01",
+      "published_at": "2000-01-01T00:00:00Z",
+      "question_pack_version": "coding-fast-v4.10",
+      "score_baseline_id": "coding-fast-v4.10:synthetic-v1",
+      "entry_count": 12,
+      "batch_sha256": "sha256:9416ade0c3178d1ea6e7a44cf7a85e9970f658fdcce0624f23618acff1388f15",
+      "path": "archive/synthetic-reference-seed-v1-01.json"
+    },
+    {
+      "batch_id": "synthetic-reference-seed-v1-02",
+      "published_at": "2000-01-02T00:00:00Z",
+      "question_pack_version": "coding-fast-v4.10",
+      "score_baseline_id": "coding-fast-v4.10:synthetic-v1",
+      "entry_count": 13,
+      "batch_sha256": "sha256:727c7892de58628d6a62b1bf9f9bcfb33e5064ac5070165417d8892e5f4823b1",
+      "path": "archive/synthetic-reference-seed-v1-02.json"
+    },
+    {
+      "batch_id": "synthetic-reference-seed-v1-03",
+      "published_at": "2000-01-03T00:00:00Z",
+      "question_pack_version": "coding-fast-v4.10",
+      "score_baseline_id": "coding-fast-v4.10:synthetic-v1",
+      "entry_count": 15,
+      "batch_sha256": "sha256:aa80722c55bd2029ba431c7d4cc15401a495b20c10fe00a7d0e0fdfd299cdf45",
+      "path": "archive/synthetic-reference-seed-v1-03.json"
+    },
+    {
+      "batch_id": "synthetic-reference-seed-v1-04",
+      "published_at": "2000-01-04T00:00:00Z",
+      "question_pack_version": "coding-fast-v4.10",
+      "score_baseline_id": "coding-fast-v4.10:synthetic-v1",
+      "entry_count": 18,
+      "batch_sha256": "sha256:e2d0982b18c802b746e96bee77c0b1dfc1c30f843c5ec70f152ad04406c04ac8",
+      "path": "archive/synthetic-reference-seed-v1-04.json"
+    }
+  ]
+}

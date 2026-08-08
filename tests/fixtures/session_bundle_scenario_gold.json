@@ -1,0 +1,213 @@
+{
+  "tests": [
+    {
+      "name": "save_contracts",
+      "steps": [
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": false,
+          "event_count": 2,
+          "metadata_features": ["mutates_during_iteration"],
+          "checks": [
+            {"path": "status", "equals": "FileExistsError"},
+            {"path": "events_consumed", "equals": 0}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "missing",
+          "metadata_features": ["mutates_during_iteration", "nested_mapping"],
+          "event_features": ["mutates_after_yield"],
+          "event_count": 3,
+          "mapping_order": "ba",
+          "checks": [
+            {"path": "metadata_snapshot", "equals": "before"},
+            {"path": "event_snapshot", "equals": "before"},
+            {"path": "nested_snapshot", "equals": "normalized"},
+            {"path": "archive.mapping_order", "equals": "ab"},
+            {"path": "durability.temporary_fsync", "equals": true}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": true,
+          "event_count": 1001,
+          "checks": [
+            {"path": "status", "equals": "event_limit_error"},
+            {"path": "events_consumed", "equals": 1000},
+            {"path": "target", "equals": "old"}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "missing",
+          "event_count": 1001,
+          "checks": [
+            {"path": "status", "equals": "event_limit_error"},
+            {"path": "events_consumed", "equals": 1000}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": true,
+          "faults": ["validation", "iteration", "serialization", "member_size", "replace"],
+          "checks": [
+            {"path": "faults.validation.target", "equals": "old"},
+            {"path": "faults.iteration.target", "equals": "old"},
+            {"path": "faults.serialization.target", "equals": "old"},
+            {"path": "faults.member_size.target", "equals": "old"},
+            {"path": "faults.replace.temporary_exists", "equals": false}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "missing",
+          "overwrite": true,
+          "faults": ["validation", "iteration", "serialization", "member_size", "replace"],
+          "checks": [
+            {"path": "faults.validation.target", "equals": "missing"},
+            {"path": "faults.iteration.target", "equals": "missing"},
+            {"path": "faults.serialization.target", "equals": "missing"},
+            {"path": "faults.member_size.target", "equals": "missing"},
+            {"path": "faults.replace.temporary_exists", "equals": false}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "missing",
+          "race_create": true,
+          "metadata_features": ["mutates_during_iteration"],
+          "checks": [
+            {"path": "status", "equals": "FileExistsError"},
+            {"path": "target", "equals": "rival"}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": true,
+          "mapping_order": "ba",
+          "clock": 20260723,
+          "directory_fsync": "unsupported",
+          "checks": [
+            {"path": "archive.mapping_order", "equals": "ab"},
+            {"path": "archive.timestamp", "equals": 19800101},
+            {"path": "durability.temporary_fsync", "equals": true},
+            {"path": "durability.parent_fsync_attempted", "equals": true}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fault_contexts",
+      "steps": [
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": true,
+          "event_count": 0,
+          "faults": ["validation"],
+          "checks": [
+            {"path": "faults.validation.target", "equals": "old"}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": true,
+          "event_features": ["mutates_after_yield"],
+          "event_count": 3,
+          "faults": ["iteration"],
+          "checks": [
+            {"path": "faults.iteration.target", "equals": "old"}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": true,
+          "metadata_features": ["nested_mapping"],
+          "mapping_order": "ba",
+          "faults": ["serialization"],
+          "checks": [
+            {"path": "faults.serialization.target", "equals": "old"}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": true,
+          "event_count": 1000,
+          "faults": ["member_size"],
+          "checks": [
+            {"path": "faults.member_size.target", "equals": "old"}
+          ]
+        },
+        {
+          "op": "save",
+          "target": "existing",
+          "overwrite": true,
+          "mapping_order": "ba",
+          "faults": ["replace"],
+          "checks": [
+            {"path": "faults.replace.temporary_exists", "equals": false}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "replay_contracts",
+      "steps": [
+        {
+          "op": "replay",
+          "recorded_success": [false, true],
+          "actual_results": ["failure", "success"],
+          "stop_on_error": true,
+          "store_history": true,
+          "checks": [
+            {"path": "outcomes", "equals": [{"seq": 1, "success": false}]}
+          ]
+        },
+        {
+          "op": "replay",
+          "recorded_success": [false, false, true],
+          "actual_results": ["failure", "success", "raise"],
+          "stop_on_error": false,
+          "store_history": false,
+          "checks": [
+            {
+              "path": "outcomes",
+              "equals": [
+                {"seq": 1, "success": false},
+                {"seq": 2, "success": true}
+              ]
+            },
+            {"path": "store_history_calls", "equals": [false, false, false]},
+            {"path": "call_start_counts", "equals": [40, 40, 40]},
+            {"path": "final_execution_count", "equals": 40}
+          ]
+        },
+        {
+          "op": "replay",
+          "recorded_success": [true, true],
+          "actual_results": ["failure", "success"],
+          "stop_on_error": false,
+          "store_history": true,
+          "checks": [
+            {
+              "path": "outcomes",
+              "equals": [
+                {"seq": 1, "success": false},
+                {"seq": 2, "success": true}
+              ]
+            },
+            {"path": "store_history_calls", "equals": [true, true]}
+          ]
+        }
+      ]
+    }
+  ]
+}

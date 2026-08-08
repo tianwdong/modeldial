@@ -1,0 +1,8 @@
+{
+  "grader": {
+    "kind": "session_bundle_test_design",
+    "test_suite": "session_bundle_scenarios_v1",
+    "pass_threshold": 20,
+    "max_score": 20
+  }
+}

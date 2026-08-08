@@ -1,0 +1,27 @@
+{
+  "id": "resp-test",
+  "output": [
+    {
+      "type": "reasoning",
+      "id": "rs-test",
+      "summary": []
+    },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "21"
+        }
+      ]
+    }
+  ],
+  "usage": {
+    "input_tokens": 128,
+    "output_tokens": 32,
+    "output_tokens_details": {
+      "reasoning_tokens": 24
+    }
+  }
+}

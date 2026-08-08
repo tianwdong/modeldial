@@ -1,0 +1,34 @@
+{
+  "scenarios": {
+    "alpha": {
+      "remove": ["A", "B"],
+      "add": ["K"],
+      "selected": ["C", "D", "G", "K"],
+      "runtime": 15,
+      "normal": {
+        "modules": ["auth", "billing", "cache", "catalog", "docs", "search", "ui"],
+        "score": 81
+      },
+      "critical_addition": "K",
+      "fallback": {
+        "modules": ["auth", "billing", "cache", "catalog", "search", "ui"],
+        "score": 76
+      }
+    },
+    "beta": {
+      "remove": ["C", "D"],
+      "add": ["H", "J"],
+      "selected": ["A", "B", "G", "H", "J"],
+      "runtime": 13,
+      "normal": {
+        "modules": ["audit", "auth", "billing", "docs", "email", "export", "search", "ui"],
+        "score": 86
+      },
+      "critical_addition": "J",
+      "fallback": {
+        "modules": ["audit", "auth", "billing", "docs", "email", "search", "ui"],
+        "score": 79
+      }
+    }
+  }
+}

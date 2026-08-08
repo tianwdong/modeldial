@@ -1,0 +1,13 @@
+# Exact build-time Python dependency lock for build.sh.
+#
+# The lock is intentionally version-only (without artifact hashes).  Release
+# artifact provenance, SBOM, and license verification remain separate gates.
+# Keep the interpreter pinned by build.sh to Python 3.14.3.
+altgraph==0.17.5
+certifi==2026.7.22
+macholib==1.16.4
+packaging==26.2
+pip==26.0
+pyinstaller==6.21.0
+pyinstaller-hooks-contrib==2026.6
+setuptools==83.0.0

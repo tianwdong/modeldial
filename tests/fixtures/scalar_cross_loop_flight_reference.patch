@@ -1,0 +1,137 @@
+*** Begin Patch
+*** Update File: async_flight.py
+<<<<<<< SEARCH
+    @staticmethod
+    def _leave_factory(context: _FactoryContext, token: Token) -> None:
+        _FACTORY_CONTEXTS.reset(token)
+=======
+    @staticmethod
+    def _leave_factory(context: _FactoryContext, token: Token) -> None:
+        context.active = False
+        _FACTORY_CONTEXTS.reset(token)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+    def _set_producer(
+        self,
+        state: _CallState,
+        loop: asyncio.AbstractEventLoop,
+        producer: asyncio.Task,
+    ) -> None:
+        with self._lock:
+            state.owner_loop = loop
+            state.producer = producer
+
+    def _finish(self, key: object, state: _CallState) -> None:
+        with self._lock:
+            if self._states.get(key) is state:
+                del self._states[key]
+                self._stats[0] -= 1
+
+    @staticmethod
+    def _cancel_task(task: asyncio.Task) -> None:
+        if not task.done():
+            task.cancel()
+
+    def _release_observer(self, key: object, state: _CallState) -> None:
+        cancellation: tuple[asyncio.AbstractEventLoop, asyncio.Task] | None = None
+        with self._lock:
+            state.observers -= 1
+            if state.observers == 0 and self._states.get(key) is state:
+                if state.owner_loop is not None and state.producer is not None:
+                    cancellation = (state.owner_loop, state.producer)
+        if cancellation is not None:
+            loop, task = cancellation
+            try:
+                loop.call_soon_threadsafe(self._cancel_task, task)
+            except RuntimeError:
+                pass
+=======
+    def _set_producer(
+        self,
+        key: object,
+        state: _CallState,
+        loop: asyncio.AbstractEventLoop,
+        producer: asyncio.Task,
+    ) -> None:
+        cancel = False
+        with self._lock:
+            state.owner_loop = loop
+            state.producer = producer
+            cancel = state.observers == 0 or self._states.get(key) is not state
+        if cancel:
+            self._request_cancellation(loop, producer)
+
+    def _finish(self, key: object, state: _CallState) -> None:
+        with self._lock:
+            if self._states.get(key) is state:
+                del self._states[key]
+                self._stats[0] -= 1
+
+    @staticmethod
+    def _cancel_task(task: asyncio.Task) -> None:
+        if not task.done():
+            task.cancel()
+
+    def _request_cancellation(
+        self,
+        loop: asyncio.AbstractEventLoop,
+        task: asyncio.Task,
+    ) -> None:
+        try:
+            loop.call_soon_threadsafe(self._cancel_task, task)
+        except RuntimeError:
+            pass
+
+    def _release_observer(self, key: object, state: _CallState) -> None:
+        cancellation: tuple[asyncio.AbstractEventLoop, asyncio.Task] | None = None
+        with self._lock:
+            state.observers -= 1
+            if state.observers == 0 and self._states.get(key) is state:
+                del self._states[key]
+                self._stats[0] -= 1
+                if state.owner_loop is not None and state.producer is not None:
+                    cancellation = (state.owner_loop, state.producer)
+        if cancellation is not None:
+            self._request_cancellation(*cancellation)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        finally:
+            self._leave_factory(context, context_token)
+            if cancelled:
+                state.future.cancel()
+            elif error is not None:
+                state.future.set_exception(error)
+            else:
+                state.future.set_result(result)
+            self._finish(key, state)
+=======
+        finally:
+            self._leave_factory(context, context_token)
+            self._finish(key, state)
+            if cancelled:
+                state.future.cancel()
+            elif error is not None:
+                state.future.set_exception(error)
+            else:
+                state.future.set_result(result)
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+            else:
+                self._set_producer(state, loop, producer)
+
+        wrapped = asyncio.wrap_future(state.future)
+        try:
+            return await asyncio.shield(wrapped)
+        finally:
+            self._release_observer(key, state)
+=======
+            else:
+                self._set_producer(key, state, loop, producer)
+
+        try:
+            wrapped = asyncio.wrap_future(state.future)
+            return await asyncio.shield(wrapped)
+        finally:
+            self._release_observer(key, state)
+>>>>>>> REPLACE
+*** End Patch

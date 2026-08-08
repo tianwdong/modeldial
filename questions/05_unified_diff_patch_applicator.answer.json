@@ -1,0 +1,9 @@
+{
+  "grader": {
+    "kind": "mutation_test_design",
+    "test_suite": "cache_regression_mutants_v3",
+    "timeout_seconds": 3,
+    "pass_threshold": 20,
+    "max_score": 20
+  }
+}

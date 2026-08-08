@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <mask id="optical-outline" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+      <rect width="100" height="100" fill="#fff" />
+      <path d="M73.8 7h.42v42l-.27 4h-.15z" fill="#000" />
+      <path d="M85.78 7h.42v46h-.15l-.27-4z" fill="#000" />
+      <path d="M46 79v10" stroke="#000" stroke-width="5.8" stroke-linecap="butt" transform="rotate(130 46 52)" />
+    </mask>
+    <clipPath id="outline-clip" clipPathUnits="userSpaceOnUse">
+      <path d="M80 14v39c0 22-14 35-35 35C22 88 10 70 14 47c4-22 20-34 40-29C59 19 63 23 63 27" fill="none" stroke="#000" stroke-width="12.1" stroke-linecap="butt" stroke-linejoin="round" />
+    </clipPath>
+  </defs>
+  <path d="M80 14v39c0 22-14 35-35 35C22 88 10 70 14 47c4-22 20-34 40-29C59 19 63 23 63 27" fill="none" stroke="#eef3f6" stroke-width="12.1" stroke-linecap="butt" stroke-linejoin="round" mask="url(#optical-outline)" />
+  <path d="M46 76.5v16" fill="none" stroke="#72b3dc" stroke-width="5.4" stroke-linecap="butt" transform="rotate(-35 46 52)" clip-path="url(#outline-clip)" />
+</svg>
