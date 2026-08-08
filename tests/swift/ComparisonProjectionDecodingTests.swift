@@ -221,13 +221,17 @@ private func verifyPublisherLeaderboardProjection() throws {
         #"""
         {
           "schema_version": 1,
-          "kind": "first_party",
+          "kind": "first_party_snapshot",
           "batch_id": "batch-2",
           "published_at": "2026-07-29T10:00:00Z",
           "question_pack_version": "pack-v2",
           "grader_version": "grader-v2",
           "entry_count": 0,
           "entries": [],
+          "provenance": {
+            "kind": "first_party_snapshot",
+            "public_official_snapshot": true
+          },
           "pairwise_comparisons": [{
             "schema_version": 1,
             "pair_key": "current__to__candidate",
@@ -307,6 +311,78 @@ private func verifyPublisherLeaderboardProjection() throws {
         officialSnapshot: snapshot
     )
     expect(dataset.pairwiseComparisons.count == 1, "official pairwise projection should reach comparison dataset")
+
+    let developmentSeed = try decode(
+        BridgeReferenceSnapshot.self,
+        #"""
+        {
+          "schema_version": 1,
+          "kind": "development_seed",
+          "batch_id": "seed-1",
+          "published_at": "2000-01-01T00:00:00Z",
+          "question_pack_version": "pack-v2",
+          "grader_version": "grader-v2",
+          "entry_count": 0,
+          "entries": [],
+          "provenance": {
+            "public_official_snapshot": true
+          },
+          "pairwise_comparisons": []
+        }
+        """#
+    )
+    expect(!developmentSeed.isPublicOfficialSnapshot, "development seed must fail the official trust check")
+    let missingProvenance = try decode(
+        BridgeReferenceSnapshot.self,
+        #"""
+        {
+          "schema_version": 1,
+          "kind": "first_party_snapshot",
+          "batch_id": "missing-provenance",
+          "published_at": "2026-07-29T10:00:00Z",
+          "question_pack_version": "pack-v2",
+          "grader_version": "grader-v2",
+          "entry_count": 0,
+          "entries": [],
+          "provenance": {
+            "public_official_snapshot": true
+          },
+          "pairwise_comparisons": []
+        }
+        """#
+    )
+    expect(!missingProvenance.isPublicOfficialSnapshot, "missing provenance kind must fail the official trust check")
+    let mismatchedProvenance = try decode(
+        BridgeReferenceSnapshot.self,
+        #"""
+        {
+          "schema_version": 1,
+          "kind": "first_party_snapshot",
+          "batch_id": "mismatched-provenance",
+          "published_at": "2026-07-29T10:00:00Z",
+          "question_pack_version": "pack-v2",
+          "grader_version": "grader-v2",
+          "entry_count": 0,
+          "entries": [],
+          "provenance": {
+            "kind": "development_seed",
+            "public_official_snapshot": true
+          },
+          "pairwise_comparisons": []
+        }
+        """#
+    )
+    expect(!mismatchedProvenance.isPublicOfficialSnapshot, "mismatched provenance kind must fail the official trust check")
+    let untrustedDataset = ComparisonSelectionPresenter.dataset(
+        usesLocalDataset: false,
+        usesOfficialSnapshot: true,
+        localStatistics: nil,
+        localLeaderboard: [],
+        localPairwiseComparisons: [],
+        officialSnapshot: developmentSeed
+    )
+    expect(untrustedDataset.referenceSnapshot == nil, "untrusted snapshots must not enter comparison")
+    expect(untrustedDataset.pairwiseComparisons.isEmpty, "untrusted pairwise data must be suppressed")
 }
 
 @main

@@ -201,8 +201,8 @@ private func verifyCompactRecommendationPresentation() throws {
     expect(presentation.metrics?.quality == "+2 分", "compact quality belongs to the presenter")
     expect(presentation.metrics?.time == "快 25%", "compact time belongs to the presenter")
     expect(presentation.metrics?.referenceCost == "省 34%", "compact cost belongs to the presenter")
-    expect(presentation.basisText == "官网实测 · 同题包完整结果", "compact basis belongs to the presenter")
-    expect(presentation.freshnessText == "更新延迟", "compact freshness copy belongs to the presenter")
+    expect(presentation.basisText == "数据待补齐 · 同题包完整结果", "untrusted official source must fail closed in compact basis")
+    expect(presentation.freshnessText.isEmpty, "untrusted official source must not expose freshness")
 
     var adoptedPayload = payload
     adoptedPayload["status"] = "keep"

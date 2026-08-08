@@ -28,6 +28,41 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         self.assertIn("the only candidate path that", self.source)
         self.assertNotIn("candidate_mtime", self.source)
 
+    def test_preview_injects_and_reads_back_official_reference_feed(self) -> None:
+        self.assertIn(
+            'MODELDIAL_REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"',
+            self.source,
+        )
+        self.assertIn(
+            'REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"',
+            self.source,
+        )
+        self.assertIn("MODELDIAL_DISABLE_UPDATES=1", self.source)
+        self.assertIn('[[ "$PREVIEW_LABEL" != "preview.1" ]]', self.source)
+        self.assertIn(
+            'reference_snapshot_url="$(plist_value ModelDialReferenceSnapshotURL)"',
+            self.source,
+        )
+        self.assertIn(
+            '[[ "$reference_snapshot_url" == "$REFERENCE_SNAPSHOT_URL" ]]',
+            self.source,
+        )
+        self.assertIn('preview_feed_url="$(plist_value SUFeedURL)"', self.source)
+        self.assertIn('[[ -z "$preview_feed_url" ]]', self.source)
+        self.assertIn('preview_public_key="$(plist_value SUPublicEDKey)"', self.source)
+        self.assertIn('[[ -z "$preview_public_key" ]]', self.source)
+
+    def test_preview_records_and_rechecks_exact_source_commit_with_clean_tree_gate(self) -> None:
+        self.assertIn('source_commit="$(git rev-parse --verify HEAD^{commit})"', self.source)
+        self.assertIn('source_commit_after_build="$(git rev-parse --verify HEAD^{commit})"', self.source)
+        self.assertIn('[[ "$source_commit_after_build" == "$source_commit" ]]', self.source)
+        self.assertIn('ModelDialSourceCommit', self.source)
+        self.assertEqual(
+            self.source.count("git status --porcelain --untracked-files=normal"),
+            2,
+        )
+        self.assertIn('worktree changed during packaging', self.source)
+
     def test_preview_rejects_developer_or_local_certificate_signatures(self) -> None:
         self.assertIn(
             'MODELDIAL_CODESIGN_IDENTITY}" != "-"',
@@ -38,7 +73,7 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         self.assertIn("not Developer ID signed and not notarized", self.source)
 
     def test_artifacts_are_versioned_arm64_dmg_zip_and_checksums(self) -> None:
-        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.1}"', self.source)
+        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.2}"', self.source)
         self.assertIn('artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"', self.source)
         self.assertIn('dmg_name="${artifact_prefix}-macos-arm64.dmg"', self.source)
         self.assertIn(

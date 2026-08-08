@@ -1,70 +1,6 @@
 import AppKit
 import SwiftUI
 
-private struct ModelSetupEmptyState: View {
-    let hasConfiguredModels: Bool
-    let onOpenModelIngress: () -> Void
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "point.3.connected.trianglepath.dotted")
-                .font(Typography.heroModel)
-                .foregroundStyle(IslandColor.interaction)
-
-            VStack(spacing: 7) {
-                Text(L10n.tr(hasConfiguredModels ? "先选择要比较的模型" : "先接入一个模型来源"))
-                    .font(Typography.sectionTitle)
-                    .foregroundStyle(IslandVisual.primaryText)
-                Text(L10n.tr(
-                    hasConfiguredModels
-                        ? "已发现模型，但尚未开启任何扫描档位。"
-                        : "连接本机登录态或 API，并开启至少一个模型档位。"
-                ))
-                .font(Typography.settingsCardBody)
-                .foregroundStyle(IslandVisual.secondaryText)
-                .multilineTextAlignment(.center)
-            }
-
-            HStack(spacing: 8) {
-                setupStep("接入来源")
-                setupDivider
-                setupStep("选择模型档位")
-                setupDivider
-                setupStep("开始首次扫描")
-            }
-
-            Label(
-                "不会读取凭据原文；项目内容与对话正文不持久化、不上传",
-                systemImage: "lock.shield"
-            )
-            .font(Typography.micro)
-            .foregroundStyle(IslandVisual.tertiaryText)
-            .multilineTextAlignment(.center)
-
-            Button(
-                hasConfiguredModels ? L10n.tr("选择档位") : L10n.tr("接入模型"),
-                action: onOpenModelIngress
-            )
-                .buttonStyle(IslandActionButtonStyle(.primary))
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        .padding(28)
-    }
-
-    private func setupStep(_ title: String) -> some View {
-        Text(LocalizedStringKey(title))
-            .font(Typography.micro)
-            .foregroundStyle(IslandVisual.tertiaryText)
-            .lineLimit(1)
-    }
-
-    private var setupDivider: some View {
-        Image(systemName: "chevron.right")
-            .font(Typography.micro)
-            .foregroundStyle(IslandVisual.hintText)
-    }
-}
-
 struct ExpandedSelectionView: View {
     private enum ScanConfirmation {
         case start
@@ -1812,48 +1748,44 @@ struct ExpandedSelectionView: View {
 
     private var overviewRankingCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if requiresModelSetup {
-                ModelSetupEmptyState(
-                    hasConfiguredModels: hasConfiguredModelCandidates,
-                    onOpenModelIngress: openModelIngress
-                )
+            if showsRadarModelSetupCTA {
+                radarModelSetupNotice
+            }
+            radarRankingHeader
+
+            if comparisonDatasetSelection.showsLocalRepairControls {
+                if let message = store.repairFailureMessage {
+                    repairFailureNotice(message: message)
+                } else if isBatchRepairRunning {
+                    batchRepairNotice
+                } else if let entry = repairNoticeEntry {
+                    ViewThatFits(in: .horizontal) {
+                        repairNotice(entry: entry)
+                        compactRepairNotice(entry: entry)
+                    }
+                }
+            }
+
+            if store.radarLeaderboardItems.isEmpty {
+                radarLeaderboardEmptyState
             } else {
-                radarRankingHeader
-
-                if comparisonDatasetSelection.showsLocalRepairControls {
-                    if let message = store.repairFailureMessage {
-                        repairFailureNotice(message: message)
-                    } else if isBatchRepairRunning {
-                        batchRepairNotice
-                    } else if let entry = repairNoticeEntry {
-                        ViewThatFits(in: .horizontal) {
-                            repairNotice(entry: entry)
-                            compactRepairNotice(entry: entry)
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(store.radarLeaderboardItems) { entry in
+                            let presentation = radarLeaderboardPresentation(for: entry)
+                            let decisionTags = presentation.tags.compactMap(leaderboardExportTag)
+                            RadarLeaderboardRow(
+                                entry: entry,
+                                rank: presentation.rank,
+                                decisionTag: decisionTags.min { $0.priority < $1.priority },
+                                onPresentEvidence: { presentEvidence(candidateID: entry.id) }
+                            )
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .padding(.bottom, 2)
                 }
-
-                if store.radarLeaderboardItems.isEmpty {
-                    radarLeaderboardEmptyState
-                } else {
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            ForEach(store.radarLeaderboardItems) { entry in
-                                let presentation = radarLeaderboardPresentation(for: entry)
-                                let decisionTags = presentation.tags.compactMap(leaderboardExportTag)
-                                RadarLeaderboardRow(
-                                    entry: entry,
-                                    rank: presentation.rank,
-                                    decisionTag: decisionTags.min { $0.priority < $1.priority },
-                                    onPresentEvidence: { presentEvidence(candidateID: entry.id) }
-                                )
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                        .padding(.bottom, 2)
-                    }
-                    .frame(maxHeight: .infinity, alignment: .top)
-                }
+                .frame(maxHeight: .infinity, alignment: .top)
             }
         }
         .frame(
@@ -1865,7 +1797,60 @@ struct ExpandedSelectionView: View {
     }
 
     private var overviewRankingFillsAvailableHeight: Bool {
-        !requiresModelSetup && store.radarLeaderboardItems.isEmpty
+        store.radarLeaderboardItems.isEmpty
+    }
+
+    private var hasValidOfficialRadarSnapshot: Bool {
+        store.snapshot?.referenceSnapshotFeed.trustedLatest != nil
+            && !store.radarLeaderboardItems.isEmpty
+    }
+
+    private var showsRadarModelSetupCTA: Bool {
+        requiresModelSetup
+    }
+
+    private var radarModelSetupNotice: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "info.circle")
+                .font(Typography.button)
+                .foregroundStyle(IslandColor.interaction)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(L10n.tr(
+                    hasValidOfficialRadarSnapshot
+                        ? "官方 Radar 可直接浏览"
+                        : "官方 Radar 尚未载入"
+                ))
+                    .font(Typography.rowTitle)
+                    .foregroundStyle(IslandVisual.primaryText)
+                    .lineLimit(1)
+                Text(L10n.tr(
+                    hasValidOfficialRadarSnapshot
+                        ? "接入本地模型后，可继续进行本机实测与个性化推荐。"
+                        : "可刷新官方榜单；本地模型接入与本机评测是可选项。"
+                ))
+                    .font(Typography.micro)
+                    .foregroundStyle(IslandVisual.secondaryText)
+                    .lineLimit(2)
+                Text(L10n.tr("不会读取凭据原文；项目内容与对话正文不持久化、不上传"))
+                    .font(Typography.micro)
+                    .foregroundStyle(IslandVisual.tertiaryText)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            Button(L10n.tr("接入模型"), action: openModelIngress)
+                .buttonStyle(IslandActionButtonStyle(.secondary))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(IslandColor.interaction.opacity(0.055))
+        .overlay(alignment: .bottom) {
+            Rectangle()
+                .fill(IslandColor.interaction.opacity(0.14))
+                .frame(height: 0.5)
+        }
     }
 
     private func repairNotice(entry: DisplayEntry) -> some View {
@@ -2064,7 +2049,7 @@ struct ExpandedSelectionView: View {
     }
 
     private var overviewRankingPreferredHeight: CGFloat {
-        if requiresModelSetup { return 420 }
+        let modelSetupNoticeHeight: CGFloat = showsRadarModelSetupCTA ? 74 : 0
         let repairNoticeHeight: CGFloat = (
             store.repairFailureMessage == nil
                 && (isBatchRepairRunning || repairNoticeEntry != nil)
@@ -2076,6 +2061,7 @@ struct ExpandedSelectionView: View {
             max(
                 188,
                 34
+                    + modelSetupNoticeHeight
                     + repairNoticeHeight
                     + repairFailureHeight
                     + CGFloat(rowCount) * RadarRankingLayout.rowHeight
@@ -2200,7 +2186,7 @@ struct ExpandedSelectionView: View {
             localStatistics: store.radarDashboard?.statistics,
             localLeaderboard: store.radarDashboard?.leaderboard ?? [],
             localPairwiseComparisons: store.radarDashboard?.pairwiseComparisons ?? [],
-            officialSnapshot: store.snapshot?.referenceSnapshotFeed.latest
+            officialSnapshot: store.snapshot?.referenceSnapshotFeed.trustedLatest
         )
     }
 
@@ -2221,10 +2207,11 @@ struct ExpandedSelectionView: View {
     }
 
     private var comparisonRoutingPresentation: ConfigurationEvidencePresenter.RoutingPresentation {
-        let latest = store.snapshot?.referenceSnapshotFeed.latest
+        let latest = store.snapshot?.referenceSnapshotFeed.trustedLatest
         return ConfigurationEvidencePresenter.routing(
             ConfigurationEvidencePresenter.RoutingInput(
                 displaySource: store.radarDisplaySource,
+                officialSnapshotIsTrusted: latest?.isPublicOfficialSnapshot == true,
                 officialQuestionPackVersion: latest?.questionPackVersion,
                 officialGraderVersion: latest?.graderVersion,
                 officialSnapshotID: latest?.batchId,
@@ -2639,9 +2626,10 @@ struct ExpandedSelectionView: View {
                 || store.snapshot?.stableDashboard != nil,
             completeQuestionSetLabel: completeQuestionSetLabel,
             officialQuestionPackVersion: store.snapshot?.referenceSnapshotFeed
-                .latest?.questionPackVersion,
+                .trustedLatest?.questionPackVersion,
             localQuestionPackVersion: store.snapshot?.questionPack.version
-                ?? store.radarDashboard?.runMetadata.questionPackVersion
+                ?? store.radarDashboard?.runMetadata.questionPackVersion,
+            requiresModelSetup: requiresModelSetup
         )
     }
 

@@ -21,8 +21,8 @@ ModelDial 采用本地优先设计。本文件描述开源 App 的默认行为�
 
 - 运行评测时，固定合成题目和模型回复会经过你选择的 Codex／Claude Code CLI 或模型 API。
 - 自定义兼容端点会收到完成请求所需的模型参数和合成题目。
-- ModelDial 品牌 App 默认从公开的第一方只读地址获取版本化参考榜单 JSON，并在本机缓存可用快照；不上传本机评测结果。源码构建者可通过 `MODELDIAL_REFERENCE_SNAPSHOT_URL` 覆盖该地址。
-- 手动检查更新或启用自动检查后，Sparkle 会通过 HTTPS 请求 ModelDial 的更新清单；下载更新时会访问更新包地址。与普通静态文件请求一样，托管服务或 CDN 可能记录 IP 地址、请求时间、User-Agent、响应状态和传输字节数等常规访问日志。
+- 只有 App 包内配置了 `ModelDialReferenceSnapshotURL` 时，ModelDial 才会从对应只读地址获取版本化参考榜单 JSON，并在本机缓存可用快照；不会上传本机评测结果。ModelDial 品牌发行候选使用公开的第一方地址，普通源码构建默认留空，也可通过 `MODELDIAL_REFERENCE_SNAPSHOT_URL` 显式指定兼容地址。与普通静态文件请求一样，托管服务或 CDN 可能记录 IP 地址、请求时间、User-Agent、响应状态和传输字节数等常规访问日志。
+- 只有发行包配置了有效 Sparkle 更新清单和公钥时，手动或自动更新检查才会通过 HTTPS 请求更新清单；下载更新时会访问更新包地址。修复后的 unsigned preview（`preview.2` 起）默认不启用更新通道；已发布 `preview.1` 的例外见其版本说明。托管服务或 CDN 可能记录上述常规访问日志。
 - App 明确关闭 Sparkle 系统画像上传（`SUSendProfileInfo=false`），不随更新检查发送 ModelDial 扫描历史、会话正文、模型配置或系统画像；自动下载默认关闭，可在设置中开启或关闭。
 
 ## 会话观察

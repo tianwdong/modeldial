@@ -38,8 +38,8 @@
 - [x] 统一声明与实际二进制最低系统版本。当前 Xcode／Info.plist 目标为 macOS 13，candidate 的 60 个真实 Mach-O／65 个架构记录全部不高于 13.0，且不存在非系统绝对动态库依赖；构建在签名前 fail closed 执行该检查，并真实加载 TLS／SHA-256／zstd 与 bundle 内 CA store。macOS 13／14 干净机器验收仍保留在 Gate 4。
 - [x] 为正式构建依赖补充 artifact hashes／来源证明；Python installer 固定 SHA-256 和 signer，PyPI requirements 固定实际 wheel SHA-256，并已在 fresh build 中通过 `--require-hashes` 重建验证。
 - [x] 使用独立 marketing version 和单调递增 build number；首个候选固定为 `0.1.0（Build 100）`。
-- [x] 将官方品牌候选中的个人 Workers 域名迁移为 ModelDial 产品域名，并完成候选 bundle 回读及远端刷新验证；正式发行包仍需在 Gate 3 最终扫描中复核。
-- [x] 在首个公开二进制中接入 Sparkle、设置页“检查更新”、自动检查和默认关闭的自动下载。
+- [x] 将官方品牌候选中的个人 Workers 域名迁移为 ModelDial 产品域名；`preview.2` 打包门禁固定注入并回读 `https://reference.modeldial.com/reference-snapshots`。最终发行包及远端刷新仍需在 Gate 3 复核。
+- [x] 接入 Sparkle、设置页“检查更新”、自动检查和默认关闭的自动下载；普通源码构建和 unsigned preview 默认不配置更新通道，正式构建只有同时显式提供 HTTPS appcast 与 EdDSA 公钥时才启用。
 - [ ] 使用 HTTPS、Sparkle EdDSA 更新包签名，并验证签名 appcast 和私钥恢复边界。
   - 开发态隔离演练已完成 Build 99 → 100 的 R2 下载、EdDSA 校验、安装和重启；长期私钥备份与正式发行包仍未完成。
 - [ ] 使用 Developer ID Application、Hardened Runtime 和 secure timestamp 完成签名。
@@ -49,7 +49,7 @@
 - [ ] 在干净 macOS Apple Silicon 机器上复现构建。
 - [x] 将所有候选代码评测统一放入 OS 级 deny-by-default sandbox；AST／导入检查只能作为第二层防线，并补齐 `object.__subclasses__`、`__globals__`、文件和网络访问回归。当前 macOS Seatbelt 已实测，其他平台 fail closed 且 Windows 实机仍属独立里程碑。
 - [x] 将跨进程暂停／停止请求改为原子 mailbox／带序号确认，并完成并发写入、读取和清理竞态测试；当前已在 macOS 完成真实多进程回归，Windows 留在独立客户端里程碑验证。
-- [x] 在 advisor projection 前拒绝 `development_seed` 和缺少明确 first-party provenance 的参考快照；对 `elapsed_ms` 增加 Swift 安全数值上限，并在 Radar／对比／导出转换前再次 checked conversion。
+- [x] 在 advisor projection 前拒绝 `development_seed` 和缺少明确 first-party provenance 的参考快照；Swift 端只有 snapshot kind、provenance kind 均为 `first_party_snapshot` 且 `public_official_snapshot=true` 时才允许进入 Radar／对比／证据，其他情况 fail closed。对 `elapsed_ms` 继续执行安全数值上限和 checked conversion。
 - [x] 公开客户端对远端参考快照强制 HTTPS；仅保留 `localhost`／loopback HTTP 作为本地开发与测试入口，非 loopback HTTP 在刷新前 fail closed。该规则只适用于第一方参考快照，不改变自定义模型 endpoint 的 HTTP 兼容策略。
 - [ ] 为远端参考快照增加独立签名并在缓存写入前验签；验签失败只回退到最近的已验证缓存或内置快照。
 - [x] 为本地 CLI／模型子进程建立环境白名单，默认不继承 API Key、Token、SSH／Git 凭据等无关环境变量；仅调用方显式注入必要的 ModelDial 配置和 Codex cloud key。
@@ -65,8 +65,18 @@
 - [x] 记录 `codesign --verify`、`codesign -dv --verbose=4` 结果；App 为 ad-hoc 签名，无 `Authority`，未宣称 Developer ID、secure timestamp、Apple notarization 或 stapling。
 - [ ] 在至少一台可用的 macOS 13+ Apple Silicon 机器上完成 DMG 挂载、拖入 `Applications` 和首次启动手动放行；这只证明预览安装路径，不等于 Gatekeeper 干净机验收、Apple 公证或正式 Release 验收。
 - [x] Release 正文引导用户使用“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”；不要求关闭 Gatekeeper，不建议 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或同类绕过命令。
-- [x] 预览版不进入正式 Sparkle `appcast.xml`，不创建 Homebrew Cask；更新、回滚和自动下载仍以正式签名门槛为准。
+- [x] 预览版不进入正式 Sparkle `appcast.xml`，不创建 Homebrew Cask；已发布的 `preview.1` 虽残留尚未发布的 stable appcast 地址，但没有可用自动升级路径，`preview.2` 打包门禁会清空 feed 与公钥。
 - [x] 已创建公开 GitHub prerelease `v0.1.0-preview.1` 并上传 4 个资产；随后不带 GitHub API 认证从公开资产 URL 重新下载，SHA-256、DMG／ZIP、ad-hoc 签名、版本／arm64、SPDX 和冻结后端 smoke 全部通过。
+
+## Gate 2B：`v0.1.0-preview.2` 修复候选
+
+- [x] marketing version 保持 `0.1.0`，build number 从 100 单调递增到 101；预览打包默认 label 改为 `preview.2` 并拒绝复用已公开的 `preview.1`。
+- [x] 打包脚本要求包含未跟踪文件在内的工作树在构建前后保持干净（忽略 `.gitignore` 内容）、HEAD 不变化，并将精确 Git commit 写入 App；candidate 与 ZIP 都必须回读为同一 commit。
+- [x] 打包脚本固定注入第一方参考快照地址，candidate 与 ZIP 必须回读精确 URL；unsigned preview 的 `SUFeedURL` 与 `SUPublicEDKey` 必须为空。
+- [x] 完成本次修复的合并定向回归 `187/187`、全量 Python `1420/1420`、架构基线 `11/11` 和 Build 101 正式构建；candidate 回读为官方 Radar URL、空更新通道、arm64 和有效深层 ad-hoc 签名，冻结后端真实远端刷新得到 15 条可信第一方结果。
+- [ ] 经单独授权形成干净提交后生成 `preview.2` DMG／ZIP／SBOM／SHA256SUMS，并完成下载前本机复验。
+- [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
+- [ ] 经单独授权创建 `v0.1.0-preview.2` tag／GitHub prerelease 并上传资产；不得修改或覆盖 `preview.1`。
 
 ## Gate 3：发行产物与渠道
 

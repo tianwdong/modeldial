@@ -215,7 +215,7 @@ final class RecommendationNotificationEngine: ObservableObject {
                 effort: entry.effort
             )
         }
-        if let entry = snapshot.referenceSnapshotFeed.latest?.entries.first(
+        if let entry = snapshot.referenceSnapshotFeed.trustedLatest?.entries.first(
             where: { $0.modelConfigurationId == configurationID }
         ) {
             return ModelIdentityPresentation.displayLabel(

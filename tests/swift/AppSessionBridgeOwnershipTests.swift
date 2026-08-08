@@ -718,13 +718,17 @@ private func referenceFeedPayload(
 ) -> [String: Any] {
     var snapshot: [String: Any] = [
         "schema_version": 1,
-        "kind": "first_party",
+        "kind": "first_party_snapshot",
         "batch_id": "fixture-official",
         "published_at": "2099-01-01T00:00:00Z",
         "question_pack_version": "fixture-v1",
         "grader_version": "fixture-grader",
         "entry_count": entries.count,
         "entries": entries,
+        "provenance": [
+            "kind": "first_party_snapshot",
+            "public_official_snapshot": true,
+        ],
     ]
     if !leaderboardOrder.isEmpty {
         snapshot["leaderboard_projection"] = [
@@ -761,7 +765,7 @@ private func referenceFeedPayload(
     return [
         "schema_version": 1,
         "status": "ready",
-        "kind": "first_party",
+        "kind": "first_party_snapshot",
         "latest": snapshot,
         "snapshots": [snapshot],
     ]

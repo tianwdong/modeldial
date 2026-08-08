@@ -773,6 +773,7 @@ private func verifyConfigurationEvidencePresentation() {
     let routing = ConfigurationEvidencePresenter.routing(
         ConfigurationEvidencePresenter.RoutingInput(
             displaySource: "official_snapshot",
+            officialSnapshotIsTrusted: true,
             officialQuestionPackVersion: "official-pack",
             officialGraderVersion: "official-grader",
             officialSnapshotID: "official-batch",
@@ -789,6 +790,23 @@ private func verifyConfigurationEvidencePresentation() {
     expect(routing.questionPackVersion == "official-pack", "official question pack should win")
     expect(routing.evaluationSnapshotID == "official-batch", "official batch ID should win")
     expect(routing.pricingSnapshotID == "recommendation-price", "missing official pricing should use recommendation pricing")
+
+    let untrustedRouting = ConfigurationEvidencePresenter.routing(
+        ConfigurationEvidencePresenter.RoutingInput(
+            displaySource: "official_snapshot",
+            officialQuestionPackVersion: "seed-pack",
+            officialGraderVersion: "seed-grader",
+            officialSnapshotID: "seed-batch",
+            officialPricingSnapshotID: "seed-pricing",
+            localQuestionPackVersion: "local-pack",
+            localGraderResults: [],
+            localSnapshotID: "local-run",
+            recommendationPricingSnapshotID: "recommendation-price",
+            diagnosticPricingSnapshotID: "diagnostic-price"
+        )
+    )
+    expect(!untrustedRouting.usesOfficialSnapshot, "missing official snapshot provenance must fail closed")
+    expect(untrustedRouting.evaluationSnapshotID == "local-run", "untrusted official metadata must not enter evidence")
 }
 
 @main

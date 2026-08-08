@@ -77,11 +77,14 @@ class ProductDirection22UIContractTests(unittest.TestCase):
 
     def test_first_run_explains_local_privacy_boundary(self) -> None:
         source = (ROOT / "Sources/Views/ExpandedSelectionView.swift").read_text(encoding="utf-8")
-        empty_state = source.split("private struct ModelSetupEmptyState: View {", 1)[1].split(
-            "struct ExpandedSelectionView", 1
+        setup_notice = source.split("private var radarModelSetupNotice: some View {", 1)[1].split(
+            "private func repairNotice", 1
         )[0]
-        self.assertIn("不会读取凭据原文", empty_state)
-        self.assertIn("不持久化、不上传", empty_state)
+        self.assertIn(".buttonStyle(IslandActionButtonStyle(.secondary))", setup_notice)
+        self.assertIn('L10n.tr("不会读取凭据原文；项目内容与对话正文不持久化、不上传")', setup_notice)
+        self.assertIn("本地模型接入与本机评测是可选项。", setup_notice)
+        self.assertIn("radarRankingHeader", source)
+        self.assertNotIn("ModelSetupEmptyState", source)
 
     def test_local_comparison_trend_uses_shared_six_round_axis(self) -> None:
         source = (ROOT / "Sources/Views/ExpandedSelectionView.swift").read_text(encoding="utf-8")
@@ -297,7 +300,7 @@ class ProductDirection22UIContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("ComparisonSelectionPresenter.dataset(", source)
         self.assertIn("usesLocalDataset ? localStatistics : nil", selection_presenter)
-        self.assertIn("usesOfficialSnapshot ? officialSnapshot : nil", selection_presenter)
+        self.assertIn("$0.isPublicOfficialSnapshot ? $0 : nil", selection_presenter)
         self.assertIn("localComparisonPairwiseComparisons", source)
         self.assertIn("presenterLocalTrendSeries", source)
         self.assertIn("presenterOfficialTrendSeries", source)

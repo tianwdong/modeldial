@@ -71,7 +71,7 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn('-project "ModelDial.xcodeproj"', self.source)
         self.assertIn('-configuration "Release"', self.source)
         self.assertNotIn("swiftc", self.source)
-        self.assertIn("CURRENT_PROJECT_VERSION = 100;", self.project_source)
+        self.assertIn("CURRENT_PROJECT_VERSION = 101;", self.project_source)
         self.assertIn("MARKETING_VERSION = 0.1.0;", self.project_source)
         for resource in (
             "AppIcon.icns in Resources",
@@ -152,6 +152,12 @@ class BuildSigningTest(unittest.TestCase):
             self.project_source.count('MODELDIAL_REFERENCE_SNAPSHOT_URL = "";'),
             2,
         )
+        for setting in (
+            "MODELDIAL_SOURCE_COMMIT",
+            "MODELDIAL_SU_FEED_URL",
+            "MODELDIAL_SU_PUBLIC_ED_KEY",
+        ):
+            self.assertEqual(self.project_source.count(f'{setting} = "";'), 2)
         for build_source in (self.source, self.dev_source):
             self.assertIn(
                 'REFERENCE_SNAPSHOT_URL="${MODELDIAL_REFERENCE_SNAPSHOT_URL:-}"',
@@ -161,6 +167,26 @@ class BuildSigningTest(unittest.TestCase):
                 'MODELDIAL_REFERENCE_SNAPSHOT_URL="$REFERENCE_SNAPSHOT_URL"',
                 build_source,
             )
+            self.assertIn(
+                'UPDATE_FEED_URL="${MODELDIAL_UPDATE_FEED_URL:-}"',
+                build_source,
+            )
+            self.assertIn(
+                'MODELDIAL_SU_FEED_URL="$UPDATE_FEED_URL"',
+                build_source,
+            )
+            self.assertIn(
+                'MODELDIAL_SU_PUBLIC_ED_KEY="$UPDATE_PUBLIC_ED_KEY"',
+                build_source,
+            )
+            self.assertIn(
+                'SOURCE_COMMIT="${MODELDIAL_SOURCE_COMMIT:-}"',
+                build_source,
+            )
+            self.assertIn(
+                'MODELDIAL_SOURCE_COMMIT="$SOURCE_COMMIT"',
+                build_source,
+            )
         self.assertIn(
             'forInfoDictionaryKey: "ModelDialReferenceSnapshotURL"',
             self.native_bridge_source,
@@ -168,6 +194,34 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn(
             'environment["MODELDIAL_REFERENCE_SNAPSHOT_URL"]',
             self.native_bridge_source,
+        )
+        self.assertIn('<key>ModelDialSourceCommit</key>', self.info_plist_source)
+        self.assertIn(
+            '<string>$(MODELDIAL_SOURCE_COMMIT)</string>',
+            self.info_plist_source,
+        )
+
+    def test_preview_build_contract_is_explicit_without_changing_source_default(self) -> None:
+        preview_source = (
+            self.root / "build-support" / "package-unsigned-preview.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            'REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"',
+            preview_source,
+        )
+        self.assertIn("MODELDIAL_DISABLE_UPDATES=1", preview_source)
+        self.assertIn(
+            'MODELDIAL_DISABLE_UPDATES="${MODELDIAL_DISABLE_UPDATES:-0}"',
+            self.source,
+        )
+        self.assertIn('if [[ "$MODELDIAL_DISABLE_UPDATES" == "1" ]]', self.source)
+        self.assertIn(
+            'MODELDIAL_SU_FEED_URL="$UPDATE_FEED_URL"',
+            self.source,
+        )
+        self.assertIn(
+            'MODELDIAL_SU_PUBLIC_ED_KEY="$UPDATE_PUBLIC_ED_KEY"',
+            self.source,
         )
 
     def test_app_bundle_contains_a_standalone_python_backend_runtime(self) -> None:

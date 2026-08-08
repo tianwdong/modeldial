@@ -429,6 +429,25 @@ struct BridgeRecommendationPrimaryBenefitV2: Decodable {
     let gainPoints: Double?
 }
 
+struct BridgeReferenceSnapshotProvenance: Decodable {
+    let kind: String?
+    let publicOfficialSnapshot: Bool?
+
+    private enum CodingKeys: String, CodingKey {
+        case kind
+        case publicOfficialSnapshot
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try container.decodeIfPresent(String.self, forKey: .kind)
+        publicOfficialSnapshot = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .publicOfficialSnapshot
+        )
+    }
+}
+
 struct BridgeReferenceSnapshotFeed: Decodable {
     let schemaVersion: Int
     let status: String
@@ -438,6 +457,13 @@ struct BridgeReferenceSnapshotFeed: Decodable {
     let delivery: BridgeReferenceSnapshotDelivery?
     let freshness: String?
     let ageHours: Int?
+
+    /// Only a snapshot with matching first-party kinds and an affirmative
+    /// public-official provenance flag may enter official App surfaces.
+    var trustedLatest: BridgeReferenceSnapshot? {
+        guard let latest, latest.isPublicOfficialSnapshot else { return nil }
+        return latest
+    }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion
@@ -487,8 +513,15 @@ struct BridgeReferenceSnapshot: Decodable, Identifiable {
     let entries: [BridgeReferenceSnapshotEntry]
     let pairwiseComparisons: [BridgePairwiseComparison]
     let leaderboardProjection: BridgeReferenceLeaderboardProjection?
+    let provenance: BridgeReferenceSnapshotProvenance?
 
     var id: String { batchId }
+
+    var isPublicOfficialSnapshot: Bool {
+        kind == "first_party_snapshot"
+            && provenance?.kind == "first_party_snapshot"
+            && provenance?.publicOfficialSnapshot == true
+    }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion
@@ -502,6 +535,7 @@ struct BridgeReferenceSnapshot: Decodable, Identifiable {
         case entries
         case pairwiseComparisons
         case leaderboardProjection
+        case provenance
     }
 
     init(from decoder: Decoder) throws {
@@ -522,6 +556,10 @@ struct BridgeReferenceSnapshot: Decodable, Identifiable {
         leaderboardProjection = try container.decodeIfPresent(
             BridgeReferenceLeaderboardProjection.self,
             forKey: .leaderboardProjection
+        )
+        provenance = try container.decodeIfPresent(
+            BridgeReferenceSnapshotProvenance.self,
+            forKey: .provenance
         )
     }
 }

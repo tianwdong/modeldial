@@ -25,6 +25,7 @@ enum ConfigurationEvidencePresenter {
 
     struct RoutingInput: Equatable {
         let displaySource: String?
+        let officialSnapshotIsTrusted: Bool
         let officialQuestionPackVersion: String?
         let officialGraderVersion: String?
         let officialSnapshotID: String?
@@ -34,6 +35,32 @@ enum ConfigurationEvidencePresenter {
         let localSnapshotID: String?
         let recommendationPricingSnapshotID: String?
         let diagnosticPricingSnapshotID: String?
+
+        init(
+            displaySource: String?,
+            officialSnapshotIsTrusted: Bool = false,
+            officialQuestionPackVersion: String?,
+            officialGraderVersion: String?,
+            officialSnapshotID: String?,
+            officialPricingSnapshotID: String?,
+            localQuestionPackVersion: String?,
+            localGraderResults: [GraderResultInput],
+            localSnapshotID: String?,
+            recommendationPricingSnapshotID: String?,
+            diagnosticPricingSnapshotID: String?
+        ) {
+            self.displaySource = displaySource
+            self.officialSnapshotIsTrusted = officialSnapshotIsTrusted
+            self.officialQuestionPackVersion = officialQuestionPackVersion
+            self.officialGraderVersion = officialGraderVersion
+            self.officialSnapshotID = officialSnapshotID
+            self.officialPricingSnapshotID = officialPricingSnapshotID
+            self.localQuestionPackVersion = localQuestionPackVersion
+            self.localGraderResults = localGraderResults
+            self.localSnapshotID = localSnapshotID
+            self.recommendationPricingSnapshotID = recommendationPricingSnapshotID
+            self.diagnosticPricingSnapshotID = diagnosticPricingSnapshotID
+        }
     }
 
     struct RoutingPresentation: Equatable {
@@ -122,6 +149,7 @@ enum ConfigurationEvidencePresenter {
 
     static func routing(_ input: RoutingInput) -> RoutingPresentation {
         let usesOfficialSnapshot = input.displaySource == "official_snapshot"
+            && input.officialSnapshotIsTrusted
         let usesLocalDataset = input.displaySource == "local_evaluation"
         let questionPackVersion = usesOfficialSnapshot
             ? input.officialQuestionPackVersion ?? input.localQuestionPackVersion

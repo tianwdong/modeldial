@@ -33,6 +33,8 @@
 	<true/>
 	<key>ModelDialReferenceSnapshotURL</key>
 	<string>$(MODELDIAL_REFERENCE_SNAPSHOT_URL)</string>
+	<key>ModelDialSourceCommit</key>
+	<string>$(MODELDIAL_SOURCE_COMMIT)</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSPrincipalClass</key>
@@ -40,9 +42,9 @@
 	<key>SUAutomaticallyUpdate</key>
 	<false/>
 	<key>SUFeedURL</key>
-	<string>https://updates.modeldial.com/macos/stable/appcast.xml</string>
+	<string>$(MODELDIAL_SU_FEED_URL)</string>
 	<key>SUPublicEDKey</key>
-	<string>maaLn09C7fDPrHIh3Hxr6NYjGrj1CNQPzKUp7DEKID0=</string>
+	<string>$(MODELDIAL_SU_PUBLIC_ED_KEY)</string>
 	<key>SUSendProfileInfo</key>
 	<false/>
 </dict>

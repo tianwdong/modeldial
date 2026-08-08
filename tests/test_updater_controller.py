@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import plistlib
 from pathlib import Path
 import subprocess
@@ -142,10 +141,24 @@ struct UpdateConfigurationTests {
         self.assertNotIn("SUEnableAutomaticChecks", info)
         self.assertEqual(
             info["SUFeedURL"],
-            "https://updates.modeldial.com/macos/stable/appcast.xml",
+            "$(MODELDIAL_SU_FEED_URL)",
         )
-        decoded_key = base64.b64decode(info["SUPublicEDKey"], validate=True)
-        self.assertEqual(len(decoded_key), 32)
+        self.assertEqual(info["SUPublicEDKey"], "$(MODELDIAL_SU_PUBLIC_ED_KEY)")
+        self.assertEqual(info["ModelDialSourceCommit"], "$(MODELDIAL_SOURCE_COMMIT)")
+
+        build = (ROOT / "build.sh").read_text(encoding="utf-8")
+        self.assertIn(
+            'UPDATE_FEED_URL="${MODELDIAL_UPDATE_FEED_URL:-}"',
+            build,
+        )
+        self.assertIn(
+            'UPDATE_PUBLIC_ED_KEY="${MODELDIAL_UPDATE_PUBLIC_ED_KEY:-}"',
+            build,
+        )
+        self.assertIn(
+            "MODELDIAL_UPDATE_FEED_URL and MODELDIAL_UPDATE_PUBLIC_ED_KEY must be provided together.",
+            build,
+        )
 
     def test_settings_expose_version_check_and_sparkle_owned_preferences(self) -> None:
         settings = (ROOT / "Sources" / "Views" / "SettingsView.swift").read_text(

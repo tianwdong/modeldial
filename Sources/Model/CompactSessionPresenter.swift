@@ -41,6 +41,14 @@ enum CompactSessionPresenter {
         displayFreshness: String?,
         leaderboardItems: [RadarLeaderboardItem]
     ) -> CompactRecommendationPresentation {
+        let effectiveDisplaySource: String?
+        if displaySource == "official_snapshot" {
+            effectiveDisplaySource = snapshot?.referenceSnapshotFeed.trustedLatest == nil
+                ? nil
+                : "official_snapshot"
+        } else {
+            effectiveDisplaySource = displaySource
+        }
         let decision = portfolio?.representativeDecision
         let lifecycle = portfolio?.recommendationLifecycle ?? .none
         let targetID: String?
@@ -77,14 +85,14 @@ enum CompactSessionPresenter {
         } else {
             comparisonState = .suppressed
         }
-        let rawTimestamp = displaySource == "official_snapshot"
-            ? snapshot?.referenceSnapshotFeed.latest?.publishedAt
+        let rawTimestamp = effectiveDisplaySource == "official_snapshot"
+            ? snapshot?.referenceSnapshotFeed.trustedLatest?.publishedAt
             : dashboard?.runMetadata.completedAt
         let questionCount = dashboard?.runMetadata.questionCount
             ?? snapshot?.questionPack.questionCount
             ?? 0
         let sourceText: String
-        switch displaySource {
+        switch effectiveDisplaySource {
         case "official_snapshot": sourceText = L10n.tr("官网实测")
         case "local_evaluation": sourceText = L10n.tr("本机实测")
         default: sourceText = L10n.tr("数据待补齐")
@@ -94,7 +102,7 @@ enum CompactSessionPresenter {
             : L10n.tr("同题包完整结果")
         let timestamp = timestampText(rawTimestamp).map { L10n.tr(" · %@ 更新", $0) } ?? ""
         let freshnessText: String
-        switch displayFreshness {
+        switch effectiveDisplaySource == "official_snapshot" ? displayFreshness : nil {
         case "delayed": freshnessText = L10n.tr("更新延迟")
         case "expired": freshnessText = L10n.tr("结果过期")
         default: freshnessText = ""
@@ -167,7 +175,7 @@ enum CompactSessionPresenter {
                 effort: entry.effort
             )
         }
-        if let entry = snapshot?.referenceSnapshotFeed.latest?.entries.first(where: {
+        if let entry = snapshot?.referenceSnapshotFeed.trustedLatest?.entries.first(where: {
             $0.modelConfigurationId == configurationID
         }) {
             return ModelIdentityPresentation.displayLabel(

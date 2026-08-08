@@ -227,18 +227,28 @@ final class AppSessionStore: ObservableObject {
 
     var radarSelectedSourceMode: String {
         guard let configurationID = radarRepresentativeConfigurationID else {
-            return radarPortfolio?.sourceMode ?? "auto"
+            let sourceMode = radarPortfolio?.sourceMode ?? "auto"
+            return sourceMode == "official_snapshot" && referenceSnapshotLeaderboardItems.isEmpty
+                ? "auto"
+                : sourceMode
         }
-        return snapshot?.config.recommendation.sourceModeByConfigurationId[configurationID]
+        let sourceMode = snapshot?.config.recommendation.sourceModeByConfigurationId[configurationID]
             ?? radarPortfolio?.sourceModeByConfigurationId[configurationID]
             ?? radarPortfolio?.sourceMode
             ?? "auto"
+        return sourceMode == "official_snapshot" && referenceSnapshotLeaderboardItems.isEmpty
+            ? "auto"
+            : sourceMode
     }
 
     private var radarAuthoritativeDataSource: String? {
         switch radarSelectedSourceMode {
-        case "official_snapshot", "local_evaluation":
-            return radarSelectedSourceMode
+        case "official_snapshot":
+            return radarHasResults(for: "official_snapshot")
+                ? "official_snapshot"
+                : nil
+        case "local_evaluation":
+            return "local_evaluation"
         default:
             if let resolved = radarPortfolio?.resolvedDataSource,
                radarHasResults(for: resolved) {
@@ -301,7 +311,7 @@ final class AppSessionStore: ObservableObject {
     var radarResultsUpdatedAt: String? {
         switch radarDisplaySource {
         case "official_snapshot":
-            return snapshot?.referenceSnapshotFeed.latest?.publishedAt
+            return snapshot?.referenceSnapshotFeed.trustedLatest?.publishedAt
         case "local_evaluation":
             return radarDashboard?.runMetadata.completedAt
         default:
@@ -321,11 +331,15 @@ final class AppSessionStore: ObservableObject {
     }
 
     var radarReferenceFreshness: String? {
-        snapshot?.referenceSnapshotFeed.freshness
+        snapshot?.referenceSnapshotFeed.trustedLatest == nil
+            ? nil
+            : snapshot?.referenceSnapshotFeed.freshness
     }
 
     var radarReferenceAgeHours: Int? {
-        snapshot?.referenceSnapshotFeed.ageHours
+        snapshot?.referenceSnapshotFeed.trustedLatest == nil
+            ? nil
+            : snapshot?.referenceSnapshotFeed.ageHours
     }
 
     func radarDisplayName(for configurationID: String?) -> String? {
@@ -351,7 +365,7 @@ final class AppSessionStore: ObservableObject {
     }
 
     private var referenceSnapshotLeaderboardItems: [RadarLeaderboardItem] {
-        guard let latest = snapshot?.referenceSnapshotFeed.latest else { return [] }
+        guard let latest = snapshot?.referenceSnapshotFeed.trustedLatest else { return [] }
         let entriesByID = Dictionary(
             latest.entries.map { ($0.modelConfigurationId, $0) },
             uniquingKeysWith: { first, _ in first }
@@ -417,7 +431,7 @@ final class AppSessionStore: ObservableObject {
     private func referenceSnapshotEntry(
         for configurationID: String
     ) -> BridgeReferenceSnapshotEntry? {
-        guard let latest = snapshot?.referenceSnapshotFeed.latest else {
+        guard let latest = snapshot?.referenceSnapshotFeed.trustedLatest else {
             return nil
         }
         if let exact = latest.entries.first(where: {
@@ -436,7 +450,7 @@ final class AppSessionStore: ObservableObject {
         _ entry: BridgeReferenceSnapshotEntry,
         matches configurationID: String
     ) -> Bool {
-        guard let latest = snapshot?.referenceSnapshotFeed.latest else {
+        guard let latest = snapshot?.referenceSnapshotFeed.trustedLatest else {
             return false
         }
         if latest.entries.contains(where: {
@@ -1646,7 +1660,7 @@ final class AppSessionStore: ObservableObject {
                 if let refreshStatus = loadResult.referenceRefreshStatus {
                     referenceSnapshotRefreshPolicy.record(
                         status: refreshStatus,
-                        latestPublishedAt: newSnapshot.referenceSnapshotFeed.latest.flatMap {
+                        latestPublishedAt: newSnapshot.referenceSnapshotFeed.trustedLatest.flatMap {
                             self.bridgeDate(from: $0.publishedAt)
                         }
                     )
@@ -2187,7 +2201,7 @@ final class AppSessionStore: ObservableObject {
             scoreText: String,
             completedAt: Date?
         )? = referenceSnapshotEntry(for: configurationID).map { entry in
-            let completedAt = snapshot?.referenceSnapshotFeed.latest.flatMap {
+            let completedAt = snapshot?.referenceSnapshotFeed.trustedLatest.flatMap {
                 bridgeDate(from: $0.publishedAt)
             }
             return (

@@ -504,7 +504,8 @@ enum RadarPresenter {
         hasStableDashboard: Bool,
         completeQuestionSetLabel: String,
         officialQuestionPackVersion: String?,
-        localQuestionPackVersion: String?
+        localQuestionPackVersion: String?,
+        requiresModelSetup: Bool = false
     ) -> SurfacePresentation {
         let rankingContext: String
         let questionPackVersion: String
@@ -526,6 +527,8 @@ enum RadarPresenter {
         let emptyTitle: String
         if evidenceUpdating {
             emptyTitle = L10n.tr("扫描进行中")
+        } else if requiresModelSetup && displaySource != "official_snapshot" {
+            emptyTitle = L10n.tr("官方 Radar 尚未载入")
         } else {
             switch portfolioStatus {
             case "no_usage":
@@ -540,6 +543,8 @@ enum RadarPresenter {
         let emptyReason: String
         if evidenceUpdating {
             emptyReason = L10n.tr("正在生成本轮榜单，完成后会自动显示完整结果。")
+        } else if requiresModelSetup && displaySource != "official_snapshot" {
+            emptyReason = L10n.tr("可刷新官方榜单；本地模型接入与本机评测是可选项。")
         } else if displaySource == "official_snapshot" {
             emptyReason = L10n.tr("当前档位暂无同口径远端结论；榜单仍可浏览，本机实测仅用于校准当前路线。")
         } else if selectedSourceMode == "local_evaluation" {

@@ -10,6 +10,8 @@
 
 不付费 `v0.1.0-preview.1` 已作为 GitHub prerelease 公开，公开文档、供应链、fresh build、DMG／ZIP／SHA-256／SBOM 和公开 URL 回下载复测均已完成；Gatekeeper 开启机器上的“仍要打开”人工放行仍未完成。
 
+针对 `preview.1` 遗漏官方 Radar 地址、无 Provider 时被模型设置空状态阻断、开发 seed 可能进入官网展示以及未发布 appcast 仍显示为已配置的问题，`v0.1.0-preview.2` 源码候选已完成修复和 Build 101 验证。它尚未形成干净提交、DMG／ZIP 或 GitHub Release，不能把本地 candidate 写成已发布版本。
+
 ## 已完成
 
 - App、本地 scanner、Native Bridge、题包、测试和构建工具已归并到本仓库；官网、Cloudflare、远端评测、快照发布和运营后台不在公开源码范围内。
@@ -21,7 +23,10 @@
 - LiteLLM pricing 来源已固定完整 upstream commit 和原始文件 SHA-256；网络与离线刷新均先校验原始字节，再解析 JSON，来源身份进入 snapshot hash。
 - `build.sh` 使用内容锁定的 python.org Python 3.14.3 installer，在项目 `build/` 内校验、解包并冻结 runtime；构建会检查 CA store、TLS／SHA-256／zstd、Mach-O 最低系统版本和非系统绝对动态库依赖。
 - `build-dev.sh` 优先复用 `build/modeldial-candidate.app` 的冻结后端；仅在 candidate 不存在时兼容使用 `build/modeldial.app`，因此 fresh clone 完成一次正式构建后即可继续 Swift／资源迭代。
-- 双语 README 已包含 `modeldial.com`、`v0.1.0-preview.1` unsigned／unnotarized 预览版的 GitHub Releases DMG 安装方式、macOS 系统设置“隐私与安全性 → 仍要打开”步骤、macOS 13+ Apple Silicon 支持边界、源码构建要求和 candidate-only 产物说明；同时明确不要求关闭 Gatekeeper，也不建议 `xattr`／`spctl` 绕过。
+- 双语 README 已重排为产品优先的公开首页：首屏展示定位、App 图标、官网／GitHub／DMG 入口、平台与本地优先标签和 Radar；随后说明使用价值、配置对比、扫描策略、下载、工作方式、核心能力与隐私。`v0.1.0-preview.1` 的 unsigned／unnotarized 限制收敛到下载区单一警告，并继续明确“隐私与安全性 → 仍要打开”、macOS 13+ Apple Silicon、Intel 不支持及禁止 `xattr`／`spctl` 绕过；构建供应链细节下沉到发布文档，README 只保留公开运行时身份与最小命令。
+- Radar 成为无需本地 Provider 的首要使用路径：首次打开始终保留官方榜单、刷新和空状态，本地模型接入只作为次要 CTA；中英文 README 同步说明可直接查看官网 Radar、本地评测完全可选，并明确已发布 `preview.1` 尚不包含该修复。
+- Swift 官方参考快照增加与 Python 一致的三条件信任门禁：snapshot kind、provenance kind 均为 `first_party_snapshot` 且 `public_official_snapshot=true`；Radar、对比、证据、compact 和通知链路均 fail closed，开发 seed 不再可能被标成官网榜单。
+- `preview.2` 候选固定为 Build 101；打包门禁注入并回读官方快照 URL、禁用未发布的 Sparkle 通道、拒绝复用 `preview.1`，并要求包含未跟踪文件在内的工作树干净（忽略 `.gitignore` 内容）、HEAD 稳定及 App／ZIP 内 `ModelDialSourceCommit` 精确一致。
 
 ## 源码公开门槛
 
@@ -63,12 +68,15 @@
 
 ## 下一步
 
-1. 在另一台 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上，从 GitHub Release 下载 DMG，完成拖入 `Applications` 和“仍要打开”人工验收。
-2. 继续处理首个正式二进制 Release 的签名、公证、干净机器和 DMG 验收。
-3. 收集真实 Intel Mac 用户需求，再决定是否建立独立的 universal2 支持里程碑。
+1. 审查本次未提交 diff；经单独授权形成干净提交后，运行 `build-support/package-unsigned-preview.sh` 生成 `preview.2` DMG／ZIP／SBOM／SHA256SUMS。
+2. 对生成的 DMG 做本机只读挂载、拖入 `Applications` 和真实 UI 验收；再在另一台 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成“仍要打开”人工验收。
+3. 经单独授权创建 `v0.1.0-preview.2` tag／GitHub prerelease 并上传资产，随后模拟公开下载和完整复验。
+4. 继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名和干净机器门槛；Intel 仍按真实需求决定是否建立 universal2 里程碑。
 
 ## 最近验证
 
+- 2026-08-08：`preview.2` 针对性修复完成；合并定向回归 `187/187`、全量 Python `1420/1420`（`619.586s`，`ResourceWarning` 按错误处理）、架构基线 `11/11`、shell／plist／本地化 JSON／diff 检查通过。使用官方参考快照地址并禁用更新通道的完整 `./build.sh` 生成 `0.1.0（Build 101）` arm64 candidate；60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名和 bundle 回读通过。冻结后端在隔离数据目录真实刷新官方端点成功，delivery 为 `http/refreshed`，得到 15 条 provenance 合格的第一方结果。未形成干净提交、未运行 release-only packaging、未创建 tag／Release 或上传资产。
+- 2026-08-08：中英文 README 完成产品首页重排；App 图标、Hero／双图截图、公开 Release／DMG、官网、语言切换和全部本地 Markdown／HTML 链接检查通过，双语版本／平台／签名限制／构建运行时事实一致。`git diff --check` 与 README 构建合同回归 `17/17` 通过；未改 App、发布资产或远端 Release。
 - 2026-08-08：提交 `fcde71f` 已推送到公开 `main`，tag `v0.1.0-preview.1` 指向该提交并创建公开 GitHub prerelease。4 个资产大小与本地产物一致；随后不带 GitHub API 认证从公开 asset URL 重新下载，`SHA256SUMS` 三项均通过，DMG 只读挂载与 ZIP 解包通过，App 为 `0.1.0 (100)`／thin arm64／ad-hoc 且无证书 Authority，bundle SPDX 校验和冻结后端 OpenSSL 3.0.18／mpdecimal 4.0.0／zstd smoke 通过。本机 Gatekeeper disabled，未把此次复测写成“仍要打开”人工验收。
 - 2026-08-08：unsigned preview 定向测试 `26/26`、全量 Python `1415/1415`（`619.687s`，`ResourceWarning` 按错误处理）通过。`package-unsigned-preview.sh` 强制 ad-hoc fresh build，PyPI requirements receipt 触发 `--require-hashes` 重建；60 个 Mach-O／65 个架构记录通过 macOS 13 门禁，整包深层签名有效。生成 DMG `17,735,966` bytes、ZIP `15,421,467` bytes、SPDX SBOM `200,931` bytes 和 `SHA256SUMS`；三项 hash、DMG／ZIP 容器、SPDX 2.3 官方 JSON Schema、只读挂载后 bundle SBOM／签名／arm64／冻结后端和 11 个 Legal 文件均通过。未创建 tag、GitHub Release 或上传二进制；当前机器 Gatekeeper disabled，未把本机挂载 smoke 写成人工放行验收。
 - 2026-08-08：unsigned preview 的中英文 README、发布清单、ADR 和 `docs/releases/v0.1.0-preview.1.md` 已完成一致性检查；文件存在性、资产命名／警告／手动放行文案和 `git diff --check` 通过，未创建 tag、GitHub Release 或上传二进制。

@@ -301,8 +301,14 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
             ranking_source,
         )
         self.assertIn(
-            "!requiresModelSetup && store.radarLeaderboardItems.isEmpty",
+            "store.radarLeaderboardItems.isEmpty",
             ranking_source,
+        )
+        self.assertIn("if showsRadarModelSetupCTA", ranking_source)
+        self.assertIn("radarModelSetupNotice", ranking_source)
+        self.assertIn(
+            "store.snapshot?.referenceSnapshotFeed.trustedLatest != nil",
+            self.source,
         )
 
     def test_radar_uses_explicit_provider_identity_and_bundled_logo_assets(self) -> None:
@@ -375,6 +381,17 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("targetLabels: row.canonicalLabels", self.source)
         self.assertIn("RadarPresenter.leaderboardRow(", self.source)
         self.assertNotIn('case "推荐", "Recommended", "Highest score"', self.source)
+
+    def test_radar_comparison_and_empty_state_use_trusted_official_snapshot(self) -> None:
+        self.assertIn("referenceSnapshotFeed.trustedLatest", self.source)
+        self.assertIn(
+            "officialSnapshotIsTrusted: latest?.isPublicOfficialSnapshot == true",
+            self.source,
+        )
+        self.assertNotIn("referenceSnapshotFeed.latest", self.source)
+        self.assertIn("requiresModelSetup: requiresModelSetup", self.source)
+        self.assertIn("requiresModelSetup: Bool = false", self.radar_presenter_source)
+        self.assertIn('L10n.tr("官方 Radar 尚未载入")', self.radar_presenter_source)
 
     def test_unmapped_current_model_uses_radar_presenter_before_legacy_copy(self) -> None:
         projection_source = self._section(
@@ -828,15 +845,36 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn('"尚未接入模型"', self.operational_presenter_source)
         self.assertIn('"尚未选择扫描档位"', self.operational_presenter_source)
 
-    def test_zero_scan_candidate_state_uses_model_setup_empty_state(self) -> None:
+    def test_zero_scan_candidate_state_keeps_radar_surface(self) -> None:
         overview_source = self._section(
             self.source,
             "private var overviewRankingCard: some View {",
             "private func repairNotice",
         )
 
-        self.assertIn("if requiresModelSetup", overview_source)
-        self.assertIn("ModelSetupEmptyState", overview_source)
+        self.assertIn("radarRankingHeader", overview_source)
+        self.assertIn("radarLeaderboardEmptyState", overview_source)
+        self.assertNotIn("ModelSetupEmptyState", overview_source)
+
+    def test_official_radar_remains_visible_before_local_model_setup(self) -> None:
+        ranking_source = self._section(
+            self.source,
+            "private var overviewRankingCard: some View {",
+            "private func repairNotice",
+        )
+        sizing_source = self._section(
+            self.source,
+            "private var overviewRankingPreferredHeight: CGFloat {",
+            "private var radarRankingHeader",
+        )
+
+        self.assertIn("radarRankingHeader", ranking_source)
+        self.assertIn("ForEach(store.radarLeaderboardItems)", ranking_source)
+        self.assertIn("showsRadarModelSetupCTA", ranking_source)
+        self.assertIn(
+            "let modelSetupNoticeHeight: CGFloat = showsRadarModelSetupCTA ? 74 : 0",
+            sizing_source,
+        )
 
     def test_zero_scan_candidate_primary_actions_open_model_ingress(self) -> None:
         current_model_source = self._section(

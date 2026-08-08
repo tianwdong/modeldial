@@ -43,13 +43,18 @@ enum ComparisonSelectionPresenter {
         localPairwiseComparisons: [BridgePairwiseComparison],
         officialSnapshot: BridgeReferenceSnapshot?
     ) -> DatasetSelection {
-        DatasetSelection(
+        let trustedOfficialSnapshot = usesOfficialSnapshot
+            ? officialSnapshot.flatMap {
+                $0.isPublicOfficialSnapshot ? $0 : nil
+            }
+            : nil
+        return DatasetSelection(
             statistics: usesLocalDataset ? localStatistics : nil,
             leaderboard: usesLocalDataset ? localLeaderboard : [],
-            pairwiseComparisons: usesOfficialSnapshot
-                ? officialSnapshot?.pairwiseComparisons ?? []
+            pairwiseComparisons: trustedOfficialSnapshot != nil
+                ? trustedOfficialSnapshot?.pairwiseComparisons ?? []
                 : usesLocalDataset ? localPairwiseComparisons : [],
-            referenceSnapshot: usesOfficialSnapshot ? officialSnapshot : nil,
+            referenceSnapshot: trustedOfficialSnapshot,
             showsLocalRepairControls: usesLocalDataset
         )
     }

@@ -332,6 +332,23 @@ private func verifySurfaceCopy() {
         "working empty reason should take priority"
     )
 
+    let setup = RadarPresenter.surface(
+        displaySource: nil,
+        selectedSourceMode: "auto",
+        portfolioStatus: nil,
+        evidenceUpdating: false,
+        hasStableDashboard: false,
+        completeQuestionSetLabel: "完整五题",
+        officialQuestionPackVersion: nil,
+        localQuestionPackVersion: nil,
+        requiresModelSetup: true
+    )
+    expect(setup.emptyTitle == "官方 Radar 尚未载入", "setup should keep the Radar empty state visible")
+    expect(
+        setup.emptyReason == "可刷新官方榜单；本地模型接入与本机评测是可选项。",
+        "setup empty state should explain optional local model setup"
+    )
+
     let expired = RadarPresenter.surface(
         displaySource: "official_snapshot",
         selectedSourceMode: "official_snapshot",

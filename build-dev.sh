@@ -8,6 +8,18 @@ APP_NAME="modeldial"
 BUNDLE_ID="com.modeldial.app"
 CODESIGN_IDENTITY="${MODELDIAL_CODESIGN_IDENTITY:--}"
 REFERENCE_SNAPSHOT_URL="${MODELDIAL_REFERENCE_SNAPSHOT_URL:-}"
+SOURCE_COMMIT="${MODELDIAL_SOURCE_COMMIT:-}"
+UPDATE_FEED_URL="${MODELDIAL_UPDATE_FEED_URL:-}"
+UPDATE_PUBLIC_ED_KEY="${MODELDIAL_UPDATE_PUBLIC_ED_KEY:-}"
+if [[ -n "$SOURCE_COMMIT" && ! "$SOURCE_COMMIT" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]]; then
+  echo "MODELDIAL_SOURCE_COMMIT must be a 40- or 64-character lowercase Git commit." >&2
+  exit 1
+fi
+if [[ -n "$UPDATE_FEED_URL" && -z "$UPDATE_PUBLIC_ED_KEY" ]] \
+  || [[ -z "$UPDATE_FEED_URL" && -n "$UPDATE_PUBLIC_ED_KEY" ]]; then
+  echo "MODELDIAL_UPDATE_FEED_URL and MODELDIAL_UPDATE_PUBLIC_ED_KEY must be provided together." >&2
+  exit 1
+fi
 BUILD_DIR="./build"
 XCODE_DERIVED_DIR="$BUILD_DIR/xcode-dev-derived"
 XCODE_PRODUCT_APP="$XCODE_DERIVED_DIR/Build/Products/Debug/$APP_NAME.app"
@@ -59,6 +71,9 @@ xcodebuild -quiet \
   -derivedDataPath "$XCODE_DERIVED_DIR" \
   CODE_SIGNING_ALLOWED=NO \
   MODELDIAL_REFERENCE_SNAPSHOT_URL="$REFERENCE_SNAPSHOT_URL" \
+  MODELDIAL_SOURCE_COMMIT="$SOURCE_COMMIT" \
+  MODELDIAL_SU_FEED_URL="$UPDATE_FEED_URL" \
+  MODELDIAL_SU_PUBLIC_ED_KEY="$UPDATE_PUBLIC_ED_KEY" \
   build
 if [[ ! -x "$XCODE_PRODUCT_APP/Contents/MacOS/$APP_NAME" ]]; then
   echo "Xcode did not produce a complete app at $XCODE_PRODUCT_APP" >&2

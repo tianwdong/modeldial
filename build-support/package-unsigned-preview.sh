@@ -22,9 +22,22 @@ fi
 
 BUILD_ROOT="$ROOT_DIR/build"
 OUTPUT_DIR="${MODELDIAL_UNSIGNED_PREVIEW_OUTPUT_DIR:-$BUILD_ROOT/unsigned-preview}"
-PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.1}"
+PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.2}"
+MODELDIAL_REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"
+REFERENCE_SNAPSHOT_URL="$MODELDIAL_REFERENCE_SNAPSHOT_URL"
 [[ "$PREVIEW_LABEL" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] \
   || fail "invalid preview label: $PREVIEW_LABEL"
+[[ "$PREVIEW_LABEL" != "preview.1" ]] \
+  || fail "preview.1 is already published and cannot be overwritten"
+
+if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
+  fail "worktree must be clean before packaging an unsigned preview"
+fi
+source_commit="$(git rev-parse --verify HEAD^{commit})" \
+  || fail "could not resolve the source Git commit"
+[[ "$source_commit" =~ ^([0-9a-f]{40}|[0-9a-f]{64})$ ]] \
+  || fail "source Git commit is not an exact 40- or 64-character SHA"
+
 mkdir -p "$BUILD_ROOT" "$OUTPUT_DIR"
 
 build_log="$(mktemp "${TMPDIR:-/tmp}/modeldial-unsigned-preview-build.XXXXXX")"
@@ -51,8 +64,18 @@ trap cleanup EXIT
 # fall back to an existing build/modeldial-candidate.app when this invocation
 # fails. The successful build invocation reports the only candidate path that
 # this packaging run will accept.
+export MODELDIAL_REFERENCE_SNAPSHOT_URL="$REFERENCE_SNAPSHOT_URL"
+export MODELDIAL_DISABLE_UPDATES=1
+export MODELDIAL_SOURCE_COMMIT="$source_commit"
 if ! MODELDIAL_CODESIGN_IDENTITY=- ./build.sh 2>&1 | tee "$build_log"; then
   fail "./build.sh did not complete; no existing candidate was packaged"
+fi
+source_commit_after_build="$(git rev-parse --verify HEAD^{commit})" \
+  || fail "could not re-read the source Git commit after building"
+[[ "$source_commit_after_build" == "$source_commit" ]] \
+  || fail "source Git commit changed during packaging"
+if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
+  fail "worktree changed during packaging"
 fi
 
 candidate_relative="$(sed -nE 's/^built (.+); .*/\1/p' "$build_log" | tail -n 1)"
@@ -79,6 +102,22 @@ bundle_id="$(plist_value CFBundleIdentifier)"
 version="$(plist_value CFBundleShortVersionString)"
 build_number="$(plist_value CFBundleVersion)"
 executable_name="$(plist_value CFBundleExecutable)"
+candidate_source_commit="$(plist_value ModelDialSourceCommit)" \
+  || fail "candidate is missing ModelDialSourceCommit"
+[[ "$candidate_source_commit" == "$source_commit" ]] \
+  || fail "candidate source commit does not match the exact packaging commit"
+reference_snapshot_url="$(plist_value ModelDialReferenceSnapshotURL)" \
+  || fail "candidate is missing ModelDialReferenceSnapshotURL"
+[[ "$reference_snapshot_url" == "$REFERENCE_SNAPSHOT_URL" ]] \
+  || fail "candidate reference snapshot URL is not the official HTTPS feed"
+preview_feed_url="$(plist_value SUFeedURL)" \
+  || fail "candidate is missing SUFeedURL"
+[[ -z "$preview_feed_url" ]] \
+  || fail "unsigned preview must not expose the unavailable stable appcast"
+preview_public_key="$(plist_value SUPublicEDKey)" \
+  || fail "candidate is missing SUPublicEDKey"
+[[ -z "$preview_public_key" ]] \
+  || fail "unsigned preview must not configure Sparkle updates"
 [[ "$app_name" == "modeldial" ]] || fail "unexpected app name in candidate: $app_name"
 [[ "$bundle_id" == "com.modeldial.app" ]] || fail "unexpected bundle identifier in candidate: $bundle_id"
 [[ "$version" =~ ^[0-9]+([.][0-9]+){1,2}$ ]] || fail "invalid marketing version: $version"
@@ -164,6 +203,22 @@ zip_plist="$zip_app/Contents/Info.plist"
 zip_version="$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$zip_plist")"
 zip_build_number="$(/usr/bin/plutil -extract CFBundleVersion raw -o - "$zip_plist")"
 zip_executable_name="$(/usr/bin/plutil -extract CFBundleExecutable raw -o - "$zip_plist")"
+zip_source_commit="$(/usr/bin/plutil -extract ModelDialSourceCommit raw -o - "$zip_plist")" \
+  || fail "ZIP app is missing ModelDialSourceCommit"
+[[ "$zip_source_commit" == "$source_commit" ]] \
+  || fail "ZIP app source commit does not match the exact packaging commit"
+zip_reference_snapshot_url="$(/usr/bin/plutil -extract ModelDialReferenceSnapshotURL raw -o - "$zip_plist")" \
+  || fail "ZIP app is missing ModelDialReferenceSnapshotURL"
+[[ "$zip_reference_snapshot_url" == "$REFERENCE_SNAPSHOT_URL" ]] \
+  || fail "ZIP app reference snapshot URL does not match the official HTTPS feed"
+zip_preview_feed_url="$(/usr/bin/plutil -extract SUFeedURL raw -o - "$zip_plist")" \
+  || fail "ZIP app is missing SUFeedURL"
+[[ -z "$zip_preview_feed_url" ]] \
+  || fail "ZIP app must not expose the unavailable stable appcast"
+zip_preview_public_key="$(/usr/bin/plutil -extract SUPublicEDKey raw -o - "$zip_plist")" \
+  || fail "ZIP app is missing SUPublicEDKey"
+[[ -z "$zip_preview_public_key" ]] \
+  || fail "ZIP app must not configure Sparkle updates"
 [[ "$zip_version" == "$version" ]] || fail "ZIP app version does not match candidate"
 [[ "$zip_build_number" == "$build_number" ]] || fail "ZIP app build does not match candidate"
 zip_main_executable="$zip_app/Contents/MacOS/$zip_executable_name"
@@ -183,4 +238,5 @@ echo "  $dmg_name"
 echo "  $zip_name"
 echo "  $sbom_name"
 echo "  $sums_name"
+echo "Source commit: $source_commit"
 echo "Signing status: ad-hoc only; not Developer ID signed and not notarized."
