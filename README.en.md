@@ -4,7 +4,7 @@
   <p><strong>Find a better-fit model configuration for each coding task through real evaluations.</strong></p>
   <p>Compare complete <code>model + effort + route</code> combinations while retaining quality, elapsed time, token, and reference-cost evidence.</p>
   <p>
-    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.1/modeldial-0.1.0-preview.1-macos-arm64.dmg"><strong>Download the macOS preview</strong></a>
+    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.2/modeldial-0.1.0-preview.2-macos-arm64.dmg"><strong>Download the macOS preview</strong></a>
     · <a href="https://modeldial.com">Website</a>
     · <a href="https://modeldial.com/radar">Official Radar</a>
     · <a href="https://github.com/tianwdong/modeldial">GitHub</a>
@@ -19,7 +19,7 @@
 
 ## Browse Official Radar First; Local Evaluation Is Optional
 
-ModelDial's primary path is browsing the public first-party Radar, not configuring a model or running a local test first. In the repaired app, starting with the next preview, click the ModelDial capsule in the menu bar to see configuration results from scheduled official evaluations; the [web Radar](https://modeldial.com/radar) is available now. Browsing official Radar requires no API key and uses none of your model quota.
+ModelDial's primary path is browsing the public first-party Radar, not configuring a model or running a local test first. In `v0.1.0-preview.2`, click the ModelDial capsule in the menu bar to see configuration results from scheduled official evaluations; the [web Radar](https://modeldial.com/radar) is also available. Browsing official Radar requires no API key and uses none of your model quota.
 
 Connect a local Codex, Claude Code, or Grok Build provider—or a compatible endpoint—only when you want to compare your own provider, route, and effort combinations. Local results and the official leaderboard remain explicit, separately selectable data sources.
 
@@ -47,17 +47,17 @@ A model name is only part of a working configuration. The same model can behave 
 
 ## Download & First Run
 
-**Current version: [`v0.1.0-preview.1`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.1)** · [Direct Apple Silicon DMG download](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.1/modeldial-0.1.0-preview.1-macos-arm64.dmg)
+**Current version: [`v0.1.0-preview.2`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.2)** · [Direct Apple Silicon DMG download](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.2/modeldial-0.1.0-preview.2-macos-arm64.dmg)
 
 Requirements: macOS 13 or later on Apple Silicon. Intel Macs are not currently supported. To verify the download, get `SHA256SUMS` from the same release and run `shasum -a 256 -c SHA256SUMS` in the asset directory.
 
 > [!IMPORTANT]
-> `v0.1.0-preview.1` is an unsigned / unnotarized preview with no Developer ID signature or Apple notarization. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** for this app; do not disable Gatekeeper or use `xattr`, `spctl`, or other commands to bypass system security checks.
+> `v0.1.0-preview.2` is an unsigned / unnotarized preview with no Developer ID signature or Apple notarization. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** for this app; do not disable Gatekeeper or use `xattr`, `spctl`, or other commands to bypass system security checks.
 
 > [!NOTE]
-> The published `v0.1.0-preview.1` does not contain the official Radar feed URL or this first-run fix. The repaired source will ship in the next preview; until then, use the [web Radar](https://modeldial.com/radar) or build from source as shown below.
+> `v0.1.0-preview.2` includes the official Radar feed URL and fixes the first-run path when no local provider is configured; local model connections and on-device evaluations remain optional. This preview does not enable automatic updates, so download future versions manually from this page or the matching GitHub Release.
 
-First run in the repaired build (starting with the next preview):
+First run:
 
 1. Open the DMG, drag `modeldial.app` to `Applications`, eject the DMG, and launch the copy from `Applications`.
 2. Click the ModelDial capsule in the menu bar and browse official Radar immediately; no local model or scan is required.
@@ -105,7 +105,7 @@ The command above enables official Radar. Run `./build.sh` without the environme
 ./build-dev.sh
 ```
 
-Changes to `scanner/`, `scripts/`, or `questions/` require a fresh `./build.sh`. The separate binary-preview constraints are documented in the [preview notes](docs/releases/v0.1.0-preview.1.md).
+Changes to `scanner/`, `scripts/`, or `questions/` require a fresh `./build.sh`. The separate binary-preview constraints are documented in the [preview notes](docs/releases/v0.1.0-preview.2.md).
 
 <details>
 <summary>Remove session-observer hooks installed from source</summary>
@@ -144,8 +144,8 @@ git diff --check
 - [Benchmark and data distribution policy](docs/benchmark-and-data-policy.md): question packs, answer fixtures, pricing snapshots, and provider assets.
 - [Open-source content audit](docs/open-source-content-audit.md): source, attribution, and question-pack search records.
 - [Release checklist](docs/release-checklist.md): separate source-candidate and binary-release gates.
-- [Preview notes](docs/releases/v0.1.0-preview.1.md): installation steps and limitations for v0.1.0-preview.1.
-- [Next preview candidate](docs/releases/v0.1.0-preview.2.md): unreleased v0.1.0-preview.2 fixes, verification, and remaining gates.
+- [Current preview notes](docs/releases/v0.1.0-preview.2.md): v0.1.0-preview.2 fixes, installation steps, verification, and limitations.
+- [Historical preview notes](docs/releases/v0.1.0-preview.1.md): v0.1.0-preview.1 installation steps and known limitations.
 - [Security policy](SECURITY.md): private vulnerability-reporting channel.
 
 ## Contributing & License

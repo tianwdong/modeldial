@@ -4,7 +4,7 @@
   <p><strong>用真实 coding 评测，找到更适合当前任务的模型配置。</strong></p>
   <p>比较完整的 <code>model + effort + route</code> 组合，同时保留质量、耗时、Token 和参考费用证据。</p>
   <p>
-    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.1/modeldial-0.1.0-preview.1-macos-arm64.dmg"><strong>下载 macOS 预览版</strong></a>
+    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.2/modeldial-0.1.0-preview.2-macos-arm64.dmg"><strong>下载 macOS 预览版</strong></a>
     · <a href="https://modeldial.com">官网</a>
     · <a href="https://modeldial.com/radar">官方 Radar</a>
     · <a href="https://github.com/tianwdong/modeldial">GitHub</a>
@@ -19,7 +19,7 @@
 
 ## 先看官方 Radar，本地评测可选
 
-ModelDial 的第一条使用路径是浏览公开的第一方 Radar，而不是要求用户先配置模型或运行本地测试。修复后的 App（下一预览包起）打开后点击菜单栏顶部的 ModelDial 胶囊，即可查看官方定时评测的配置榜单；现在也可以直接访问 [modeldial.com/radar](https://modeldial.com/radar)。浏览官方 Radar 不需要 API Key，也不会消耗你的模型额度。
+ModelDial 的第一条使用路径是浏览公开的第一方 Radar，而不是要求用户先配置模型或运行本地测试。`v0.1.0-preview.2` 打开后点击菜单栏顶部的 ModelDial 胶囊，即可查看官方定时评测的配置榜单；也可以直接访问 [modeldial.com/radar](https://modeldial.com/radar)。浏览官方 Radar 不需要 API Key，也不会消耗你的模型额度。
 
 只有当你希望比较自己的 provider、route 或 effort 组合时，才需要接入本机 Codex、Claude Code、Grok Build 或兼容 endpoint，并运行本地评测。本机结果与官方榜单是两个明确的数据来源，可以分别查看。
 
@@ -47,17 +47,17 @@ ModelDial 的第一条使用路径是浏览公开的第一方 Radar，而不是�
 
 ## 下载与首次运行
 
-**当前版本：[`v0.1.0-preview.1`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.1)** · [直接下载 Apple Silicon DMG](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.1/modeldial-0.1.0-preview.1-macos-arm64.dmg)
+**当前版本：[`v0.1.0-preview.2`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.2)** · [直接下载 Apple Silicon DMG](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.2/modeldial-0.1.0-preview.2-macos-arm64.dmg)
 
 系统要求：macOS 13 或更高版本、Apple Silicon。Intel Mac 当前不支持。如需校验下载文件，请从同一 Release 获取 `SHA256SUMS`，在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
 
 > [!IMPORTANT]
-> `v0.1.0-preview.1` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；不要关闭 Gatekeeper，也不要使用 `xattr`、`spctl` 或其他命令绕过系统安全检查。
+> `v0.1.0-preview.2` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；不要关闭 Gatekeeper，也不要使用 `xattr`、`spctl` 或其他命令绕过系统安全检查。
 
 > [!NOTE]
-> 已发布的 `v0.1.0-preview.1` 没有写入官方 Radar 数据地址，也不包含本次首次使用流程修复。修复后的源码将进入下一预览包；发布前可先使用[网页 Radar](https://modeldial.com/radar)，或按下文方式从源码构建。
+> `v0.1.0-preview.2` 已写入官方 Radar 数据地址，并修复无本地 Provider 时的首次使用流程；本地模型接入和本机评测仍是可选能力。该预览版不启用自动更新，请从本页或同一 GitHub Release 手动下载后续版本。
 
-修复版首次运行（下一预览包起）：
+首次运行：
 
 1. 打开 DMG，把 `modeldial.app` 拖到 `Applications`，推出 DMG 后从 `Applications` 启动。
 2. 点击菜单栏顶部的 ModelDial 胶囊，直接浏览官方 Radar；无需接入本地模型，也无需先运行扫描。
@@ -105,7 +105,7 @@ open build/modeldial-candidate.app
 ./build-dev.sh
 ```
 
-修改 `scanner/`、`scripts/` 或 `questions/` 后，请重新运行 `./build.sh`。源码构建和二进制预览的独立门槛见 [预览发布说明](docs/releases/v0.1.0-preview.1.md)。
+修改 `scanner/`、`scripts/` 或 `questions/` 后，请重新运行 `./build.sh`。源码构建和二进制预览的独立门槛见 [预览发布说明](docs/releases/v0.1.0-preview.2.md)。
 
 <details>
 <summary>移除从源码安装的会话观察 hook</summary>
@@ -144,8 +144,8 @@ git diff --check
 - [Benchmark 与数据发布策略](docs/benchmark-and-data-policy.md)：题包、答案 fixture、价格快照和 provider 资产。
 - [公开内容来源审计](docs/open-source-content-audit.md)：上游来源、attribution 和题包检索留痕。
 - [发布清单](docs/release-checklist.md)：源码候选和二进制发行的独立门槛。
-- [预览发布说明](docs/releases/v0.1.0-preview.1.md)：v0.1.0-preview.1 的安装步骤与限制。
-- [下一预览候选](docs/releases/v0.1.0-preview.2.md)：尚未发布的 v0.1.0-preview.2 修复、验证与剩余门槛。
+- [当前预览发布说明](docs/releases/v0.1.0-preview.2.md)：v0.1.0-preview.2 的修复、安装步骤、验证与限制。
+- [历史预览发布说明](docs/releases/v0.1.0-preview.1.md)：v0.1.0-preview.1 的安装步骤与已知限制。
 - [安全策略](SECURITY.md)：私密漏洞报告渠道。
 
 ## 参与贡献与许可证
