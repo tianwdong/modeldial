@@ -76,7 +76,7 @@
 - [x] 完成本次修复的合并定向回归 `187/187`、全量 Python `1420/1420`、架构基线 `11/11` 和 Build 101 正式构建；candidate 回读为官方 Radar URL、空更新通道、arm64 和有效深层 ad-hoc 签名，冻结后端真实远端刷新得到 15 条可信第一方结果。
 - [x] 已在干净提交 `a20d14e` 上生成 `preview.2` DMG／ZIP／SBOM／SHA256SUMS；三项哈希、DMG 只读挂载、ZIP 解包、bundle SBOM、官方 Radar URL、空更新通道、精确源码提交、深层 ad-hoc 签名和冻结后端真实刷新均通过下载前本机复验。
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
-- [ ] 经单独授权创建 `v0.1.0-preview.2` tag／GitHub prerelease 并上传资产；不得修改或覆盖 `preview.1`。
+- [x] 经单独授权创建 `v0.1.0-preview.2` annotated tag／GitHub prerelease 并上传 4 个精确资产；tag 的 peeled commit 与二进制 `ModelDialSourceCommit` 均为 `a20d14e`，`preview.1` 未被修改或覆盖。随后从公开 URL 无认证下载，完成 SHA-256、DMG／ZIP、签名、macOS 13、SPDX 和冻结后端官方快照复验。
 
 ## Gate 3：发行产物与渠道
 
