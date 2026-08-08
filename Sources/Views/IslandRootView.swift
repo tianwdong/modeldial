@@ -33,7 +33,6 @@ struct IslandRootView: View {
                     .opacity(isSessionPanelContentVisible ? 1 : 0)
                     .offset(y: isSessionPanelContentVisible ? 0 : -4)
                     .allowsHitTesting(isSessionPanelContentVisible)
-                    .onHover(perform: updateCompactHover)
                     .zIndex(0)
             }
 
@@ -44,6 +43,12 @@ struct IslandRootView: View {
                 compactIslandButton
                     .zIndex(2)
             }
+        }
+        .frame(width: hoverTrackingSize.width, height: hoverTrackingSize.height, alignment: .top)
+        .contentShape(Rectangle())
+        .onHover { isHovering in
+            DebugLog.write("IslandRootView.onHover hovering=\(isHovering) state=\(model.state)")
+            updateCompactHover(isHovering)
         }
         .frame(width: model.expandedSize.width, height: model.expandedSize.height, alignment: .top)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -82,10 +87,6 @@ struct IslandRootView: View {
         .buttonStyle(.plain)
         .accessibilityLabel(store.glancePresentation.accessibilityLabel)
         .accessibilityHint(L10n.Island.openRecommendationDetails)
-        .onHover { isHovering in
-            DebugLog.write("IslandRootView.onHover hovering=\(isHovering) state=\(model.state)")
-            updateCompactHover(isHovering)
-        }
         .islandPointerOnHover()
     }
 
@@ -159,7 +160,7 @@ struct IslandRootView: View {
             return
         }
         expandedTransitionTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 40_000_000)
+            await Task.yield()
             guard !Task.isCancelled, model.state == .expanded else { return }
             withAnimation(shapeCloseAnimation) {
                 model.setState(.compact)
@@ -191,7 +192,7 @@ struct IslandRootView: View {
             return
         }
         expandedTransitionTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 40_000_000)
+            await Task.yield()
             guard !Task.isCancelled, model.state == .expanded else { return }
             withAnimation(expandedContentAnimation) {
                 isExpandedContentVisible = true
@@ -361,6 +362,18 @@ struct IslandRootView: View {
         return isSessionPanelVisible || isSessionPanelTransitioningToExpanded || reduceMotion
             ? height
             : 0
+    }
+
+    private var hoverTrackingSize: CGSize {
+        guard model.state == .compact else { return model.expandedSize }
+        return CGSize(
+            width: model.compactSessionPanelWidth,
+            height: model.compactHeight
+                + CompactSessionPanelView.height(
+                    forSessionCount: store.activeModelSessions.count
+                )
+                - 2
+        )
     }
 
     private var activeEdgeSize: CGSize {

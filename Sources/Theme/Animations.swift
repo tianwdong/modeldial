@@ -1,8 +1,8 @@
 import SwiftUI
 
 extension Animation {
-    static let islandOpen = Animation.spring(response: 0.42, dampingFraction: 0.82)
-    static let islandClose = Animation.spring(response: 0.30, dampingFraction: 0.88)
+    static let islandOpen = Animation.spring(response: 0.30, dampingFraction: 0.86)
+    static let islandClose = Animation.spring(response: 0.24, dampingFraction: 0.90)
     static let islandHover = Animation.timingCurve(0.16, 1, 0.3, 1, duration: 0.15)
     static let islandHoverContent = Animation.easeOut(duration: 0.12)
     static let islandHoverClose = Animation.easeOut(duration: 0.12)

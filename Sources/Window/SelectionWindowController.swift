@@ -159,7 +159,9 @@ final class SelectionWindowController {
         let hitInset = model.state == .compact ? Self.compactHoverHitInset : 0
         let interactiveIslandRect = islandRect.insetBy(dx: -hitInset, dy: -hitInset)
         let inside = interactiveIslandRect.contains(local)
-        window.ignoresMouseEvents = !inside
+        let shouldIgnoreMouseEvents = !inside
+        guard window.ignoresMouseEvents != shouldIgnoreMouseEvents else { return }
+        window.ignoresMouseEvents = shouldIgnoreMouseEvents
     }
 
     deinit {

@@ -113,8 +113,11 @@ class IslandRootViewSourceTest(unittest.TestCase):
             / "Animations.swift"
         ).read_text(encoding="utf-8")
 
-        hover_section = self.source.split(".onHover { isHovering in", 1)[1].split(
-            ".islandPointerOnHover()", 1
+        body_section = self.source.split("var body: some View {", 1)[1].split(
+            "private var compactIslandButton", 1
+        )[0]
+        hover_section = body_section.split(".onHover { isHovering in", 1)[1].split(
+            ".frame(maxWidth: .infinity", 1
         )[0]
         hover_function = self.source.split(
             "private func updateCompactHover(_ isHovering: Bool)", 1
@@ -125,6 +128,18 @@ class IslandRootViewSourceTest(unittest.TestCase):
         self.assertIn("@State private var isSessionPanelVisible = false", self.source)
         self.assertIn("@State private var isSessionPanelContentVisible = false", self.source)
         self.assertIn("updateCompactHover(isHovering)", hover_section)
+        self.assertEqual(body_section.count("updateCompactHover(isHovering)"), 1)
+        self.assertIn(
+            ".frame(width: hoverTrackingSize.width, height: hoverTrackingSize.height, alignment: .top)",
+            body_section,
+        )
+        tracking_size = self.source.split("private var hoverTrackingSize: CGSize", 1)[1].split(
+            "private var activeEdgeSize", 1
+        )[0]
+        self.assertIn("model.compactSessionPanelWidth", tracking_size)
+        self.assertIn("CompactSessionPanelView.height", tracking_size)
+        self.assertNotIn("isSessionPanelVisible", tracking_size)
+        self.assertNotIn("isSessionPanelWidthExpanded", tracking_size)
         self.assertIn("Task.sleep(nanoseconds: 40_000_000)", hover_function)
         self.assertIn("Task.sleep(nanoseconds: 140_000_000)", hover_function)
         self.assertNotIn("Task.sleep(nanoseconds: 120_000_000)", hover_function)
@@ -222,7 +237,7 @@ class IslandRootViewSourceTest(unittest.TestCase):
         self.assertIn(".opacity(isSessionPanelContentVisible ? 1 : 0)", preview_section)
         self.assertIn(".offset(y: isSessionPanelContentVisible ? 0 : -4)", preview_section)
         self.assertIn(".allowsHitTesting(isSessionPanelContentVisible)", preview_section)
-        self.assertIn(".onHover(perform: updateCompactHover)", preview_section)
+        self.assertNotIn(".onHover(perform: updateCompactHover)", preview_section)
         self.assertIn(
             ".frame(height: revealedSessionPanelHeight, alignment: .top)",
             preview_section,
@@ -547,6 +562,13 @@ class IslandRootViewSourceTest(unittest.TestCase):
             controller_source,
         )
         self.assertIn("let inside = interactiveIslandRect.contains(local)", controller_source)
+        self.assertIn("let shouldIgnoreMouseEvents = !inside", controller_source)
+        self.assertIn(
+            "guard window.ignoresMouseEvents != shouldIgnoreMouseEvents else { return }",
+            controller_source,
+        )
+        self.assertIn("window.ignoresMouseEvents = shouldIgnoreMouseEvents", controller_source)
+        self.assertNotIn("window.ignoresMouseEvents = !inside", controller_source)
         self.assertNotIn("model.state == .peek", controller_source)
         self.assertNotIn("model.setState(.compact)", controller_source)
 
@@ -674,11 +696,11 @@ class IslandRootViewSourceTest(unittest.TestCase):
             / "Animations.swift"
         ).read_text(encoding="utf-8")
         self.assertIn(
-            "static let islandOpen = Animation.spring(response: 0.42, dampingFraction: 0.82)",
+            "static let islandOpen = Animation.spring(response: 0.30, dampingFraction: 0.86)",
             animations_source,
         )
         self.assertIn(
-            "static let islandClose = Animation.spring(response: 0.30, dampingFraction: 0.88)",
+            "static let islandClose = Animation.spring(response: 0.24, dampingFraction: 0.90)",
             animations_source,
         )
         self.assertIn("@State private var isExpandedContentVisible = false", self.source)
@@ -705,7 +727,8 @@ class IslandRootViewSourceTest(unittest.TestCase):
             open_section.index("model.setState(.expanded)"),
         )
         self.assertIn("isExpandedContentVisible = reduceMotion", open_section)
-        self.assertIn("Task.sleep(nanoseconds: 40_000_000)", open_section)
+        self.assertIn("await Task.yield()", open_section)
+        self.assertNotIn("Task.sleep(nanoseconds: 40_000_000)", open_section)
         self.assertIn("withAnimation(expandedContentAnimation)", open_section)
         self.assertGreater(
             open_section.index("isExpandedContentVisible = true"),
@@ -718,7 +741,8 @@ class IslandRootViewSourceTest(unittest.TestCase):
             "private func openExpanded()", 1
         )[0]
         self.assertIn("withAnimation(expandedContentCloseAnimation)", close_section)
-        self.assertIn("Task.sleep(nanoseconds: 40_000_000)", close_section)
+        self.assertIn("await Task.yield()", close_section)
+        self.assertNotIn("Task.sleep(nanoseconds: 40_000_000)", close_section)
         self.assertIn("withAnimation(shapeCloseAnimation)", close_section)
         self.assertLess(
             close_section.index("isExpandedContentVisible = false"),
