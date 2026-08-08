@@ -10,7 +10,7 @@
 
 不付费 `v0.1.0-preview.1` 已作为 GitHub prerelease 公开，公开文档、供应链、fresh build、DMG／ZIP／SHA-256／SBOM 和公开 URL 回下载复测均已完成；Gatekeeper 开启机器上的“仍要打开”人工放行仍未完成。
 
-针对 `preview.1` 遗漏官方 Radar 地址、无 Provider 时被模型设置空状态阻断、开发 seed 可能进入官网展示以及未发布 appcast 仍显示为已配置的问题，`v0.1.0-preview.2` 源码候选已完成修复和 Build 101 验证。它尚未形成干净提交、DMG／ZIP 或 GitHub Release，不能把本地 candidate 写成已发布版本。
+针对 `preview.1` 遗漏官方 Radar 地址、无 Provider 时被模型设置空状态阻断、开发 seed 可能进入官网展示以及未发布 appcast 仍显示为已配置的问题，`v0.1.0-preview.2` 已在本地提交 `a20d14e` 上完成修复、Build 101 打包和产物复验。它尚未创建 tag／GitHub Release 或公开下载地址，不能把本地产物写成已发布版本。
 
 ## 已完成
 
@@ -27,6 +27,7 @@
 - Radar 成为无需本地 Provider 的首要使用路径：首次打开始终保留官方榜单、刷新和空状态，本地模型接入只作为次要 CTA；中英文 README 同步说明可直接查看官网 Radar、本地评测完全可选，并明确已发布 `preview.1` 尚不包含该修复。
 - Swift 官方参考快照增加与 Python 一致的三条件信任门禁：snapshot kind、provenance kind 均为 `first_party_snapshot` 且 `public_official_snapshot=true`；Radar、对比、证据、compact 和通知链路均 fail closed，开发 seed 不再可能被标成官网榜单。
 - `preview.2` 候选固定为 Build 101；打包门禁注入并回读官方快照 URL、禁用未发布的 Sparkle 通道、拒绝复用 `preview.1`，并要求包含未跟踪文件在内的工作树干净（忽略 `.gitignore` 内容）、HEAD 稳定及 App／ZIP 内 `ModelDialSourceCommit` 精确一致。
+- 在干净提交 `a20d14e` 上生成 `preview.2` DMG、ZIP、SPDX SBOM 和 `SHA256SUMS`；DMG 只读挂载、ZIP 解包、哈希、bundle SBOM、深层 ad-hoc 签名、arm64 兼容性和冻结后端官方快照刷新均通过本机复验，产物仍只保存在未纳入版本控制的本地 `build/unsigned-preview/`。
 
 ## 源码公开门槛
 
@@ -68,14 +69,14 @@
 
 ## 下一步
 
-1. 审查本次未提交 diff；经单独授权形成干净提交后，运行 `build-support/package-unsigned-preview.sh` 生成 `preview.2` DMG／ZIP／SBOM／SHA256SUMS。
-2. 对生成的 DMG 做本机只读挂载、拖入 `Applications` 和真实 UI 验收；再在另一台 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成“仍要打开”人工验收。
-3. 经单独授权创建 `v0.1.0-preview.2` tag／GitHub prerelease 并上传资产，随后模拟公开下载和完整复验。
-4. 继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名和干净机器门槛；Intel 仍按真实需求决定是否建立 universal2 里程碑。
+1. 将本地 DMG 拖入 `Applications` 并完成真实 UI 验收；再在另一台 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成“仍要打开”人工验收。
+2. 经单独授权创建 `v0.1.0-preview.2` tag／GitHub prerelease 并上传资产，随后从公开 URL 模拟下载并完成全套复验。
+3. 继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名和干净机器门槛；Intel 仍按真实需求决定是否建立 universal2 里程碑。
 
 ## 最近验证
 
-- 2026-08-08：`preview.2` 针对性修复完成；合并定向回归 `187/187`、全量 Python `1420/1420`（`619.586s`，`ResourceWarning` 按错误处理）、架构基线 `11/11`、shell／plist／本地化 JSON／diff 检查通过。使用官方参考快照地址并禁用更新通道的完整 `./build.sh` 生成 `0.1.0（Build 101）` arm64 candidate；60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名和 bundle 回读通过。冻结后端在隔离数据目录真实刷新官方端点成功，delivery 为 `http/refreshed`，得到 15 条 provenance 合格的第一方结果。未形成干净提交、未运行 release-only packaging、未创建 tag／Release 或上传资产。
+- 2026-08-08：`preview.2` 针对性修复已形成本地提交 `a20d14e`，并由 release-only packaging 在该干净提交上生成 Build 101 DMG `17,766,496` bytes、ZIP `15,451,034` bytes、SPDX SBOM `200,931` bytes 和 `SHA256SUMS`。三项产物 SHA-256、DMG 容器与只读挂载、ZIP 解包、bundle SBOM、官方 Radar URL、空 Sparkle 配置、精确源码提交和深层 ad-hoc 签名均通过；主程序为 thin arm64，60 个嵌套 Mach-O 均含 arm64。冻结后端在隔离目录从官方端点刷新得到 15 条 provenance 合格的第一方结果。未覆盖 `/Applications`，未创建 tag／Release 或上传资产。
+- 2026-08-08：`preview.2` 针对性修复完成；合并定向回归 `187/187`、全量 Python `1420/1420`（`619.586s`，`ResourceWarning` 按错误处理）、架构基线 `11/11`、shell／plist／本地化 JSON／diff 检查通过。使用官方参考快照地址并禁用更新通道的完整 `./build.sh` 生成 `0.1.0（Build 101）` arm64 candidate；60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名和 bundle 回读通过。冻结后端在隔离数据目录真实刷新官方端点成功，delivery 为 `http/refreshed`，得到 15 条 provenance 合格的第一方结果。
 - 2026-08-08：中英文 README 完成产品首页重排；App 图标、Hero／双图截图、公开 Release／DMG、官网、语言切换和全部本地 Markdown／HTML 链接检查通过，双语版本／平台／签名限制／构建运行时事实一致。`git diff --check` 与 README 构建合同回归 `17/17` 通过；未改 App、发布资产或远端 Release。
 - 2026-08-08：提交 `fcde71f` 已推送到公开 `main`，tag `v0.1.0-preview.1` 指向该提交并创建公开 GitHub prerelease。4 个资产大小与本地产物一致；随后不带 GitHub API 认证从公开 asset URL 重新下载，`SHA256SUMS` 三项均通过，DMG 只读挂载与 ZIP 解包通过，App 为 `0.1.0 (100)`／thin arm64／ad-hoc 且无证书 Authority，bundle SPDX 校验和冻结后端 OpenSSL 3.0.18／mpdecimal 4.0.0／zstd smoke 通过。本机 Gatekeeper disabled，未把此次复测写成“仍要打开”人工验收。
 - 2026-08-08：unsigned preview 定向测试 `26/26`、全量 Python `1415/1415`（`619.687s`，`ResourceWarning` 按错误处理）通过。`package-unsigned-preview.sh` 强制 ad-hoc fresh build，PyPI requirements receipt 触发 `--require-hashes` 重建；60 个 Mach-O／65 个架构记录通过 macOS 13 门禁，整包深层签名有效。生成 DMG `17,735,966` bytes、ZIP `15,421,467` bytes、SPDX SBOM `200,931` bytes 和 `SHA256SUMS`；三项 hash、DMG／ZIP 容器、SPDX 2.3 官方 JSON Schema、只读挂载后 bundle SBOM／签名／arm64／冻结后端和 11 个 Legal 文件均通过。未创建 tag、GitHub Release 或上传二进制；当前机器 Gatekeeper disabled，未把本机挂载 smoke 写成人工放行验收。

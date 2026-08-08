@@ -74,7 +74,7 @@
 - [x] 打包脚本要求包含未跟踪文件在内的工作树在构建前后保持干净（忽略 `.gitignore` 内容）、HEAD 不变化，并将精确 Git commit 写入 App；candidate 与 ZIP 都必须回读为同一 commit。
 - [x] 打包脚本固定注入第一方参考快照地址，candidate 与 ZIP 必须回读精确 URL；unsigned preview 的 `SUFeedURL` 与 `SUPublicEDKey` 必须为空。
 - [x] 完成本次修复的合并定向回归 `187/187`、全量 Python `1420/1420`、架构基线 `11/11` 和 Build 101 正式构建；candidate 回读为官方 Radar URL、空更新通道、arm64 和有效深层 ad-hoc 签名，冻结后端真实远端刷新得到 15 条可信第一方结果。
-- [ ] 经单独授权形成干净提交后生成 `preview.2` DMG／ZIP／SBOM／SHA256SUMS，并完成下载前本机复验。
+- [x] 已在干净提交 `a20d14e` 上生成 `preview.2` DMG／ZIP／SBOM／SHA256SUMS；三项哈希、DMG 只读挂载、ZIP 解包、bundle SBOM、官方 Radar URL、空更新通道、精确源码提交、深层 ad-hoc 签名和冻结后端真实刷新均通过下载前本机复验。
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
 - [ ] 经单独授权创建 `v0.1.0-preview.2` tag／GitHub prerelease 并上传资产；不得修改或覆盖 `preview.1`。
 
