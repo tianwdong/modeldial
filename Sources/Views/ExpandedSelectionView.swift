@@ -37,7 +37,6 @@ struct ExpandedSelectionView: View {
     let transitionNamespace: Namespace.ID
     let isTransitionSource: Bool
     let isTransitionContentVisible: Bool
-    let preservesDecisionEvidenceDuringTransition: Bool
     let onCollapse: () -> Void
     @ObservedObject private var settings = SelectionSettingsStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -203,7 +202,7 @@ struct ExpandedSelectionView: View {
     }
 
     private var transitionDecisionEvidenceOpacity: Double {
-        isTransitionContentVisible || preservesDecisionEvidenceDuringTransition || reduceMotion ? 1 : 0
+        isTransitionContentVisible || reduceMotion ? 1 : 0
     }
 
     private var scanConflictAlertIsPresented: Binding<Bool> {

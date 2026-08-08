@@ -1557,14 +1557,16 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         expanded_section = self._section(
             root_source,
-            "if model.state == .expanded && isExpandedContentMounted {",
+            "if isExpandedContentMounted {",
             "        }\n        .frame(width: compactSurfaceWidth, height: model.size.height)"
         )
-        self.assertIn("isTransitionContentVisible: isExpandedContentVisible", expanded_section)
         self.assertIn(
-            "preservesDecisionEvidenceDuringTransition: isSessionPanelTransitioningToExpanded",
+            "isTransitionSource: model.state == .expanded && !isExpandedShellOpening",
             expanded_section,
         )
+        self.assertIn("isTransitionContentVisible: isExpandedContentVisible", expanded_section)
+        self.assertIn(".opacity(isExpandedShellOpening ? 0 : 1)", expanded_section)
+        self.assertNotIn("preservesDecisionEvidenceDuringTransition", expanded_section)
         self.assertIn(".allowsHitTesting(isExpandedContentVisible)", expanded_section)
         self.assertNotIn(".opacity(isExpandedContentVisible ? 1 : 0)", expanded_section)
         self.assertNotIn(".offset(y:", expanded_section)
@@ -1588,7 +1590,7 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         )
 
         self.assertIn("let isTransitionContentVisible: Bool", self.source)
-        self.assertIn("let preservesDecisionEvidenceDuringTransition: Bool", self.source)
+        self.assertNotIn("preservesDecisionEvidenceDuringTransition", self.source)
         self.assertGreaterEqual(body_source.count(".opacity(transitionChromeOpacity)"), 2)
         self.assertIn(".opacity(transitionChromeOpacity)", hero_source)
         self.assertIn(".opacity(transitionDecisionEvidenceOpacity)", identity_source)

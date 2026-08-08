@@ -15,6 +15,7 @@ final class IslandModel: ObservableObject {
     @Published var notch: NotchInfo
     @Published private(set) var isCompactSessionPanelVisible = false
     @Published private(set) var compactSessionPanelHeight: CGFloat = 0
+    @Published private(set) var isPointerInsideInteractionArea = false
 
     let pillSlotWidth: CGFloat = 78
     let expandedWidth: CGFloat = 1080
@@ -67,6 +68,11 @@ final class IslandModel: ObservableObject {
     func setCompactSessionPanel(visible: Bool, height: CGFloat = 0) {
         isCompactSessionPanelVisible = visible
         compactSessionPanelHeight = visible ? max(0, height) : 0
+    }
+
+    func setPointerInsideInteractionArea(_ inside: Bool) {
+        guard isPointerInsideInteractionArea != inside else { return }
+        isPointerInsideInteractionArea = inside
     }
 
     func updateNotch(_ newNotch: NotchInfo) {

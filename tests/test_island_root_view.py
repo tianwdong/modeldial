@@ -105,19 +105,27 @@ class IslandRootViewSourceTest(unittest.TestCase):
         self.assertIn("var size: CGSize {", model_source)
         self.assertNotIn("recomputeSize()", model_source)
 
-    def test_hover_reveals_transient_session_panel_without_adding_business_state(self) -> None:
+    def test_hover_uses_window_interaction_area_as_the_single_transition_authority(self) -> None:
         animations_source = (
             Path(__file__).resolve().parent.parent
             / "Sources"
             / "Theme"
             / "Animations.swift"
         ).read_text(encoding="utf-8")
+        model_source = (
+            Path(__file__).resolve().parent.parent
+            / "Sources"
+            / "Model"
+            / "IslandModel.swift"
+        ).read_text(encoding="utf-8")
 
         body_section = self.source.split("var body: some View {", 1)[1].split(
             "private var compactIslandButton", 1
         )[0]
-        hover_section = body_section.split(".onHover { isHovering in", 1)[1].split(
-            ".frame(maxWidth: .infinity", 1
+        hover_section = body_section.split(
+            ".onChange(of: model.isPointerInsideInteractionArea) { isInside in", 1
+        )[1].split(
+            ".background(alignment: .top)", 1
         )[0]
         hover_function = self.source.split(
             "private func updateCompactHover(_ isHovering: Bool)", 1
@@ -127,19 +135,19 @@ class IslandRootViewSourceTest(unittest.TestCase):
         self.assertIn("@State private var isSessionPanelWidthExpanded = false", self.source)
         self.assertIn("@State private var isSessionPanelVisible = false", self.source)
         self.assertIn("@State private var isSessionPanelContentVisible = false", self.source)
-        self.assertIn("updateCompactHover(isHovering)", hover_section)
-        self.assertEqual(body_section.count("updateCompactHover(isHovering)"), 1)
+        self.assertIn("updateCompactHover(isInside)", hover_section)
+        self.assertEqual(body_section.count("updateCompactHover(isInside)"), 1)
+        self.assertNotIn(".onHover", body_section)
+        self.assertNotIn("hoverTrackingSize", self.source)
         self.assertIn(
-            ".frame(width: hoverTrackingSize.width, height: hoverTrackingSize.height, alignment: .top)",
-            body_section,
+            "@Published private(set) var isPointerInsideInteractionArea = false",
+            model_source,
         )
-        tracking_size = self.source.split("private var hoverTrackingSize: CGSize", 1)[1].split(
-            "private var activeEdgeSize", 1
-        )[0]
-        self.assertIn("model.compactSessionPanelWidth", tracking_size)
-        self.assertIn("CompactSessionPanelView.height", tracking_size)
-        self.assertNotIn("isSessionPanelVisible", tracking_size)
-        self.assertNotIn("isSessionPanelWidthExpanded", tracking_size)
+        self.assertIn("func setPointerInsideInteractionArea(_ inside: Bool)", model_source)
+        self.assertIn(
+            "guard isPointerInsideInteractionArea != inside else { return }",
+            model_source,
+        )
         self.assertIn("Task.sleep(nanoseconds: 40_000_000)", hover_function)
         self.assertIn("Task.sleep(nanoseconds: 140_000_000)", hover_function)
         self.assertNotIn("Task.sleep(nanoseconds: 120_000_000)", hover_function)
@@ -151,6 +159,23 @@ class IslandRootViewSourceTest(unittest.TestCase):
         self.assertNotIn("model.setState", hover_section)
         self.assertNotIn("static let hoverMorph", animations_source)
         self.assertNotIn("static let hoverReducedMotion", animations_source)
+
+    def test_hover_exit_shrinks_the_window_interaction_area_before_visual_cleanup(self) -> None:
+        hover_function = self.source.split(
+            "private func updateCompactHover(_ isHovering: Bool)", 1
+        )[1].split("private var shapeOpenAnimation: Animation", 1)[0]
+        exit_section = hover_function.split(
+            "guard isSessionPanelContentVisible", 1
+        )[1]
+
+        shrink_interaction_area = exit_section.index(
+            "model.setCompactSessionPanel(visible: false)"
+        )
+        close_animation = exit_section.index("withAnimation(hoverCloseAnimation)")
+        cleanup_delay = exit_section.index("Task.sleep(nanoseconds: 140_000_000)")
+        self.assertLess(shrink_interaction_area, close_animation)
+        self.assertLess(close_animation, cleanup_delay)
+        self.assertEqual(exit_section.count("model.setCompactSessionPanel(visible: false)"), 1)
 
     def test_hover_phases_overlap_without_a_stop_between_width_and_height(self) -> None:
         hover_function = self.source.split(
@@ -487,7 +512,7 @@ class IslandRootViewSourceTest(unittest.TestCase):
         self.assertIn("let surfaceShape: IslandShape", edge_section)
         self.assertIn(".mask(surfaceShape)", edge_section)
 
-    def test_click_morphs_the_hover_panel_directly_into_the_expanded_shell(self) -> None:
+    def test_click_starts_the_shell_before_mounting_expanded_content(self) -> None:
         button_action = self.source.split("private var compactIslandButton", 1)[1].split(
             "} label:", 1
         )[0]
@@ -499,47 +524,39 @@ class IslandRootViewSourceTest(unittest.TestCase):
         self.assertIn("guard model.state == .compact else { return }", open_section)
         self.assertLess(
             open_section.index("guard model.state == .compact else { return }"),
-            open_section.index("expandedTransitionTask?.cancel()"),
+            open_section.index("hoverTransitionTask?.cancel()"),
         )
         self.assertNotIn("dismissSessionPanel()", button_action)
         self.assertIn("hoverTransitionTask?.cancel()", open_section)
         self.assertIn("expandedTransitionTask?.cancel()", open_section)
-        self.assertIn("let expandsFromSessionPanel = isSessionPanelVisible", open_section)
-        self.assertIn(
-            "isSessionPanelTransitioningToExpanded = expandsFromSessionPanel",
-            open_section,
-        )
+        self.assertNotIn("isSessionPanelTransitioningToExpanded", open_section)
         self.assertNotIn("withAnimation(hoverContentAnimation)", open_section)
         self.assertIn("withAnimation(shapeOpenAnimation)", open_section)
         self.assertIn("isSessionPanelVisible = false", open_section)
         self.assertIn("isSessionPanelContentVisible = false", open_section)
-        self.assertIn("isExpandedContentMounted = true", open_section)
+        self.assertIn("isExpandedContentMounted = reduceMotion", open_section)
         self.assertIn("isExpandedContentVisible = true", open_section)
         self.assertLess(
+            open_section.index("model.setState(.expanded)"),
             open_section.index("isExpandedContentMounted = true"),
-            open_section.index("withAnimation(shapeOpenAnimation)"),
         )
-        self.assertLess(
-            open_section.index("withAnimation(shapeOpenAnimation)"),
-            open_section.index("isExpandedContentVisible = true"),
-        )
-        self.assertNotIn("Task.sleep(nanoseconds: 48_000_000)", open_section)
-        self.assertNotIn("Task.sleep(nanoseconds: 16_000_000)", open_section)
-        self.assertNotIn("Task.sleep(nanoseconds: 220_000_000)", open_section)
+        self.assertIn("isExpandedContentVisible = reduceMotion", open_section)
+        self.assertIn("isExpandedShellOpening = !reduceMotion", open_section)
+        self.assertIn("Task.sleep(nanoseconds: 220_000_000)", open_section)
+        self.assertIn("await Task.yield()", open_section)
         self.assertIn("model.setState(.expanded)", open_section)
+        self.assertGreater(
+            open_section.index("isExpandedContentVisible = true"),
+            open_section.index("isExpandedContentMounted = true"),
+        )
 
         body_section = self.source.split("var body: some View {", 1)[1].split(
             "private var compactIslandButton", 1
         )[0]
-        self.assertIn(
-            "if model.state == .compact || isSessionPanelTransitioningToExpanded",
-            body_section,
-        )
+        self.assertIn("if model.state == .compact {", body_section)
+        self.assertNotIn("isSessionPanelTransitioningToExpanded", body_section)
         self.assertIn("max(0, model.compactHeight - 2)", body_section)
-        self.assertIn(
-            "isSessionPanelVisible || isSessionPanelTransitioningToExpanded",
-            self.source,
-        )
+        self.assertNotIn("isSessionPanelTransitioningToExpanded", self.source)
 
     def test_window_hit_testing_expands_over_connected_session_panel(self) -> None:
         controller_source = (
@@ -562,12 +579,19 @@ class IslandRootViewSourceTest(unittest.TestCase):
             controller_source,
         )
         self.assertIn("let inside = interactiveIslandRect.contains(local)", controller_source)
+        self.assertIn("model.setPointerInsideInteractionArea(inside)", controller_source)
         self.assertIn("let shouldIgnoreMouseEvents = !inside", controller_source)
         self.assertIn(
             "guard window.ignoresMouseEvents != shouldIgnoreMouseEvents else { return }",
             controller_source,
         )
         self.assertIn("window.ignoresMouseEvents = shouldIgnoreMouseEvents", controller_source)
+        self.assertLess(
+            controller_source.index("model.setPointerInsideInteractionArea(inside)"),
+            controller_source.index(
+                "guard window.ignoresMouseEvents != shouldIgnoreMouseEvents else { return }"
+            ),
+        )
         self.assertNotIn("window.ignoresMouseEvents = !inside", controller_source)
         self.assertNotIn("model.state == .peek", controller_source)
         self.assertNotIn("model.setState(.compact)", controller_source)
@@ -630,7 +654,7 @@ class IslandRootViewSourceTest(unittest.TestCase):
 
     def test_expanded_content_is_not_double_padded_inside_shell(self) -> None:
         expanded_section = self.source.split(
-            "if model.state == .expanded && isExpandedContentMounted {", 1
+            "if isExpandedContentMounted {", 1
         )[1].split("}", 1)[0]
         self.assertIn("ExpandedSelectionView(", expanded_section)
         self.assertIn("onCollapse: collapseExpanded", self.source)
@@ -688,7 +712,7 @@ class IslandRootViewSourceTest(unittest.TestCase):
         self.assertIn(".accessibilityHidden(true)", overlay_section)
         self.assertNotIn(".accessibilityLabel(store.glancePresentation.accessibilityLabel)", overlay_section)
 
-    def test_expanded_content_is_ready_with_the_shell_and_leaves_before_it_closes(self) -> None:
+    def test_expanded_content_and_shell_use_explicit_open_and_close_choreography(self) -> None:
         animations_source = (
             Path(__file__).resolve().parent.parent
             / "Sources"
@@ -696,25 +720,26 @@ class IslandRootViewSourceTest(unittest.TestCase):
             / "Animations.swift"
         ).read_text(encoding="utf-8")
         self.assertIn(
-            "static let islandOpen = Animation.spring(response: 0.30, dampingFraction: 0.86)",
+            "static let islandOpen = Animation.spring(response: 0.42, dampingFraction: 0.86)",
             animations_source,
         )
         self.assertIn(
-            "static let islandClose = Animation.spring(response: 0.24, dampingFraction: 0.90)",
+            "static let islandClose = Animation.spring(response: 0.30, dampingFraction: 0.90)",
             animations_source,
         )
         self.assertIn("@State private var isExpandedContentVisible = false", self.source)
         self.assertIn("@State private var isExpandedContentMounted = false", self.source)
+        self.assertIn("@State private var isExpandedShellOpening = false", self.source)
         self.assertIn("@State private var expandedTransitionTask: Task<Void, Never>?", self.source)
 
         surface_section = self.source.split("private var islandSurface", 1)[1].split(
             "private var backgroundGlow", 1
         )[0]
+        self.assertIn("if isExpandedContentMounted {", surface_section)
         self.assertIn("isTransitionContentVisible: isExpandedContentVisible", surface_section)
-        self.assertIn(
-            "preservesDecisionEvidenceDuringTransition: isSessionPanelTransitioningToExpanded",
-            surface_section,
-        )
+        self.assertIn(".opacity(isExpandedShellOpening ? 0 : 1)", surface_section)
+        self.assertIn("if model.state != .expanded || isExpandedShellOpening", surface_section)
+        self.assertNotIn("preservesDecisionEvidenceDuringTransition", surface_section)
         self.assertNotIn(".opacity(isExpandedContentVisible ? 1 : 0)", surface_section)
         self.assertNotIn(".offset(y:", surface_section)
         self.assertIn(".allowsHitTesting(isExpandedContentVisible)", surface_section)
@@ -723,32 +748,38 @@ class IslandRootViewSourceTest(unittest.TestCase):
             "private func updateCompactHover", 1
         )[0]
         self.assertLess(
-            open_section.index("isExpandedContentMounted = true"),
             open_section.index("model.setState(.expanded)"),
+            open_section.index("isExpandedContentMounted = true"),
         )
+        self.assertIn("isExpandedContentMounted = reduceMotion", open_section)
         self.assertIn("isExpandedContentVisible = reduceMotion", open_section)
+        self.assertIn("Task.sleep(nanoseconds: 220_000_000)", open_section)
+        self.assertIn("withAnimation(expandedContentOpenAnimation)", open_section)
         self.assertIn("await Task.yield()", open_section)
-        self.assertNotIn("Task.sleep(nanoseconds: 40_000_000)", open_section)
-        self.assertIn("withAnimation(expandedContentAnimation)", open_section)
         self.assertGreater(
             open_section.index("isExpandedContentVisible = true"),
-            open_section.index("model.setState(.expanded)"),
+            open_section.index("isExpandedContentMounted = true"),
         )
-        self.assertNotIn("Task.sleep(nanoseconds: 48_000_000)", open_section)
-        self.assertNotIn("Task.sleep(nanoseconds: 16_000_000)", open_section)
 
         close_section = self.source.split("private func collapseExpanded()", 1)[1].split(
             "private func openExpanded()", 1
         )[0]
+        self.assertIn("expandedTransitionTask?.cancel()", close_section)
         self.assertIn("withAnimation(expandedContentCloseAnimation)", close_section)
-        self.assertIn("await Task.yield()", close_section)
-        self.assertNotIn("Task.sleep(nanoseconds: 40_000_000)", close_section)
         self.assertIn("withAnimation(shapeCloseAnimation)", close_section)
         self.assertLess(
             close_section.index("isExpandedContentVisible = false"),
             close_section.index("model.setState(.compact)"),
         )
-        self.assertNotIn("Task.sleep(nanoseconds: 20_000_000)", close_section)
+        self.assertIn("Task.sleep(nanoseconds: 360_000_000)", close_section)
+        self.assertNotIn("Task.yield", close_section)
+        retained_close_section = close_section.split(
+            "Task.sleep(nanoseconds: 360_000_000)", 1
+        )[1]
+        self.assertIn(
+            "isExpandedContentMounted = false",
+            retained_close_section,
+        )
 
     def test_expanded_content_uses_a_fixed_final_canvas_inside_the_top_anchored_shell(self) -> None:
         expanded_source = (

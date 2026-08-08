@@ -11,16 +11,16 @@ struct IslandRootView: View {
     @State private var isSessionPanelWidthExpanded = false
     @State private var isSessionPanelVisible = false
     @State private var isSessionPanelContentVisible = false
-    @State private var isSessionPanelTransitioningToExpanded = false
     @State private var isExpandedContentMounted = false
     @State private var isExpandedContentVisible = false
+    @State private var isExpandedShellOpening = false
     @State private var hoverTransitionTask: Task<Void, Never>?
     @State private var expandedTransitionTask: Task<Void, Never>?
     @Namespace private var islandTransitionNamespace
 
     var body: some View {
         ZStack(alignment: .top) {
-            if model.state == .compact || isSessionPanelTransitioningToExpanded {
+            if model.state == .compact {
                 CompactSessionPanelView(
                     store: store,
                     model: model,
@@ -44,14 +44,12 @@ struct IslandRootView: View {
                     .zIndex(2)
             }
         }
-        .frame(width: hoverTrackingSize.width, height: hoverTrackingSize.height, alignment: .top)
-        .contentShape(Rectangle())
-        .onHover { isHovering in
-            DebugLog.write("IslandRootView.onHover hovering=\(isHovering) state=\(model.state)")
-            updateCompactHover(isHovering)
-        }
         .frame(width: model.expandedSize.width, height: model.expandedSize.height, alignment: .top)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .onChange(of: model.isPointerInsideInteractionArea) { isInside in
+            DebugLog.write("IslandRootView.pointerInside interaction=\(isInside) state=\(model.state)")
+            updateCompactHover(isInside)
+        }
         .background(alignment: .top) {
             connectedPanelShadow
         }
@@ -66,9 +64,8 @@ struct IslandRootView: View {
             )
         }
         .onDisappear {
+            hoverTransitionTask?.cancel()
             expandedTransitionTask?.cancel()
-            expandedTransitionTask = nil
-            isSessionPanelTransitioningToExpanded = false
         }
         .environment(\.locale, appLanguage.locale)
     }
@@ -94,32 +91,34 @@ struct IslandRootView: View {
         ZStack(alignment: .top) {
             backgroundGlow
 
-            if model.state == .expanded && isExpandedContentMounted {
+            if isExpandedContentMounted {
                 ExpandedSelectionView(
                     store: store,
                     model: model,
                     transitionNamespace: islandTransitionNamespace,
-                    isTransitionSource: model.state == .expanded,
+                    isTransitionSource: model.state == .expanded && !isExpandedShellOpening,
                     isTransitionContentVisible: isExpandedContentVisible,
-                    preservesDecisionEvidenceDuringTransition: isSessionPanelTransitioningToExpanded,
                     onCollapse: collapseExpanded
                 )
+                .opacity(isExpandedShellOpening ? 0 : 1)
                 .allowsHitTesting(isExpandedContentVisible)
             }
         }
         .frame(width: compactSurfaceWidth, height: model.size.height)
         .overlay {
-            if model.state != .expanded {
+            if model.state != .expanded || isExpandedShellOpening {
                 CompactPillView(
                     presentation: store.glancePresentation,
                     notch: model.notch,
                     sideSlotWidth: model.compactSideSlotWidth,
                     transitionNamespace: islandTransitionNamespace,
                     primaryIdentityTransitionID: compactIdentityTransitionID,
-                    isTransitionSource: model.state == .compact && !isSessionPanelVisible,
+                    isTransitionSource: (model.state == .compact && !isSessionPanelVisible)
+                        || isExpandedShellOpening,
                     reduceMotion: reduceMotion
                 )
                 .padding(.horizontal, compactContentShellCompensation)
+                .transition(.opacity)
             }
         }
         .clipShape(compactSurfaceShape)
@@ -145,26 +144,28 @@ struct IslandRootView: View {
     }
 
     private func collapseExpanded() {
-        guard model.state == .expanded, isExpandedContentVisible else { return }
+        guard model.state == .expanded else { return }
         expandedTransitionTask?.cancel()
-        isSessionPanelTransitioningToExpanded = false
-        withAnimation(expandedContentCloseAnimation) {
+        expandedTransitionTask = nil
+        isExpandedShellOpening = false
+        if isExpandedContentMounted {
+            withAnimation(expandedContentCloseAnimation) {
+                isExpandedContentVisible = false
+            }
+        } else {
             isExpandedContentVisible = false
         }
-        if reduceMotion {
-            withAnimation(shapeCloseAnimation) {
-                model.setState(.compact)
-            }
+        withAnimation(shapeCloseAnimation) {
+            model.setState(.compact)
+        }
+        guard isExpandedContentMounted else { return }
+        guard !reduceMotion else {
             isExpandedContentMounted = false
-            expandedTransitionTask = nil
             return
         }
         expandedTransitionTask = Task { @MainActor in
-            await Task.yield()
-            guard !Task.isCancelled, model.state == .expanded else { return }
-            withAnimation(shapeCloseAnimation) {
-                model.setState(.compact)
-            }
+            try? await Task.sleep(nanoseconds: 360_000_000)
+            guard !Task.isCancelled, model.state == .compact else { return }
             isExpandedContentMounted = false
             expandedTransitionTask = nil
         }
@@ -172,14 +173,13 @@ struct IslandRootView: View {
 
     private func openExpanded() {
         guard model.state == .compact else { return }
-        let expandsFromSessionPanel = isSessionPanelVisible
         hoverTransitionTask?.cancel()
         hoverTransitionTask = nil
         expandedTransitionTask?.cancel()
         expandedTransitionTask = nil
-        isSessionPanelTransitioningToExpanded = expandsFromSessionPanel
-        isExpandedContentMounted = true
+        isExpandedContentMounted = reduceMotion
         isExpandedContentVisible = reduceMotion
+        isExpandedShellOpening = !reduceMotion
         withAnimation(shapeOpenAnimation) {
             isSessionPanelContentVisible = false
             isSessionPanelWidthExpanded = false
@@ -187,20 +187,16 @@ struct IslandRootView: View {
             isHovered = false
             model.setState(.expanded)
         }
-        guard !reduceMotion else {
-            isSessionPanelTransitioningToExpanded = false
-            return
-        }
+        guard !reduceMotion else { return }
         expandedTransitionTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            guard !Task.isCancelled, model.state == .expanded else { return }
+            isExpandedContentMounted = true
             await Task.yield()
             guard !Task.isCancelled, model.state == .expanded else { return }
-            withAnimation(expandedContentAnimation) {
+            withAnimation(expandedContentOpenAnimation) {
+                isExpandedShellOpening = false
                 isExpandedContentVisible = true
-            }
-            if expandsFromSessionPanel {
-                try? await Task.sleep(nanoseconds: 120_000_000)
-                guard !Task.isCancelled, model.state == .expanded else { return }
-                isSessionPanelTransitioningToExpanded = false
             }
             expandedTransitionTask = nil
         }
@@ -244,6 +240,7 @@ struct IslandRootView: View {
         else { return }
         hoverTransitionTask = Task { @MainActor in
             guard !Task.isCancelled, !isHovered, model.state == .compact else { return }
+            model.setCompactSessionPanel(visible: false)
             withAnimation(hoverCloseAnimation) {
                 isSessionPanelContentVisible = false
                 isSessionPanelVisible = false
@@ -251,7 +248,6 @@ struct IslandRootView: View {
             }
             try? await Task.sleep(nanoseconds: 140_000_000)
             guard !Task.isCancelled, !isSessionPanelWidthExpanded else { return }
-            model.setCompactSessionPanel(visible: false)
             hoverTransitionTask = nil
         }
     }
@@ -264,12 +260,12 @@ struct IslandRootView: View {
         reduceMotion ? .easeOut(duration: 0.10) : .islandClose
     }
 
-    private var expandedContentAnimation: Animation {
-        .easeOut(duration: reduceMotion ? 0.08 : 0.14)
+    private var expandedContentOpenAnimation: Animation {
+        .easeOut(duration: reduceMotion ? 0.08 : 0.16)
     }
 
     private var expandedContentCloseAnimation: Animation {
-        .easeOut(duration: reduceMotion ? 0.06 : 0.08)
+        .easeOut(duration: reduceMotion ? 0.06 : 0.10)
     }
 
     private var hoverContentAnimation: Animation {
@@ -359,21 +355,9 @@ struct IslandRootView: View {
         let height = CompactSessionPanelView.height(
             forSessionCount: store.activeModelSessions.count
         )
-        return isSessionPanelVisible || isSessionPanelTransitioningToExpanded || reduceMotion
+        return isSessionPanelVisible || reduceMotion
             ? height
             : 0
-    }
-
-    private var hoverTrackingSize: CGSize {
-        guard model.state == .compact else { return model.expandedSize }
-        return CGSize(
-            width: model.compactSessionPanelWidth,
-            height: model.compactHeight
-                + CompactSessionPanelView.height(
-                    forSessionCount: store.activeModelSessions.count
-                )
-                - 2
-        )
     }
 
     private var activeEdgeSize: CGSize {
