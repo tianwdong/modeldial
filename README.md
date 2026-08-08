@@ -4,13 +4,35 @@
 
 ModelDial 是一个本地优先的 macOS 菜单栏 App。它用真实的 `model + effort + route` 组合完成可重复的 coding 评测，保留质量、耗时、Token 和参考费用证据，帮助你为不同任务选择合适的模型配置。
 
-> 当前仓库是可审计的公开源码候选；目前没有正式下载包，默认构建使用 ad-hoc 签名。
+> 当前仓库是可审计的公开源码候选；目前没有正式签名下载包，默认构建使用 ad-hoc 签名。没有付费 Apple Developer Program 也可以先使用 `v0.1.0-preview.1` 预览版，但它是 **unsigned / unnotarized**，不等同于 Apple 公证或 Gatekeeper 放行。
 
-## 官网与正式安装
+## 下载渠道与安装
 
 - 产品官网：<https://modeldial.com>
-- 首个正式 DMG 尚未发布。发布后将从 GitHub Releases 下载；打开 DMG 后把 ModelDial 拖入 Applications，再从 Applications 首次启动。
-- 首个正式版本支持 macOS 13+ Apple Silicon；Intel Mac 暂不支持。
+- 当前尚未发布正式签名 DMG。正式版本完成 Developer ID 签名、Apple notarization 和干净机器验收后，才会从 GitHub Releases 提供。
+- 阶段性预览版使用 GitHub Release `v0.1.0-preview.1`，面向 macOS 13+ Apple Silicon；Intel Mac 暂不支持。预览版资产必须保留 `preview.1` 版本标签，不能使用正式版文件名，也不能宣称已签名、公证或普通用户直接双击即可打开。
+
+### 不付费预览版（unsigned / unnotarized）
+
+若 GitHub Releases 已发布 `v0.1.0-preview.1`，下载以下资产并先核对同一 Release 中的 `SHA256SUMS`：
+
+- `modeldial-0.1.0-preview.1-macos-arm64.dmg`
+- `modeldial-0.1.0-preview.1-build-100-macos-arm64.zip`
+- `SHA256SUMS`
+- `modeldial-0.1.0-preview.1-sbom.spdx.json`
+
+安装步骤：
+
+1. 打开 DMG，把 `modeldial.app` 拖到 `Applications`，推出 DMG 后从 `Applications` 启动。
+2. 首次打开若 macOS 阻止未识别的开发者，先关闭提示，再打开“系统设置 → 隐私与安全性”。
+3. 在安全性区域找到关于 ModelDial 被阻止的提示，点击“仍要打开”，按系统提示确认；随后再从 `Applications` 启动。
+4. 如果没有看到“仍要打开”，重新尝试打开一次 App，再回到“隐私与安全性”查看。不同 macOS 小版本的提示文字可能略有差异。
+
+这条路径只是在 macOS 的系统设置中为该 App 做一次用户确认。**不需要关闭 Gatekeeper**，也不建议执行 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或其他绕过系统安全检查的命令。预览版没有 Developer ID 签名和 Apple notarization，不能保证在所有机器上首次双击直接打开；遇到无法确认来源的情况，应停止安装并核对 Release 资产与 SHA-256。
+
+### 正式签名版（后续）
+
+正式版会使用独立的版本标签和资产命名，并在发布前完成 Developer ID Application、secure timestamp、Apple notarization、stapling 和 Gatekeeper 验收。正式版可用之前，不要把 `v0.1.0-preview.1` 当作正式 Release，也不要把本地 ad-hoc 构建当作已公证产物。
 
 ## 产品预览
 
@@ -42,7 +64,7 @@ python3 scripts/install_session_observer.py --uninstall
 
 ## 构建与运行
 
-源码构建面向 macOS 13+ Apple Silicon，需要 Xcode 16.4，无需另行安装独立 Python runtime。首次运行 `build.sh` 会按 [`python-runtime.lock.json`](build-support/python-runtime.lock.json) 下载 python.org 官方 universal2 Python 3.14.3 installer，在校验固定 SHA-256 和 Python Software Foundation installer 签名后，仅解包到被忽略的 `build/` 目录；不会执行系统安装，也不会回退到 Homebrew／PATH 中的 Python。随后脚本会在 `build/pyinstaller-env` 中按 [`pyinstaller-requirements.txt`](build-support/pyinstaller-requirements.txt) 精确锁定 PyInstaller 6.21.0、certifi CA bundle 及其构建依赖，并在签名前真实加载 TLS／SHA-256／zstd、确认 CA store 非空，再递归拒绝最低系统版本高于 App 声明或引用非系统绝对动态库路径的 Mach-O。该门禁不能替代 macOS 13／14 干净机器验收；PyPI artifact hashes、正式 SBOM 和完整许可证清单仍是独立发布门槛。首次构建也会由 SwiftPM 按 `Package.resolved` 下载固定版本的 Sparkle 2.9.4。
+源码构建面向 macOS 13+ Apple Silicon，需要 Xcode 16.4，无需另行安装独立 Python runtime。首次运行 `build.sh` 会按 [`python-runtime.lock.json`](build-support/python-runtime.lock.json) 下载 python.org 官方 universal2 Python 3.14.3 installer，在校验固定 SHA-256 和 Python Software Foundation installer 签名后，仅解包到被忽略的 `build/` 目录；不会执行系统安装，也不会回退到 Homebrew／PATH 中的 Python。随后脚本会在 `build/pyinstaller-env` 中按 [`pyinstaller-requirements.txt`](build-support/pyinstaller-requirements.txt) 锁定 PyInstaller 6.21.0、certifi CA bundle 及其构建依赖的版本和 wheel SHA-256，使用 `pip --require-hashes` 安装，并用 requirements 内容 receipt 阻止旧环境绕过新锁。签名前会真实加载 TLS／SHA-256／zstd、确认 CA store 非空，再递归拒绝最低系统版本高于 App 声明或引用非系统绝对动态库路径的 Mach-O。[`package-unsigned-preview.sh`](build-support/package-unsigned-preview.sh) 会强制 fresh build，并生成、验证 DMG、ZIP、SPDX SBOM 和 `SHA256SUMS`；这些门禁仍不能替代 macOS 13／14 干净机器验收。首次构建也会由 SwiftPM 按 `Package.resolved` 下载固定版本的 Sparkle 2.9.4。
 
 ```bash
 ./build.sh
@@ -51,7 +73,7 @@ open build/modeldial-candidate.app
 
 `build.sh` 会构建 Swift App、冻结 Python 后端、运行 snapshot smoke，并校验整包签名。它始终保留 `build/modeldial.app`，默认把新构建写入 `build/modeldial-candidate.app`；若该 candidate 正在运行，则改用带时间戳的 candidate 路径。请以脚本最后输出的路径为准。App 是菜单栏程序，启动后从菜单栏图标打开。
 
-公开源码构建默认使用 ad-hoc 签名；若本机有可用的代码签名身份，可显式传入：
+公开源码构建默认使用 ad-hoc 签名；这只用于本地开发和 unsigned preview，不代表 Developer ID 或 Apple notarization，也不会让 Gatekeeper 自动信任 App。若本机有可用的代码签名身份，可显式传入：
 
 ```bash
 MODELDIAL_CODESIGN_IDENTITY="Developer ID Application: ..." ./build.sh
@@ -93,6 +115,7 @@ git diff --check
 - [Benchmark 与数据发布策略](docs/benchmark-and-data-policy.md)：题包、答案 fixture、价格快照和 provider 资产的公开口径。
 - [公开内容来源审计](docs/open-source-content-audit.md)：上游来源、attribution 和题包检索留痕。
 - [发布清单](docs/release-checklist.md)：源码候选和二进制发行的独立门槛。
+- [v0.1.0-preview.1 预览发布正文](docs/releases/v0.1.0-preview.1.md)：unsigned／unnotarized GitHub Release 的资产、安装和限制说明。
 - [贡献指南](CONTRIBUTING.md)：代码边界和最小验证要求。
 
 ## 数据与网络边界

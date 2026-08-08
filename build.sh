@@ -74,6 +74,7 @@ PYTHON_INSTALLER_TEMP="$PYTHON_INSTALLER_PATH.partial.$$"
 PYTHON_RUNTIME_EXTRACT_DIR="$BUILD_DIR/.python-runtime-extract-$$"
 PYINSTALLER_ENV="$BUILD_DIR/pyinstaller-env"
 PYINSTALLER_PYTHON="$PYINSTALLER_ENV/bin/python3"
+PYINSTALLER_REQUIREMENTS_RECEIPT="$PYINSTALLER_ENV/.modeldial-requirements.sha256"
 PYINSTALLER_DIST_DIR="$STAGING_DIR/pyinstaller-dist"
 PYINSTALLER_WORK_DIR="$STAGING_DIR/pyinstaller-work"
 PYINSTALLER_SPEC_DIR="$STAGING_DIR/pyinstaller-spec"
@@ -171,7 +172,9 @@ pyinstaller_env_matches_lock() {
   MODELDIAL_REQUIRED_PYTHON="$PYTHON_VERSION" \
   MODELDIAL_REQUIRED_BASE_PREFIX="$(pwd)/${PYTHON_FRAMEWORK_ROOT#./}" \
   MODELDIAL_REQUIRED_BASE_EXECUTABLE="$(pwd)/${BUILD_PYTHON#./}" \
-    python_runtime_env "$PYINSTALLER_PYTHON" - "$PYINSTALLER_REQUIREMENTS" <<'PY'
+    python_runtime_env "$PYINSTALLER_PYTHON" - \
+    "$PYINSTALLER_REQUIREMENTS" "$PYINSTALLER_REQUIREMENTS_RECEIPT" <<'PY'
+import hashlib
 import os
 import platform
 import re
@@ -184,6 +187,11 @@ def normalize(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
+requirements_path = Path(sys.argv[1])
+receipt_path = Path(sys.argv[2])
+expected_receipt = hashlib.sha256(requirements_path.read_bytes()).hexdigest()
+if not receipt_path.is_file() or receipt_path.read_text(encoding="utf-8").strip() != expected_receipt:
+    raise SystemExit(1)
 if platform.python_version() != os.environ["MODELDIAL_REQUIRED_PYTHON"]:
     raise SystemExit(1)
 expected_base_prefix = Path(os.environ["MODELDIAL_REQUIRED_BASE_PREFIX"]).resolve()
@@ -208,6 +216,9 @@ for raw_line in Path(sys.argv[1]).read_text(encoding="utf-8").splitlines():
     line = raw_line.split("#", 1)[0].strip()
     if not line:
         continue
+    if line.startswith("--hash="):
+        continue
+    line = line.rstrip("\\").strip()
     name, separator, version = line.partition("==")
     if not separator or not name or not version:
         raise SystemExit(1)
@@ -267,7 +278,12 @@ if [[ ! -x "$PYINSTALLER_PYTHON" ]] || ! pyinstaller_env_matches_lock; then
   python_runtime_env "$PYINSTALLER_PYTHON" -m pip install \
     --disable-pip-version-check \
     --no-input \
+    --require-hashes \
     --requirement "$PYINSTALLER_REQUIREMENTS"
+  REQUIREMENTS_DIGEST="$(shasum -a 256 "$PYINSTALLER_REQUIREMENTS" | awk '{print $1}')"
+  REQUIREMENTS_RECEIPT_TEMP="$PYINSTALLER_REQUIREMENTS_RECEIPT.partial.$$"
+  printf '%s\n' "$REQUIREMENTS_DIGEST" > "$REQUIREMENTS_RECEIPT_TEMP"
+  mv -f "$REQUIREMENTS_RECEIPT_TEMP" "$PYINSTALLER_REQUIREMENTS_RECEIPT"
   if ! pyinstaller_env_matches_lock; then
     echo "The rebuilt PyInstaller environment does not match $PYINSTALLER_REQUIREMENTS." >&2
     exit 1

@@ -1,13 +1,22 @@
 # Exact build-time Python dependency lock for build.sh.
 #
-# The lock is intentionally version-only (without artifact hashes).  Release
-# artifact provenance, SBOM, and license verification remain separate gates.
+# The requirements are locked to the exact wheels used by the arm64 Python
+# 3.14 build.  `build.sh` installs with --require-hashes, so a changed PyPI
+# artifact fails closed instead of silently replacing the build input.
 # Keep the interpreter pinned by build.sh to Python 3.14.3.
-altgraph==0.17.5
-certifi==2026.7.22
-macholib==1.16.4
-packaging==26.2
-pip==26.0
-pyinstaller==6.21.0
-pyinstaller-hooks-contrib==2026.6
-setuptools==83.0.0
+altgraph==0.17.5 \
+    --hash=sha256:f3a22400bce1b0c701683820ac4f3b159cd301acab067c51c653e06961600597
+certifi==2026.7.22 \
+    --hash=sha256:62f22742b58a1a33014a2b6b706588a8d7e2a88ae7bd1a6ebe8c992928483775
+macholib==1.16.4 \
+    --hash=sha256:da1a3fa8266e30f0ce7e97c6a54eefaae8edd1e5f86f3eb8b95457cae90265ea
+packaging==26.2 \
+    --hash=sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e
+pip==26.0 \
+    --hash=sha256:98436feffb9e31bc9339cf369fd55d3331b1580b6a6f1173bacacddcf9c34754
+pyinstaller==6.21.0 \
+    --hash=sha256:327d132389f37912609e01be62810cf96b5aa95b613903e4b8692e0d12fb0eda
+pyinstaller-hooks-contrib==2026.6 \
+    --hash=sha256:fd13b8ac126b35361175edacd41a0d97080b75dd5f4b594ecefefff969509dd3
+setuptools==83.0.0 \
+    --hash=sha256:29b23c360f22f414dc7336bb39178cc7bcbf6021ed2733cde173f09dba19abb3

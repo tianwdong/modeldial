@@ -24,6 +24,28 @@ The certificate bundle is packaged with the frozen Python backend so HTTPS
 verification does not depend on a separately installed Python framework. Its
 upstream license notice is bundled alongside this file as certifi-LICENSE.txt.
 
+Frozen Python runtime and build dependencies
+---------------------------------------------
+
+The candidate backend is built with Python 3.14.3 and PyInstaller 6.21.0.
+The runtime also contains the private OpenSSL 3.0.18, XZ/liblzma 5.2.3,
+Zstandard 1.5.7, and libmpdec 4.0.0 components identified by the Python
+installer.  Their complete license texts are bundled as:
+
+  PYTHON-LICENSE.txt
+  PYINSTALLER-LICENSE.txt
+  OPENSSL-LICENSE.txt
+  XZ-LICENSE.txt
+  ZSTD-LICENSE.txt
+  MPDECIMAL-LICENSE.txt
+
+The exact PyPI build inputs, wheel SHA-256 values, sources, and license
+mapping are recorded in THIRD_PARTY_DEPENDENCIES.txt.  The complete license
+texts for those build-time packages are in
+PYPI-BUILD-DEPENDENCIES-LICENSES.txt.  `build-support/generate-sbom.py`
+generates an SPDX 2.3 document from the actual candidate bundle and fails
+closed when any listed evidence is missing.
+
 LiteLLM pricing data
 --------------------
 

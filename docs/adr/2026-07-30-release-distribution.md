@@ -2,6 +2,7 @@
 
 - 日期：2026-07-30
 - 状态：已接受，实施中
+- 最近修订：2026-08-08（增加不付费 unsigned preview 先行渠道）
 
 ## 背景
 
@@ -10,6 +11,8 @@ ModelDial 的公开仓库只包含 macOS App、本地 scanner、题包、脚本�
 决策形成时，开源候选可以独立测试和构建，但构建仍由 `swiftc` 和 PyInstaller 脚本直接装配，版本与 build number 没有分离，产物使用 ad-hoc 签名，也没有自动更新、DMG、SBOM、正式公证或公开分发渠道。首个公开二进制必须先建立完整升级路径，否则早期用户只能手工重装。
 
 2026-07-30 已完成第一段实现：Xcode Project／SwiftPM 接管 Swift App 和 Sparkle 装配，版本固定为 `0.1.0（Build 100）`，`build.sh` 与 `build-dev.sh` 已迁移到 Xcode 构建，Sparkle 2.9.4 的完整许可证已进入 bundle，更新控制器、设置页、公开 feed URL 与公钥也已接通。临时私钥导出／离线签名与隔离的 Build 99 → 100 R2 更新演练已经通过；长期安全备份、正式 archive／export、Developer ID、公证和发行产物仍待实现。
+
+2026-08-08 决定在正式签名路径完成前保留一个不付费的人工预览渠道。预览版用于收集愿意手动放行的 macOS 用户反馈，不改变正式版本的签名、公证、自动更新和干净机器验收门槛；GitHub Release 的实际创建和上传仍需单独授权。
 
 ## 决策
 
@@ -40,7 +43,7 @@ ModelDial 的公开仓库只包含 macOS App、本地 scanner、题包、脚本�
 
 ### 3. 版本合同与产物
 
-首个正式候选目标：
+首个正式候选目标（付费签名路径）：
 
 - Git tag：`v0.1.0`
 - `CFBundleShortVersionString`：`0.1.0`
@@ -81,6 +84,16 @@ https://updates.modeldial.com/macos/releases/0.1.0/modeldial-0.1.0-macos-arm64.d
 - 已发布的版本化对象永不覆盖；更正内容必须提高 build number 并使用新路径。
 - GitHub Releases 保存相同版本的源码、DMG、ZIP、校验和、SBOM 和发布说明，作为公开镜像与人工兜底，不作为第二自动更新权威。
 - Homebrew Tap 的 Cask 下载同一正式 DMG，并固定版本与 SHA-256；不提供 `curl | sh` 安装器，也不指导用户删除 quarantine 绕过 Gatekeeper。
+
+### 5A. 不付费 `unsigned preview` 先行渠道
+
+在没有 Apple Developer Program 会员资格时，允许先发布带有明确预览标签的人工安装包。该渠道与正式 `v0.1.0` 分离：
+
+- GitHub Release 标签固定为 `v0.1.0-preview.1`；App 的 marketing version／build 仍为 `0.1.0`／`100`，预览标签不能省略或改写为正式版本。
+- 资产固定为 `modeldial-0.1.0-preview.1-macos-arm64.dmg`、`modeldial-0.1.0-preview.1-build-100-macos-arm64.zip`、`SHA256SUMS` 和 `modeldial-0.1.0-preview.1-sbom.spdx.json`。DMG 内附 `UNSIGNED_PREVIEW.txt`，再次说明 unsigned／unnotarized 状态和人工放行步骤。
+- 发布正文必须醒目标出 unsigned／unnotarized、无 Developer ID、无 Apple notarization、无 Intel 支持，并附 SHA-256 校验方法。不能声称普通用户下载后直接双击即可打开，也不能把本预览版列入正式版本的 appcast 或 Homebrew Cask。
+- 预览安装仅验证候选包构建、签名类型记录、DMG 挂载／拖入 `Applications`、SHA-256 和“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”人工放行路径；这些证据不等于 Developer ID、secure timestamp、Apple notarization、stapling、Gatekeeper 干净机器验收或正式发行验收。
+- 文档不得要求关闭 Gatekeeper，也不得建议 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或其他绕过系统安全检查的命令。遇到来源无法确认时，用户应停止安装并重新核对 Release 资产。
 
 ### 6. 发布顺序与回滚
 

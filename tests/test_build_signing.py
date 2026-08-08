@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+import os
 from pathlib import Path
 import plistlib
 import subprocess
@@ -11,6 +13,7 @@ import unittest
 class BuildSigningTest(unittest.TestCase):
     def setUp(self) -> None:
         root = Path(__file__).resolve().parent.parent
+        self.root = root
         self.source = (root / "build.sh").read_text(encoding="utf-8")
         self.pyinstaller_requirements = (
             root / "build-support" / "pyinstaller-requirements.txt"
@@ -207,6 +210,111 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn('BACKEND_RUNTIME_DIR="$BACKEND_DIR/Runtime"', self.source)
         self.assertIn('modeldial-backend', self.source)
 
+    def test_build_dependencies_are_artifact_hashed(self) -> None:
+        self.assertIn("--require-hashes", self.source)
+        expected_packages = {
+            "altgraph",
+            "certifi",
+            "macholib",
+            "packaging",
+            "pip",
+            "pyinstaller",
+            "pyinstaller-hooks-contrib",
+            "setuptools",
+        }
+        requirements = self.pyinstaller_requirements.splitlines()
+        package_names = set()
+        for line in requirements:
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if stripped.startswith("--hash=") or stripped == "\\":
+                continue
+            package, separator, version = stripped.partition("==")
+            self.assertEqual("==", separator, stripped)
+            self.assertTrue(version, stripped)
+            package_names.add(package.lower())
+        self.assertEqual(expected_packages, package_names)
+        for package in expected_packages:
+            package_line = next(
+                line
+                for line in requirements
+                if line.lower().startswith(f"{package}==")
+            )
+            index = requirements.index(package_line)
+            self.assertRegex(
+                "\n".join(requirements[index : index + 2]),
+                r"--hash=sha256:[0-9a-f]{64}",
+            )
+
+    def test_build_requirements_receipt_is_checked_before_reuse(self) -> None:
+        runtime_python = self.root / "build" / "pyinstaller-env" / "bin" / "python3"
+        runtime_root = self.root / "build" / "python-runtime-3.14.3"
+        if not runtime_python.is_file() or not runtime_root.is_dir():
+            self.skipTest("requires the project-local frozen Python build environment")
+        marker = 'python_runtime_env "$PYINSTALLER_PYTHON"'
+        embedded_source = self.source[self.source.index(marker) :]
+        embedded_source = embedded_source.split("<<'PY'\n", 1)[1].split(
+            "\nPY\n}", 1
+        )[0]
+        requirements = self.root / "build-support" / "pyinstaller-requirements.txt"
+        with tempfile.TemporaryDirectory() as temporary:
+            receipt = Path(temporary) / "requirements.sha256"
+            receipt.write_text(
+                hashlib.sha256(requirements.read_bytes()).hexdigest() + "\n",
+                encoding="utf-8",
+            )
+            environment = os.environ.copy()
+            environment.update(
+                {
+                    "MODELDIAL_REQUIRED_PYTHON": "3.14.3",
+                    "MODELDIAL_REQUIRED_BASE_PREFIX": str(
+                        runtime_root / "Python.framework" / "Versions" / "3.14"
+                    ),
+                    "MODELDIAL_REQUIRED_BASE_EXECUTABLE": str(
+                        runtime_root
+                        / "Python.framework"
+                        / "Versions"
+                        / "3.14"
+                        / "bin"
+                        / "python3.14"
+                    ),
+                    "DYLD_FRAMEWORK_PATH": str(runtime_root),
+                    "DYLD_LIBRARY_PATH": str(
+                        runtime_root / "Python.framework" / "Versions" / "3.14" / "lib"
+                    ),
+                }
+            )
+            valid = subprocess.run(
+                [str(runtime_python), "-", str(requirements), str(receipt)],
+                input=embedded_source,
+                text=True,
+                capture_output=True,
+                env=environment,
+                check=False,
+            )
+            self.assertEqual(valid.returncode, 0, valid.stderr)
+            receipt.write_text("0" * 64 + "\n", encoding="utf-8")
+            invalid = subprocess.run(
+                [str(runtime_python), "-", str(requirements), str(receipt)],
+                input=embedded_source,
+                text=True,
+                capture_output=True,
+                env=environment,
+                check=False,
+            )
+            self.assertNotEqual(invalid.returncode, 0)
+            receipt.unlink()
+            missing = subprocess.run(
+                [str(runtime_python), "-", str(requirements), str(receipt)],
+                input=embedded_source,
+                text=True,
+                capture_output=True,
+                env=environment,
+                check=False,
+            )
+            self.assertNotEqual(missing.returncode, 0)
+
     def test_python_runtime_source_is_immutable_and_project_local(self) -> None:
         self.assertEqual(
             self.python_runtime_lock,
@@ -338,6 +446,9 @@ class BuildSigningTest(unittest.TestCase):
             line = raw_line.split("#", 1)[0].strip()
             if not line:
                 continue
+            if line.startswith("--hash=") or line == "\\":
+                continue
+            line = line.rstrip("\\").strip()
             name, separator, version = line.partition("==")
             self.assertEqual(separator, "==")
             self.assertNotIn(name, actual)
