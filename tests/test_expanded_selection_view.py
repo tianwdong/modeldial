@@ -9,11 +9,12 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("store.scanConflictPresentation == .expanded", self.source)
         self.assertNotIn("store.scanConflictPresentation == .settings", self.source)
 
-    def test_expanded_view_consumes_destination_once_on_entry(self) -> None:
-        self.assertIn("@State private var entryDestination: GlanceDestination = .overview", self.source)
-        self.assertIn("let destination = store.consumeExpandedDestination()", self.source)
-        self.assertIn("entryDestination = destination", self.source)
+    def test_expanded_view_applies_the_destination_captured_by_the_root(self) -> None:
+        self.assertIn("let entryDestination: GlanceDestination", self.source)
+        self.assertIn("applyEntryDestination(entryDestination)", self.source)
+        self.assertIn(".onChange(of: entryDestination) { destination in", self.source)
         self.assertIn("applyEntryDestination(destination)", self.source)
+        self.assertNotIn("store.consumeExpandedDestination()", self.source)
 
     def test_entry_reason_is_projected_from_authoritative_destination(self) -> None:
         projection_source = self._section(
@@ -275,6 +276,7 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("} else {", ranking_source)
         self.assertNotIn("radarRankingContext", ranking_source)
         self.assertIn("radarRankingHeader", ranking_source)
+        self.assertIn("LazyVStack(alignment: .leading, spacing: 0)", ranking_source)
         self.assertIn("let presentation = radarLeaderboardPresentation(for: entry)", ranking_source)
         self.assertIn("let decisionTags = presentation.tags.compactMap(leaderboardExportTag)", ranking_source)
         self.assertIn("rank: presentation.rank", ranking_source)
@@ -682,7 +684,7 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         header_source = self._section(
             self.source,
             "private var headerToolControls: some View {",
-            "private func collapseHeaderLead",
+            "private var overviewPanelHeader",
         )
         open_settings_source = self._section(
             self.source,
@@ -769,24 +771,32 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("RadarEntryPresenter.entries(", detail_source)
         self.assertIn("return leaderboard.map", self.radar_entry_presenter_source)
 
-    def test_panel_headers_fall_back_to_compact_content_without_overlapping(self) -> None:
+    def test_fixed_width_panel_headers_build_one_layout_path(self) -> None:
         overview_header_source = self._section(
             self.source,
             "private var overviewPanelHeader: some View {",
-            "private var overviewFullPanelHeader: some View {",
+            "private var detailPanelHeader: some View {",
         )
         detail_header_source = self._section(
             self.source,
             "private var detailPanelHeader: some View {",
-            "private var detailFullPanelHeader: some View {",
+            "private func scanModelPickerButton",
         )
 
-        self.assertIn("ViewThatFits(in: .horizontal)", overview_header_source)
-        self.assertIn("overviewCompactPanelHeader", overview_header_source)
+        self.assertNotIn("ViewThatFits", overview_header_source)
+        self.assertIn("collapseHeaderLead {", overview_header_source)
+        self.assertEqual(
+            overview_header_source.count("scanModelPickerButton(title: overviewModelCountText)"),
+            1,
+        )
         self.assertIn("if isEvidenceUpdating", overview_header_source)
         self.assertIn("Text(store.runtimeProgressText)", overview_header_source)
-        self.assertIn("ViewThatFits(in: .horizontal)", detail_header_source)
-        self.assertIn("detailCompactPanelHeader", detail_header_source)
+        self.assertNotIn("ViewThatFits", detail_header_source)
+        self.assertIn("collapseHeaderLead {", detail_header_source)
+        self.assertEqual(
+            detail_header_source.count("scanModelPickerButton(title: detailModelCountText)"),
+            1,
+        )
 
     def test_overview_picker_header_reports_effective_scan_scope(self) -> None:
         self.assertIn(
@@ -1054,7 +1064,7 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         body_source = self._section(
             self.source,
             "var body: some View {",
-            "private var transitionChromeOpacity: Double {",
+            "static func == (lhs: ExpandedSelectionView",
         )
         footer_source = self._section(
             self.source,
@@ -1145,7 +1155,7 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("evidenceHeader", body_source)
         self.assertIn("ScrollView", body_source)
         self.assertLess(body_source.index("evidenceHeader"), body_source.index("ScrollView"))
-        self.assertIn("model.size.height * 0.82", self.source)
+        self.assertIn("expandedSize.height * 0.82", self.source)
 
     def test_scan_control_does_not_depend_on_recommendation_copy(self) -> None:
         title_source = self._section(
@@ -1541,14 +1551,15 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("selectedEvidence = nil", self.source)
         self.assertIn("showsCurrentInUsePicker = false", self.source)
         self.assertIn("onCollapse()", self.source)
-        self.assertIn("collapseHeaderButton {", header_source)
-        self.assertIn("private func collapseHeaderButton<Content: View>", self.source)
+        self.assertIn("panelHeaderContainer {", header_source)
+        self.assertIn("private func panelHeaderContainer<Content: View>", self.source)
+        self.assertIn("private func collapseHeaderLead<Content: View>", self.source)
         self.assertIn("Button(action: onCollapse)", self.source)
         self.assertIn(".contentShape(Rectangle())", self.source)
         self.assertIn(".onExitCommand", picker_source)
         self.assertIn("showsCurrentInUsePicker = false", picker_source)
 
-    def test_expanded_shell_content_is_staged_after_the_shell_opens(self) -> None:
+    def test_expanded_shell_content_is_prewarmed_outside_the_click_path(self) -> None:
         root_source = (
             Path(__file__).resolve().parent.parent
             / "Sources"
@@ -1557,22 +1568,17 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         ).read_text(encoding="utf-8")
         expanded_section = self._section(
             root_source,
-            "if isExpandedContentMounted {",
+            "ExpandedSelectionView(",
             "        }\n        .frame(width: compactSurfaceWidth, height: model.size.height)"
         )
-        self.assertIn(
-            "isTransitionSource: model.state == .expanded && !isExpandedShellOpening",
-            expanded_section,
-        )
-        self.assertIn("isTransitionContentVisible: isExpandedContentVisible", expanded_section)
-        self.assertIn(".opacity(isExpandedShellOpening ? 0 : 1)", expanded_section)
-        self.assertNotIn("preservesDecisionEvidenceDuringTransition", expanded_section)
+        self.assertIn(".equatable()", expanded_section)
+        self.assertIn(".opacity(isExpandedContentVisible ? 1 : 0)", expanded_section)
         self.assertIn(".allowsHitTesting(isExpandedContentVisible)", expanded_section)
-        self.assertNotIn(".opacity(isExpandedContentVisible ? 1 : 0)", expanded_section)
+        self.assertIn(".accessibilityHidden(!isExpandedContentVisible)", expanded_section)
         self.assertNotIn(".offset(y:", expanded_section)
         self.assertNotIn(".transition(", expanded_section)
 
-    def test_expanded_transition_keeps_identity_ahead_of_page_chrome(self) -> None:
+    def test_prewarmed_content_has_stable_inputs_and_static_transition_targets(self) -> None:
         body_source = self._section(
             self.source,
             "var body: some View {",
@@ -1589,11 +1595,15 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
             "private var radarCurrentIdentityLine",
         )
 
-        self.assertIn("let isTransitionContentVisible: Bool", self.source)
-        self.assertNotIn("preservesDecisionEvidenceDuringTransition", self.source)
-        self.assertGreaterEqual(body_source.count(".opacity(transitionChromeOpacity)"), 2)
-        self.assertIn(".opacity(transitionChromeOpacity)", hero_source)
-        self.assertIn(".opacity(transitionDecisionEvidenceOpacity)", identity_source)
+        self.assertIn("struct ExpandedSelectionView: View, Equatable", self.source)
+        self.assertIn("static func == (lhs: ExpandedSelectionView", self.source)
+        self.assertIn("lhs.entryDestination == rhs.entryDestination", self.source)
+        self.assertNotIn("isTransitionContentVisible", self.source)
+        self.assertNotIn("isTransitionSource", self.source)
+        self.assertNotIn("transitionChromeOpacity", body_source)
+        self.assertNotIn("transitionDecisionEvidenceOpacity", identity_source)
+        self.assertIn("isSource: false", self.source)
+        self.assertIn("radarControlBar", hero_source)
         self.assertIn("radarCurrentIdentityLine", identity_source)
         current_line = identity_source.split("radarCurrentIdentityLine", 1)[1].split(
             "if let candidate", 1
@@ -1862,7 +1872,7 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertNotIn('Text("结果：\\(currentBestShortLabel)")', header_source)
         self.assertEqual(
             header_source.count("scanModelPickerButton(title: detailModelCountText"),
-            2,
+            1,
         )
         self.assertIn("private var detailModelCountText: String", self.source)
         self.assertIn("overviewModelCountText", self.source)
@@ -1875,7 +1885,7 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
     def test_page_header_count_opens_shared_regular_scan_model_picker(self) -> None:
         header_source = self._section(
             self.source,
-            "private var overviewFullPanelHeader: some View {",
+            "private var overviewPanelHeader: some View {",
             "private var pagedContent: some View {",
         )
         picker_source = self._section(
@@ -1887,11 +1897,11 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("@State private var showsScanModelPicker = false", self.source)
         self.assertEqual(
             header_source.count("scanModelPickerButton(title: overviewModelCountText"),
-            2,
+            1,
         )
         self.assertEqual(
             header_source.count("scanModelPickerButton(title: detailModelCountText"),
-            2,
+            1,
         )
         self.assertIn(".popover(isPresented: $showsScanModelPicker", picker_source)
         self.assertIn('Text(L10n.tr("扫描档位"))', picker_source)
@@ -1903,26 +1913,32 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("修改后自动保存，并同步到两页。", picker_source)
         self.assertIn("candidate.pickerLabel", picker_source)
 
-    def test_header_title_and_free_space_still_collapse_around_model_picker(self) -> None:
+    def test_header_has_one_collapse_control_and_one_picker_per_page(self) -> None:
         header_source = self._section(
             self.source,
-            "private var overviewFullPanelHeader: some View {",
+            "private var overviewPanelHeader: some View {",
             "private func scanModelPickerButton(",
         )
         lead_source = self._section(
             self.source,
-            "private func collapseHeaderButton<Content: View>(",
+            "private func collapseHeaderLead<Content: View>(",
             "private var overviewPanelHeader: some View {",
         )
 
         self.assertEqual(
             header_source.count("scanModelPickerButton(title:"),
-            4,
+            2,
         )
         self.assertIn("Button(action: onCollapse)", lead_source)
         self.assertIn("content()", lead_source)
-        self.assertIn(".frame(maxWidth: .infinity, alignment: .leading)", lead_source)
+        self.assertIn(
+            ".frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)",
+            lead_source,
+        )
         self.assertIn(".contentShape(Rectangle())", lead_source)
+        self.assertEqual(header_source.count("collapseHeaderLead {"), 2)
+        self.assertEqual(self.source.count("Button(action: onCollapse)"), 1)
+        self.assertNotIn("ViewThatFits", header_source)
 
 
 

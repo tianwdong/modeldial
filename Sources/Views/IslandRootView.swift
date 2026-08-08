@@ -11,9 +11,9 @@ struct IslandRootView: View {
     @State private var isSessionPanelWidthExpanded = false
     @State private var isSessionPanelVisible = false
     @State private var isSessionPanelContentVisible = false
-    @State private var isExpandedContentMounted = false
     @State private var isExpandedContentVisible = false
     @State private var isExpandedShellOpening = false
+    @State private var expandedEntryDestination: GlanceDestination = .overview
     @State private var hoverTransitionTask: Task<Void, Never>?
     @State private var expandedTransitionTask: Task<Void, Never>?
     @Namespace private var islandTransitionNamespace
@@ -50,6 +50,10 @@ struct IslandRootView: View {
             DebugLog.write("IslandRootView.pointerInside interaction=\(isInside) state=\(model.state)")
             updateCompactHover(isInside)
         }
+        .onChange(of: store.glancePresentation.destination) { destination in
+            guard model.state == .compact else { return }
+            expandedEntryDestination = destination
+        }
         .background(alignment: .top) {
             connectedPanelShadow
         }
@@ -75,6 +79,7 @@ struct IslandRootView: View {
             guard model.state == .compact else { return }
             DebugLog.write("IslandRootView.activateCompact")
             store.prepareExpandedDestination()
+            expandedEntryDestination = store.consumeExpandedDestination()
             openExpanded()
         } label: {
             Color.clear
@@ -91,18 +96,18 @@ struct IslandRootView: View {
         ZStack(alignment: .top) {
             backgroundGlow
 
-            if isExpandedContentMounted {
-                ExpandedSelectionView(
-                    store: store,
-                    model: model,
-                    transitionNamespace: islandTransitionNamespace,
-                    isTransitionSource: model.state == .expanded && !isExpandedShellOpening,
-                    isTransitionContentVisible: isExpandedContentVisible,
-                    onCollapse: collapseExpanded
-                )
-                .opacity(isExpandedShellOpening ? 0 : 1)
-                .allowsHitTesting(isExpandedContentVisible)
-            }
+            ExpandedSelectionView(
+                store: store,
+                expandedSize: model.expandedSize,
+                notchHeight: model.notch.height,
+                entryDestination: expandedEntryDestination,
+                transitionNamespace: islandTransitionNamespace,
+                onCollapse: collapseExpanded
+            )
+            .equatable()
+            .opacity(isExpandedContentVisible ? 1 : 0)
+            .allowsHitTesting(isExpandedContentVisible)
+            .accessibilityHidden(!isExpandedContentVisible)
         }
         .frame(width: compactSurfaceWidth, height: model.size.height)
         .overlay {
@@ -148,26 +153,11 @@ struct IslandRootView: View {
         expandedTransitionTask?.cancel()
         expandedTransitionTask = nil
         isExpandedShellOpening = false
-        if isExpandedContentMounted {
-            withAnimation(expandedContentCloseAnimation) {
-                isExpandedContentVisible = false
-            }
-        } else {
+        withAnimation(expandedContentCloseAnimation) {
             isExpandedContentVisible = false
         }
         withAnimation(shapeCloseAnimation) {
             model.setState(.compact)
-        }
-        guard isExpandedContentMounted else { return }
-        guard !reduceMotion else {
-            isExpandedContentMounted = false
-            return
-        }
-        expandedTransitionTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 360_000_000)
-            guard !Task.isCancelled, model.state == .compact else { return }
-            isExpandedContentMounted = false
-            expandedTransitionTask = nil
         }
     }
 
@@ -177,7 +167,6 @@ struct IslandRootView: View {
         hoverTransitionTask = nil
         expandedTransitionTask?.cancel()
         expandedTransitionTask = nil
-        isExpandedContentMounted = reduceMotion
         isExpandedContentVisible = reduceMotion
         isExpandedShellOpening = !reduceMotion
         withAnimation(shapeOpenAnimation) {
@@ -189,10 +178,7 @@ struct IslandRootView: View {
         }
         guard !reduceMotion else { return }
         expandedTransitionTask = Task { @MainActor in
-            try? await Task.sleep(nanoseconds: 220_000_000)
-            guard !Task.isCancelled, model.state == .expanded else { return }
-            isExpandedContentMounted = true
-            await Task.yield()
+            try? await Task.sleep(nanoseconds: 120_000_000)
             guard !Task.isCancelled, model.state == .expanded else { return }
             withAnimation(expandedContentOpenAnimation) {
                 isExpandedShellOpening = false

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-struct ExpandedSelectionView: View {
+struct ExpandedSelectionView: View, Equatable {
     private enum ScanConfirmation {
         case start
         case pause
@@ -32,11 +32,11 @@ struct ExpandedSelectionView: View {
     }
 
     @ObservedObject var store: AppSessionStore
-    @ObservedObject var model: IslandModel
     @ObservedObject private var appLanguage = AppLanguageStore.shared
+    let expandedSize: CGSize
+    let notchHeight: CGFloat
+    let entryDestination: GlanceDestination
     let transitionNamespace: Namespace.ID
-    let isTransitionSource: Bool
-    let isTransitionContentVisible: Bool
     let onCollapse: () -> Void
     @ObservedObject private var settings = SelectionSettingsStore.shared
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -49,7 +49,6 @@ struct ExpandedSelectionView: View {
     @State private var showsScanModelPicker = false
     @State private var showsEvaluationProfilePopover = false
     @State private var showsEvaluationProfileDecision = false
-    @State private var entryDestination: GlanceDestination = .overview
     @State private var exportErrorMessage: String?
     @State private var exportedLeaderboardURL: URL?
     @State private var pendingScanConfirmation: ScanConfirmation?
@@ -81,10 +80,8 @@ struct ExpandedSelectionView: View {
         ZStack {
             VStack(spacing: 0) {
                 panelHeader
-                    .opacity(transitionChromeOpacity)
                 pagedContent
                 panelFooter
-                    .opacity(transitionChromeOpacity)
             }
 
             if let selectedEvidence {
@@ -96,8 +93,8 @@ struct ExpandedSelectionView: View {
                     onDismiss: dismissEvidence
                 )
                 .frame(
-                    width: min(620, model.size.width - 72),
-                    height: min(460, max(360, model.size.height * 0.82))
+                    width: min(620, expandedSize.width - 72),
+                    height: min(460, max(360, expandedSize.height * 0.82))
                 )
                 .zIndex(2)
             }
@@ -106,15 +103,15 @@ struct ExpandedSelectionView: View {
                 currentInUsePickerBackdrop
                 currentInUsePicker
                     .frame(
-                        width: min(500, model.size.width - 80),
-                        height: min(520, max(360, model.size.height * 0.82))
+                        width: min(500, expandedSize.width - 80),
+                        height: min(520, max(360, expandedSize.height * 0.82))
                     )
                     .zIndex(4)
             }
         }
         .frame(
-            width: model.expandedSize.width,
-            height: model.expandedSize.height,
+            width: expandedSize.width,
+            height: expandedSize.height,
             alignment: .topLeading
         )
         .background(IslandVisual.panelBackground(reduceTransparency: reduceTransparency))
@@ -126,8 +123,9 @@ struct ExpandedSelectionView: View {
             }
         }
         .onAppear {
-            let destination = store.consumeExpandedDestination()
-            entryDestination = destination
+            applyEntryDestination(entryDestination)
+        }
+        .onChange(of: entryDestination) { destination in
             applyEntryDestination(destination)
         }
         .onExitCommand {
@@ -197,12 +195,10 @@ struct ExpandedSelectionView: View {
         }
     }
 
-    private var transitionChromeOpacity: Double {
-        isTransitionContentVisible || reduceMotion ? 1 : 0
-    }
-
-    private var transitionDecisionEvidenceOpacity: Double {
-        isTransitionContentVisible || reduceMotion ? 1 : 0
+    static func == (lhs: ExpandedSelectionView, rhs: ExpandedSelectionView) -> Bool {
+        lhs.expandedSize == rhs.expandedSize
+            && lhs.notchHeight == rhs.notchHeight
+            && lhs.entryDestination == rhs.entryDestination
     }
 
     private var scanConflictAlertIsPresented: Binding<Bool> {
@@ -343,40 +339,20 @@ struct ExpandedSelectionView: View {
     @ViewBuilder
     private var panelHeader: some View {
         if pageIndex == 1 {
-            collapseHeaderButton {
+            panelHeaderContainer {
                 detailPanelHeader
             }
         } else {
-            collapseHeaderButton {
+            panelHeaderContainer {
                 overviewPanelHeader
             }
         }
     }
 
-    private func collapseHeaderButton<Content: View>(
+    private func panelHeaderContainer<Content: View>(
         @ViewBuilder content: () -> Content
     ) -> some View {
         HStack(alignment: .center, spacing: LayoutRhythm.standard) {
-            Button(action: onCollapse) {
-                Image(systemName: "chevron.up")
-                    .font(Typography.micro)
-                    .foregroundStyle(IslandVisual.secondaryText)
-                    .frame(width: 30, height: 30)
-                    .background(
-                        RoundedRectangle(cornerRadius: IslandRadius.control)
-                            .fill(IslandVisual.surfaceSubtle)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: IslandRadius.control)
-                                    .strokeBorder(IslandVisual.hairline, lineWidth: 0.5)
-                            )
-                    )
-            }
-            .buttonStyle(.plain)
-            .help(L10n.Common.collapse)
-            .accessibilityLabel(L10n.Common.collapse)
-            .contentShape(Rectangle())
-            .islandPointerOnHover()
-
             content()
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -389,6 +365,36 @@ struct ExpandedSelectionView: View {
                 .fill(IslandVisual.workspaceBorder)
                 .frame(height: 0.5)
         }
+    }
+
+    private func collapseHeaderLead<Content: View>(
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Button(action: onCollapse) {
+            HStack(spacing: LayoutRhythm.standard) {
+                Image(systemName: "chevron.up")
+                    .font(Typography.micro)
+                    .foregroundStyle(IslandVisual.secondaryText)
+                    .frame(width: 30, height: 30)
+                    .background(
+                        RoundedRectangle(cornerRadius: IslandRadius.control)
+                            .fill(IslandVisual.surfaceSubtle)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: IslandRadius.control)
+                                    .strokeBorder(IslandVisual.hairline, lineWidth: 0.5)
+                            )
+                    )
+
+                content()
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(L10n.Common.collapse)
+        .accessibilityLabel(L10n.Common.collapse)
+        .islandPointerOnHover()
     }
 
     private var headerToolControls: some View {
@@ -417,51 +423,7 @@ struct ExpandedSelectionView: View {
         .fixedSize(horizontal: true, vertical: false)
     }
 
-    private func collapseHeaderLead<Content: View>(
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        Button(action: onCollapse) {
-            HStack(spacing: 0) {
-                content()
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(L10n.Common.collapse)
-        .accessibilityLabel(L10n.Common.collapse)
-        .islandPointerOnHover()
-    }
-
     private var overviewPanelHeader: some View {
-        ViewThatFits(in: .horizontal) {
-            overviewFullPanelHeader
-            overviewCompactPanelHeader
-        }
-        .overlay {
-            if isEvidenceUpdating {
-                Text(store.runtimeProgressText)
-                    .font(Typography.micro)
-                    .foregroundStyle(IslandVisual.tertiaryText)
-                    .lineLimit(1)
-                    .allowsHitTesting(false)
-                    .islandMatchedGeometry(
-                        id: IslandTransitionElement.secondaryStatus.rawValue,
-                        in: transitionNamespace,
-                        isSource: isTransitionSource,
-                        reduceMotion: reduceMotion
-                    )
-            }
-        }
-        .frame(height: 34)
-        .padding(.leading, 0)
-        .padding(.trailing, 22)
-        .padding(.top, 10)
-        .padding(.bottom, max(8, min(16, max(0, model.notch.height - 34 - 10))))
-    }
-
-    private var overviewFullPanelHeader: some View {
         HStack(alignment: .center, spacing: LayoutRhythm.section) {
             collapseHeaderLead {
                 HStack(spacing: LayoutRhythm.compact) {
@@ -478,40 +440,29 @@ struct ExpandedSelectionView: View {
 
             scanModelPickerButton(title: overviewModelCountText)
         }
-    }
-
-    private var overviewCompactPanelHeader: some View {
-        HStack(spacing: LayoutRhythm.compact) {
-            collapseHeaderLead {
-                HStack(spacing: LayoutRhythm.compact) {
-                    Circle()
-                        .fill(heroAccentColor)
-                        .frame(width: 10, height: 10)
-
-                    Text(L10n.Overview.recommendationDecision)
-                        .font(Typography.sectionTitle)
-                        .foregroundStyle(IslandVisual.primaryText)
-                        .lineLimit(1)
-                }
+        .overlay {
+            if isEvidenceUpdating {
+                Text(store.runtimeProgressText)
+                    .font(Typography.micro)
+                    .foregroundStyle(IslandVisual.tertiaryText)
+                    .lineLimit(1)
+                    .allowsHitTesting(false)
+                    .islandMatchedGeometry(
+                        id: IslandTransitionElement.secondaryStatus.rawValue,
+                        in: transitionNamespace,
+                        isSource: false,
+                        reduceMotion: reduceMotion
+                    )
             }
-
-            scanModelPickerButton(title: overviewModelCountText, compact: true)
-        }
-    }
-
-    private var detailPanelHeader: some View {
-        ViewThatFits(in: .horizontal) {
-            detailFullPanelHeader
-            detailCompactPanelHeader
         }
         .frame(height: 34)
         .padding(.leading, 0)
         .padding(.trailing, 22)
         .padding(.top, 10)
-        .padding(.bottom, max(8, min(16, max(0, model.notch.height - 34 - 10))))
+        .padding(.bottom, max(8, min(16, max(0, notchHeight - 34 - 10))))
     }
 
-    private var detailFullPanelHeader: some View {
+    private var detailPanelHeader: some View {
         HStack(alignment: .center, spacing: LayoutRhythm.section) {
             collapseHeaderLead {
                 HStack(spacing: LayoutRhythm.compact) {
@@ -528,31 +479,14 @@ struct ExpandedSelectionView: View {
 
             scanModelPickerButton(title: detailModelCountText)
         }
+        .frame(height: 34)
+        .padding(.leading, 0)
+        .padding(.trailing, 22)
+        .padding(.top, 10)
+        .padding(.bottom, max(8, min(16, max(0, notchHeight - 34 - 10))))
     }
 
-    private var detailCompactPanelHeader: some View {
-        HStack(spacing: LayoutRhythm.compact) {
-            collapseHeaderLead {
-                HStack(spacing: LayoutRhythm.compact) {
-                    Circle()
-                        .fill(IslandColor.interaction)
-                        .frame(width: 10, height: 10)
-
-                    Text(detailHeaderPrimaryText)
-                        .font(Typography.sectionTitle)
-                        .foregroundStyle(IslandVisual.primaryText)
-                        .lineLimit(1)
-                }
-            }
-
-            scanModelPickerButton(title: detailModelCountText, compact: true)
-        }
-    }
-
-    private func scanModelPickerButton(
-        title: String,
-        compact: Bool = false
-    ) -> some View {
+    private func scanModelPickerButton(title: String) -> some View {
         Button {
             showsScanModelPicker = true
         } label: {
@@ -561,7 +495,6 @@ struct ExpandedSelectionView: View {
                     .font(Typography.rowTitle)
                     .foregroundStyle(IslandVisual.secondaryText)
                     .lineLimit(1)
-                    .minimumScaleFactor(compact ? 0.82 : 1)
 
                 Image(systemName: "chevron.down")
                     .font(Typography.micro)
@@ -760,7 +693,6 @@ struct ExpandedSelectionView: View {
                     detailPage
                         .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
                         .clipped()
-                        .opacity(transitionChromeOpacity)
                         .transition(.opacity)
                 }
             }
@@ -798,7 +730,6 @@ struct ExpandedSelectionView: View {
                     .padding(.horizontal, expandedHeaderHorizontalInset)
                     .padding(.top, LayoutRhythm.compact)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                    .opacity(transitionChromeOpacity)
                     .background(IslandVisual.evidenceSurface)
                     .overlay(alignment: .top) {
                         Rectangle()
@@ -818,10 +749,8 @@ struct ExpandedSelectionView: View {
     private var overviewHeroCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             radarControlBar
-                .opacity(transitionChromeOpacity)
 
             heroDecisionHeader
-                .opacity(transitionChromeOpacity)
 
             decisionIdentityStrip
         }
@@ -873,7 +802,6 @@ struct ExpandedSelectionView: View {
                             element: .candidateIdentity,
                             showsTransition: true
                         )
-                        .opacity(transitionDecisionEvidenceOpacity)
                     }
                 }
             }
@@ -901,7 +829,6 @@ struct ExpandedSelectionView: View {
                     )
                 }
                 .padding(.vertical, 12)
-                .opacity(transitionDecisionEvidenceOpacity)
             }
 
             Rectangle()
@@ -909,7 +836,6 @@ struct ExpandedSelectionView: View {
                 .frame(height: 0.5)
 
             radarSessionSummary
-                .opacity(transitionChromeOpacity)
         }
         .overlay(alignment: .top) {
             Rectangle()
@@ -934,7 +860,7 @@ struct ExpandedSelectionView: View {
                 .islandMatchedGeometry(
                     id: IslandTransitionElement.primaryIdentity.rawValue,
                     in: transitionNamespace,
-                    isSource: isTransitionSource,
+                    isSource: false,
                     reduceMotion: reduceMotion
                 )
 
@@ -946,7 +872,7 @@ struct ExpandedSelectionView: View {
                     .islandMatchedGeometry(
                         id: IslandTransitionElement.secondaryStatus.rawValue,
                         in: transitionNamespace,
-                        isSource: isTransitionSource,
+                        isSource: false,
                         reduceMotion: reduceMotion
                     )
             }
@@ -977,7 +903,7 @@ struct ExpandedSelectionView: View {
                 .islandMatchedGeometry(
                     id: element.rawValue,
                     in: transitionNamespace,
-                    isSource: isTransitionSource,
+                    isSource: false,
                     reduceMotion: reduceMotion
                 )
         }
@@ -1004,7 +930,7 @@ struct ExpandedSelectionView: View {
         .islandMatchedGeometry(
             id: element.rawValue,
             in: transitionNamespace,
-            isSource: isTransitionSource,
+            isSource: false,
             reduceMotion: reduceMotion
         )
     }
@@ -1769,7 +1695,7 @@ struct ExpandedSelectionView: View {
                 radarLeaderboardEmptyState
             } else {
                 ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 0) {
+                    LazyVStack(alignment: .leading, spacing: 0) {
                         ForEach(store.radarLeaderboardItems) { entry in
                             let presentation = radarLeaderboardPresentation(for: entry)
                             let decisionTags = presentation.tags.compactMap(leaderboardExportTag)

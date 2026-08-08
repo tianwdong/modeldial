@@ -321,7 +321,7 @@ class LeaderboardExportViewTest(unittest.TestCase):
         header_source = self._section(
             self.expanded_source,
             "private var headerToolControls",
-            "private func collapseHeaderLead",
+            "private var overviewPanelHeader",
         )
         footer_source = self._section(
             self.expanded_source,
