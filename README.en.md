@@ -14,7 +14,7 @@ ModelDial is a local-first macOS menu bar app for comparing real `model + effort
 
 ### Unpaid preview (unsigned / unnotarized)
 
-If GitHub Releases has published `v0.1.0-preview.1`, download these assets and verify them against `SHA256SUMS` from the same release:
+Download these assets from [GitHub Release `v0.1.0-preview.1`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.1) and verify them against `SHA256SUMS` from the same release:
 
 - `modeldial-0.1.0-preview.1-macos-arm64.dmg`
 - `modeldial-0.1.0-preview.1-build-100-macos-arm64.zip`

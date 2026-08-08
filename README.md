@@ -14,7 +14,7 @@ ModelDial 是一个本地优先的 macOS 菜单栏 App。它用真实的 `model 
 
 ### 不付费预览版（unsigned / unnotarized）
 
-若 GitHub Releases 已发布 `v0.1.0-preview.1`，下载以下资产并先核对同一 Release 中的 `SHA256SUMS`：
+从 [GitHub Release `v0.1.0-preview.1`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.1) 下载以下资产，并先核对同一 Release 中的 `SHA256SUMS`：
 
 - `modeldial-0.1.0-preview.1-macos-arm64.dmg`
 - `modeldial-0.1.0-preview.1-build-100-macos-arm64.zip`

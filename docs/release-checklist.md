@@ -66,6 +66,7 @@
 - [ ] 在至少一台可用的 macOS 13+ Apple Silicon 机器上完成 DMG 挂载、拖入 `Applications` 和首次启动手动放行；这只证明预览安装路径，不等于 Gatekeeper 干净机验收、Apple 公证或正式 Release 验收。
 - [x] Release 正文引导用户使用“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”；不要求关闭 Gatekeeper，不建议 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或同类绕过命令。
 - [x] 预览版不进入正式 Sparkle `appcast.xml`，不创建 Homebrew Cask；更新、回滚和自动下载仍以正式签名门槛为准。
+- [x] 已创建公开 GitHub prerelease `v0.1.0-preview.1` 并上传 4 个资产；随后不带 GitHub API 认证从公开资产 URL 重新下载，SHA-256、DMG／ZIP、ad-hoc 签名、版本／arm64、SPDX 和冻结后端 smoke 全部通过。
 
 ## Gate 3：发行产物与渠道
 

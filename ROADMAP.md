@@ -8,7 +8,7 @@
 
 当前公开源码候选已通过全量验证，并以单一无父 `main` 根提交固化；源码树发布门槛已经完成。正式签名二进制和 GitHub Release 仍是独立门槛，tag、Release 或生产部署需要单独确认。
 
-不付费 `v0.1.0-preview.1` 的公开文档、供应链、fresh build 和 DMG／ZIP／SHA-256／SBOM 已生成并完成本机只读挂载验证；GitHub Release、公开 URL 重新下载和 Gatekeeper 开启机器上的人工放行仍未完成。
+不付费 `v0.1.0-preview.1` 已作为 GitHub prerelease 公开，公开文档、供应链、fresh build、DMG／ZIP／SHA-256／SBOM 和公开 URL 回下载复测均已完成；Gatekeeper 开启机器上的“仍要打开”人工放行仍未完成。
 
 ## 已完成
 
@@ -52,7 +52,7 @@
 - [x] README、发布清单和 ADR 均区分 preview 与正式签名 Release；预览文案不宣称 Developer ID、公证、stapling、Gatekeeper 验收或普通用户直接双击成功。
 - [x] 生成并验证 `modeldial-0.1.0-preview.1-macos-arm64.dmg`、`modeldial-0.1.0-preview.1-build-100-macos-arm64.zip`、`SHA256SUMS` 和 `modeldial-0.1.0-preview.1-sbom.spdx.json`。
 - [ ] 在 macOS 13+ Apple Silicon 上完成 DMG 挂载、拖入 `Applications` 和“隐私与安全性 → 仍要打开”人工放行；该结果不替代正式 Gatekeeper 干净机验收。
-- [ ] 经单独授权创建 `v0.1.0-preview.1` GitHub Release；在完成前不得声称预览已公开下载。
+- [x] 经单独授权创建公开 `v0.1.0-preview.1` GitHub prerelease，上传 DMG／ZIP／SHA256SUMS／SPDX，并从公开资产 URL 无认证回下载复测。
 
 ## 兼容性边界
 
@@ -63,12 +63,13 @@
 
 ## 下一步
 
-1. 提交并推送已验证的预览发布工具与文档，创建 `v0.1.0-preview.1` GitHub prerelease；再从公开 URL 重新下载并核验 DMG、SHA-256 和启动路径。
-2. 继续处理首个正式二进制 Release 的供应链、签名、公证、干净机器和 DMG 验收。
+1. 在另一台 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上，从 GitHub Release 下载 DMG，完成拖入 `Applications` 和“仍要打开”人工验收。
+2. 继续处理首个正式二进制 Release 的签名、公证、干净机器和 DMG 验收。
 3. 收集真实 Intel Mac 用户需求，再决定是否建立独立的 universal2 支持里程碑。
 
 ## 最近验证
 
+- 2026-08-08：提交 `fcde71f` 已推送到公开 `main`，tag `v0.1.0-preview.1` 指向该提交并创建公开 GitHub prerelease。4 个资产大小与本地产物一致；随后不带 GitHub API 认证从公开 asset URL 重新下载，`SHA256SUMS` 三项均通过，DMG 只读挂载与 ZIP 解包通过，App 为 `0.1.0 (100)`／thin arm64／ad-hoc 且无证书 Authority，bundle SPDX 校验和冻结后端 OpenSSL 3.0.18／mpdecimal 4.0.0／zstd smoke 通过。本机 Gatekeeper disabled，未把此次复测写成“仍要打开”人工验收。
 - 2026-08-08：unsigned preview 定向测试 `26/26`、全量 Python `1415/1415`（`619.687s`，`ResourceWarning` 按错误处理）通过。`package-unsigned-preview.sh` 强制 ad-hoc fresh build，PyPI requirements receipt 触发 `--require-hashes` 重建；60 个 Mach-O／65 个架构记录通过 macOS 13 门禁，整包深层签名有效。生成 DMG `17,735,966` bytes、ZIP `15,421,467` bytes、SPDX SBOM `200,931` bytes 和 `SHA256SUMS`；三项 hash、DMG／ZIP 容器、SPDX 2.3 官方 JSON Schema、只读挂载后 bundle SBOM／签名／arm64／冻结后端和 11 个 Legal 文件均通过。未创建 tag、GitHub Release 或上传二进制；当前机器 Gatekeeper disabled，未把本机挂载 smoke 写成人工放行验收。
 - 2026-08-08：unsigned preview 的中英文 README、发布清单、ADR 和 `docs/releases/v0.1.0-preview.1.md` 已完成一致性检查；文件存在性、资产命名／警告／手动放行文案和 `git diff --check` 通过，未创建 tag、GitHub Release 或上传二进制。
 - 2026-08-08：私有公共核心锁已同步到公开根提交及内容哈希；双仓边界、镜像内公共核心校验、私有边界／Cloud Runner／发布器回归 `50/50`、Cloudflare 普通 Vitest `37/37`、Workers Runtime `1/1`、TypeScript／生成类型、Linux／AMD64 镜像 `/health` 和 `wrangler deploy --dry-run` 全部通过，未部署 Cloudflare 或创建二进制 Release。
