@@ -86,7 +86,7 @@
 - [x] 三项 SHA-256、DMG 只读挂载、ZIP 解包、版本／build／源码提交、官方 Radar URL、空更新通道、深层 ad-hoc 签名、thin arm64、macOS 13 bundle 兼容性和两份 bundle SBOM 均通过独立复验。
 - [x] ZIP 内冻结后端在隔离 HOME 和全新数据目录真实刷新官方端点，delivery 为 `http/refreshed`，得到 15 条 provenance 合格的第一方结果。
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收；当前机器 assessments disabled，不能据此核销。
-- [ ] 经单独授权创建 `v0.1.0-preview.3` annotated tag／GitHub prerelease，上传 4 个精确资产，并从无认证公开 URL 重新下载完成同等复验；公开前不修改 README 的 `preview.2` 下载链接。
+- [x] 经单独授权创建 `v0.1.0-preview.3` annotated tag／GitHub prerelease 并上传 4 个精确资产；tag 的 peeled commit 与二进制 `ModelDialSourceCommit` 均为 `16e0dd2`，Release 非 draft 且仅包含四项预期资产。随后从无认证公开 URL 下载并完成 SHA-256、DMG／ZIP、签名、macOS 13、SPDX 和冻结后端官方快照复验；双语 README 已切换到 `preview.3`。
 
 ## Gate 3：发行产物与渠道
 

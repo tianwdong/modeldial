@@ -8,11 +8,11 @@
 
 当前公开源码候选已通过全量验证，并以单一无父 `main` 根提交固化；源码树发布门槛已经完成。正式签名二进制和 GitHub Release 仍是独立门槛，tag、Release 或生产部署需要单独确认。
 
-不付费 `v0.1.0-preview.1` 与修复版 `v0.1.0-preview.2` 均已作为 GitHub prerelease 公开；公开文档、供应链、fresh build、DMG／ZIP／SHA-256／SBOM 和公开 URL 回下载复测均已完成。Gatekeeper 开启机器上的“仍要打开”人工放行仍未完成。
+不付费 `v0.1.0-preview.1`、首次使用修复版 `v0.1.0-preview.2` 与交互修复版 `v0.1.0-preview.3` 均已作为 GitHub prerelease 公开；公开文档、供应链、fresh build、DMG／ZIP／SHA-256／SBOM 和公开 URL 回下载复测均已完成。Gatekeeper 开启机器上的“仍要打开”人工放行仍未完成。
 
 针对 `preview.1` 遗漏官方 Radar 地址、无 Provider 时被模型设置空状态阻断、开发 seed 可能进入官网展示以及未发布 appcast 仍显示为已配置的问题，`v0.1.0-preview.2` 已在源码提交 `a20d14e` 上完成修复与 Build 101 打包；tag、GitHub prerelease、4 个资产和公开下载复验均已完成。它仍是 unsigned／unnotarized 预览版，不等于正式 `v0.1.0`。
 
-交互修复候选 `v0.1.0-preview.3` 已在源码提交 `16e0dd2cafa82ef1b77b719edc0a3db90e5bf68f` 上完成 Build 102 本地打包和独立产物复验；DMG、ZIP、SPDX SBOM 与 `SHA256SUMS` 已生成，冻结后端从空目录真实拉取官方 15 条 Radar 数据。该候选尚未创建 tag、GitHub prerelease 或公开下载，README 仍指向已公开的 `preview.2`。
+交互修复版 `v0.1.0-preview.3` 已在源码提交 `16e0dd2cafa82ef1b77b719edc0a3db90e5bf68f` 上完成 Build 102 打包并公开；annotated tag、GitHub prerelease、四项资产和无认证公开下载复验均已完成，双语 README 已切换到该版本。它仍是 unsigned／unnotarized 手动安装预览版，不进入正式 Sparkle 通道。
 
 ## 已完成
 
@@ -25,8 +25,8 @@
 - LiteLLM pricing 来源已固定完整 upstream commit 和原始文件 SHA-256；网络与离线刷新均先校验原始字节，再解析 JSON，来源身份进入 snapshot hash。
 - `build.sh` 使用内容锁定的 python.org Python 3.14.3 installer，在项目 `build/` 内校验、解包并冻结 runtime；构建会检查 CA store、TLS／SHA-256／zstd、Mach-O 最低系统版本和非系统绝对动态库依赖。
 - `build-dev.sh` 优先复用 `build/modeldial-candidate.app` 的冻结后端；仅在 candidate 不存在时兼容使用 `build/modeldial.app`，因此 fresh clone 完成一次正式构建后即可继续 Swift／资源迭代。
-- 双语 README 已重排为产品优先的公开首页：首屏展示定位、对应语言的 compact／Radar／Compare 动图、官网／GitHub／`preview.2` DMG 入口、平台与本地优先标签；正文按“无需配置浏览官方 Radar → 下载安装 → 产品价值 → 可选本地评测 → 隐私与源码构建”展开。unsigned／unnotarized 限制集中在下载区，并继续明确“隐私与安全性 → 仍要打开”、macOS 13+ Apple Silicon、Intel 不支持及禁止 `xattr`／`spctl` 绕过；构建供应链细节下沉到发布文档，README 只保留公开运行时身份与最小命令。
-- Radar 成为无需本地 Provider 的首要使用路径：首次打开始终保留官方榜单、刷新和空状态，本地模型接入只作为次要 CTA；中英文 README 同步说明可直接查看官网 Radar、本地评测完全可选，并指向已包含该修复的 `preview.2`。
+- 双语 README 已重排为产品优先的公开首页：首屏展示定位、对应语言的 compact／Radar／Compare 动图、官网／GitHub／`preview.3` DMG 入口、平台与本地优先标签；正文按“无需配置浏览官方 Radar → 下载安装 → 产品价值 → 可选本地评测 → 隐私与源码构建”展开。unsigned／unnotarized 限制集中在下载区，并继续明确“隐私与安全性 → 仍要打开”、macOS 13+ Apple Silicon、Intel 不支持及禁止 `xattr`／`spctl` 绕过；构建供应链细节下沉到发布文档，README 只保留公开运行时身份与最小命令。
+- Radar 成为无需本地 Provider 的首要使用路径：首次打开始终保留官方榜单、刷新和空状态，本地模型接入只作为次要 CTA；中英文 README 同步说明可直接查看官网 Radar、本地评测完全可选，并指向当前 `preview.3`。
 - Swift 官方参考快照增加与 Python 一致的三条件信任门禁：snapshot kind、provenance kind 均为 `first_party_snapshot` 且 `public_official_snapshot=true`；Radar、对比、证据、compact 和通知链路均 fail closed，开发 seed 不再可能被标成官网榜单。
 - `preview.2` 候选固定为 Build 101；打包门禁注入并回读官方快照 URL、禁用未发布的 Sparkle 通道、拒绝复用 `preview.1`，并要求包含未跟踪文件在内的工作树干净（忽略 `.gitignore` 内容）、HEAD 稳定及 App／ZIP 内 `ModelDialSourceCommit` 精确一致。
 - 在干净提交 `a20d14e` 上生成 `preview.2` DMG、ZIP、SPDX SBOM 和 `SHA256SUMS`；tag 精确指向该二进制源码提交，4 个资产已上传公开 GitHub prerelease。公开 URL 无认证回下载后的 DMG 只读挂载、ZIP 解包、哈希、bundle SBOM、深层 ad-hoc 签名、arm64 兼容性和冻结后端官方快照刷新均通过复验。
@@ -63,7 +63,7 @@
 - [ ] 在 macOS 13+ Apple Silicon 上完成 DMG 挂载、拖入 `Applications` 和“隐私与安全性 → 仍要打开”人工放行；该结果不替代正式 Gatekeeper 干净机验收。
 - [x] 经单独授权创建公开 `v0.1.0-preview.1` GitHub prerelease，上传 DMG／ZIP／SHA256SUMS／SPDX，并从公开资产 URL 无认证回下载复测。
 - [x] `v0.1.0-preview.3` 已在干净源码提交上生成并完成本地产物验收；Build 102、官方 Radar、空 Sparkle 通道、arm64、ad-hoc 签名、SPDX 和精确资产哈希均有记录。
-- [ ] 经单独授权发布 `v0.1.0-preview.3` annotated tag／GitHub prerelease，并从公开 URL 无认证回下载复测；发布成功前双语 README 继续指向 `preview.2`。
+- [x] 经单独授权发布 `v0.1.0-preview.3` annotated tag／GitHub prerelease，并从公开 URL 无认证回下载复测；双语 README 已切换到 `preview.3`。
 
 ## 兼容性边界
 
@@ -74,13 +74,14 @@
 
 ## 下一步
 
-1. 经单独确认后推送本地候选提交，创建精确指向 `16e0dd2` 的 `v0.1.0-preview.3` annotated tag／GitHub prerelease，上传四项本地候选资产并从无认证公开 URL 回下载复验；成功后再更新双语 README 下载链接。
+1. 针对官方快照偶发首字节超过当前 3 秒单请求门限的情况，评估更稳妥的超时／重试策略并补慢响应回归；任何二进制修复必须使用更高 build 和新 preview label，不覆盖 `preview.3`。
 2. 将公开 DMG 拖入 `Applications` 并完成真实 UI 验收；再在另一台 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成“仍要打开”人工验收。
 3. 继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名和干净机器门槛；Intel 仍按真实需求决定是否建立 universal2 里程碑。
-4. 下一版 unsigned preview 启用正式 Sparkle 更新前，固定并备份长期 EdDSA 私钥、发布永久 HTTPS appcast，并在发布候选上复跑升级验收；由于公开 `preview.2` 未配置更新源，现有用户仍需手动安装首个启用更新通道的版本，后续版本才能从设置页连续升级。
+4. 下一版 unsigned preview 启用正式 Sparkle 更新前，固定并备份长期 EdDSA 私钥、发布永久 HTTPS appcast，并在发布候选上复跑升级验收；由于公开 `preview.2`／`preview.3` 均未配置更新源，现有用户仍需手动安装首个启用更新通道的版本，后续版本才能从设置页连续升级。
 
 ## 最近验证
 
+- 2026-08-09：公开 `main` 推送至 `35b8472`；`v0.1.0-preview.3` annotated tag object 为 `d46b011`，peeled commit 与 App 内 `ModelDialSourceCommit` 均精确为 `16e0dd2cafa82ef1b77b719edc0a3db90e5bf68f`。GitHub prerelease 非 draft 且仅有四项预期资产；主代理和独立 Luna 复核均使用不带 GitHub API 认证的公开 URL 下载，三项 SHA-256 与大小一致。公开 DMG／ZIP 的容器、版本／build／源码提交／官方 Radar URL／空 Sparkle 通道、thin arm64、60 个 Mach-O／65 个架构记录的 macOS 13 门禁、深层 ad-hoc 签名和 bundle SPDX 均通过。冻结后端复验期间，官方 `index.json` 曾短时出现约 4.0～4.7 秒首字节延迟并超过当前 3 秒单请求门限，正确回退到内置数据；端点随后连续 5 次恢复至 0.39～1.07 秒，重新下载的公开 ZIP 在全新隔离目录最终得到 `http/refreshed` 和 15 条公开官方第一方结果。当前机器 Gatekeeper assessments disabled，未覆盖 `/Applications`，未核销人工放行验收。
 - 2026-08-09：`preview.3` 本地发布候选在干净源码提交 `16e0dd2cafa82ef1b77b719edc0a3db90e5bf68f` 上完成 release-only fresh build；独立目录生成 Build 102 DMG `17,631,107` bytes、ZIP `15,405,346` bytes、SPDX SBOM `200,931` bytes 和 `SHA256SUMS`。三项哈希自校验、DMG 容器与只读挂载、ZIP 解包、DMG／ZIP App 的版本／build／完整源码提交／官方 Radar URL／空 Sparkle feed 与公钥／thin arm64、深层严格 ad-hoc 签名、60 个 Mach-O／65 个架构记录的 macOS 13 门禁和两份 bundle SBOM 复验均通过；两份主程序 SHA-256 一致。ZIP 内冻结后端在隔离 HOME 与全新数据目录从官方端点得到 `http/refreshed`，缓存 `snapshot-2026-08-09T00-00-00Z` 精确为 15 条公开官方第一方结果。当前机器 Gatekeeper assessments disabled，未把本机 `spctl` 接受写成人工放行验收；未创建 tag／Release、未上传资产、未改 README 的 `preview.2` 下载链接。
 - 2026-08-09：打包前 Build 102 候选固定为 `0.1.0（Build 102）`，构建合同定向回归 `28/28`、全量 Python `1421/1421`（`645.560s`）和 `git diff --check` 通过。先以源码提交 `ec2284d`、官方 `https://reference.modeldial.com/reference-snapshots`、空 Sparkle feed／公钥完成完整 `./build.sh`；candidate 回读版本、源码提交和 Radar URL 精确一致，60 个 Mach-O／65 个架构记录通过 macOS 13 门禁，thin arm64 与深层 ad-hoc 签名有效。随后在仅改变 bundle id／隔离 HOME 的临时副本中从零启动，没有点击刷新，约 19 秒后自动取得 `snapshot-2026-08-09T00-00-00Z`，本地缓存精确为 15 条并在 SwiftUI Radar 展示 08:00 新榜单；临时副本和隔离数据已删除。3 个交互提交、Build 102 合同和双语 README／GIF／验证记录共 5 个提交已 fast-forward 推送，远端 `main` 到达 `a1b7062`；标准 `build/modeldial-candidate.app` 随后从该精确提交重建并启动，继续回读官方 Radar URL 与空 Sparkle 通道。本次未创建 `preview.3`、tag、Release 或正式 Sparkle 通道。
 - 2026-08-09：完成一次隔离的 Sparkle 设置页真实升级演练。以公开 `preview.2` 的 `0.1.0（Build 101）` 为基线，仅在临时副本注入一次性 EdDSA 公钥和临时 HTTPS appcast；当前交互修复提交 `b20cac0` 以 `0.1.0（Build 102）` 完整 Release 构建，60 个 Mach-O／65 个架构记录的 macOS 13 门禁、深层 ad-hoc 签名、appcast EdDSA 签名及 `sign_update --verify` 均通过。App 在“设置 → 软件更新”发现 Build 102，实际请求 appcast 与 `15,414,550` bytes ZIP，完成“安装并重启应用”后同一路径回读为 Build 102／源码提交 `b20cac0`；隔离数据哨兵保留，真实配置与历史文件的时间和大小未变化，随后再次检查显示“当前已是最新版本”。更新后的无障碍树只有一个“收起”按钮，确认新交互实现已落入升级包。本次未配置永久 feed／正式密钥，未修改 GitHub、tag、Release 或生产服务；公开 `preview.2` 仍不能自行发现后续更新。
