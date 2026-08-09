@@ -38,7 +38,11 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
             self.source,
         )
         self.assertIn("MODELDIAL_DISABLE_UPDATES=1", self.source)
-        self.assertIn('[[ "$PREVIEW_LABEL" != "preview.1" ]]', self.source)
+        self.assertIn("preview.1|preview.2)", self.source)
+        self.assertIn(
+            'fail "$PREVIEW_LABEL is already published and cannot be overwritten"',
+            self.source,
+        )
         self.assertIn(
             'reference_snapshot_url="$(plist_value ModelDialReferenceSnapshotURL)"',
             self.source,
@@ -73,7 +77,7 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         self.assertIn("not Developer ID signed and not notarized", self.source)
 
     def test_artifacts_are_versioned_arm64_dmg_zip_and_checksums(self) -> None:
-        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.2}"', self.source)
+        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.3}"', self.source)
         self.assertIn('artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"', self.source)
         self.assertIn('dmg_name="${artifact_prefix}-macos-arm64.dmg"', self.source)
         self.assertIn(

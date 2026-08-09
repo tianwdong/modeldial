@@ -22,13 +22,16 @@ fi
 
 BUILD_ROOT="$ROOT_DIR/build"
 OUTPUT_DIR="${MODELDIAL_UNSIGNED_PREVIEW_OUTPUT_DIR:-$BUILD_ROOT/unsigned-preview}"
-PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.2}"
+PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.3}"
 MODELDIAL_REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"
 REFERENCE_SNAPSHOT_URL="$MODELDIAL_REFERENCE_SNAPSHOT_URL"
 [[ "$PREVIEW_LABEL" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] \
   || fail "invalid preview label: $PREVIEW_LABEL"
-[[ "$PREVIEW_LABEL" != "preview.1" ]] \
-  || fail "preview.1 is already published and cannot be overwritten"
+case "$PREVIEW_LABEL" in
+  preview.1|preview.2)
+    fail "$PREVIEW_LABEL is already published and cannot be overwritten"
+    ;;
+esac
 
 if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
   fail "worktree must be clean before packaging an unsigned preview"
