@@ -145,6 +145,7 @@ struct UpdateConfigurationTests {
         )
         self.assertEqual(info["SUPublicEDKey"], "$(MODELDIAL_SU_PUBLIC_ED_KEY)")
         self.assertIs(info["SURequireSignedFeed"], True)
+        self.assertIs(info["SUVerifyUpdateBeforeExtraction"], True)
         self.assertEqual(info["ModelDialSourceCommit"], "$(MODELDIAL_SOURCE_COMMIT)")
 
         build = (ROOT / "build.sh").read_text(encoding="utf-8")

@@ -47,6 +47,8 @@
 	<string>$(MODELDIAL_SU_PUBLIC_ED_KEY)</string>
 	<key>SURequireSignedFeed</key>
 	<true/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 	<key>SUSendProfileInfo</key>
 	<false/>
 </dict>
