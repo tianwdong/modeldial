@@ -4,7 +4,7 @@
   <p><strong>用真实 coding 评测，选出更适合当前任务的模型配置。</strong></p>
   <p>比较完整的 <code>model + effort + route</code>，直接看到质量、速度、Token 与参考费用。</p>
   <p>
-    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.8/modeldial-0.1.0-preview.8-macos-arm64.dmg"><strong>下载 macOS 预览版</strong></a>
+    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.9/modeldial-0.1.0-preview.9-macos-arm64.dmg"><strong>下载 macOS 预览版</strong></a>
     · <a href="https://modeldial.com">官网</a>
     · <a href="https://modeldial.com/radar">官方 Radar</a>
     · <a href="https://github.com/tianwdong/modeldial">GitHub</a>
@@ -27,7 +27,7 @@
 
 ## 下载并安装
 
-**当前版本：[`v0.1.0-preview.8`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.8)** · [直接下载 Apple Silicon DMG](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.8/modeldial-0.1.0-preview.8-macos-arm64.dmg)
+**当前版本：[`v0.1.0-preview.9`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.9)** · [直接下载 Apple Silicon DMG](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.9/modeldial-0.1.0-preview.9-macos-arm64.dmg)
 
 系统要求：macOS 13 或更高版本、Apple Silicon。Intel Mac 当前不支持。
 
@@ -36,10 +36,10 @@
 3. 如需自己的对比证据，再进入「评测 → 模型接入」，导入 provider 或新增兼容 endpoint。
 
 > [!IMPORTANT]
-> `v0.1.0-preview.8` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；不要关闭 Gatekeeper，也不要使用 `xattr`、`spctl` 或其他命令绕过系统安全检查。
+> `v0.1.0-preview.9` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；不要关闭 Gatekeeper，也不要使用 `xattr`、`spctl` 或其他命令绕过系统安全检查。
 
 > [!NOTE]
-> `preview.7` 起已启用独立的 Sparkle 预览更新通道，可在“设置 → 软件更新”检查后续版本。`preview.6` 及更早版本的更新器不可用，需要手动安装 `preview.8` 一次。若要校验文件，请同时下载 `SHA256SUMS`，并在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
+> `preview.7` 起已启用独立的 Sparkle 预览更新通道，可在“设置 → 软件更新”检查后续版本。`preview.6` 及更早版本的更新器不可用，需要手动安装 `preview.9` 一次。若要校验文件，请同时下载 `SHA256SUMS`，并在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
 
 ## 它解决什么
 
@@ -122,7 +122,7 @@ git diff --check
 - [Benchmark 与数据发布策略](docs/benchmark-and-data-policy.md)：题包、答案 fixture、价格快照和 provider 资产。
 - [公开内容来源审计](docs/open-source-content-audit.md)：上游来源、attribution 和题包检索留痕。
 - [发布清单](docs/release-checklist.md)：源码候选和二进制发行的独立门槛。
-- [当前预览发布说明](docs/releases/v0.1.0-preview.8.md)：安装步骤、验证与限制。
+- [当前预览发布说明](docs/releases/v0.1.0-preview.9.md)：安装步骤、验证与限制。
 - [安全策略](SECURITY.md)：私密漏洞报告渠道。
 
 ## 参与贡献与许可证
