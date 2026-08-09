@@ -76,8 +76,9 @@ struct ReferenceSnapshotRefreshPolicy {
         30 * 60,
     ]
     private static let publicationCatchUpInterval: TimeInterval = 60 * 60
-    private static let scheduleVersion = 3
+    private static let scheduleVersion = 4
     private static let failureBackoff: [TimeInterval] = [
+        30,
         5 * 60,
         15 * 60,
         60 * 60,

@@ -28,7 +28,9 @@ from scanner.history_store import HistoryStore
 from scanner.native_bridge import build_snapshot, refresh_reference_snapshots
 from scanner.reference_snapshot import (
     DEFAULT_REFERENCE_SNAPSHOT_URL,
+    DEFAULT_REFERENCE_SNAPSHOT_TIMEOUT_SECONDS,
     MAX_REFERENCE_ELAPSED_MS,
+    _HttpJsonResponse,
     build_reference_snapshot_leaderboard_projection,
     build_reference_snapshot_pairwise_comparisons,
     load_reference_snapshot_feed,
@@ -622,6 +624,59 @@ class ReferenceSnapshotTests(unittest.TestCase):
                     for summary in index["snapshots"]
                 ],
             )
+
+    def test_default_http_timeout_is_applied_to_index_and_archives(self) -> None:
+        index = json.loads(
+            (SNAPSHOT_ROOT / "index.json").read_text(encoding="utf-8")
+        )
+        timeout_calls: list[tuple[str, float]] = []
+
+        def read_http_json(
+            url: str,
+            *,
+            timeout_seconds: float,
+            max_bytes: int,
+            if_none_match: str | None = None,
+            allow_not_modified: bool = False,
+        ) -> _HttpJsonResponse:
+            del max_bytes, if_none_match, allow_not_modified
+            timeout_calls.append((url, timeout_seconds))
+            if url.endswith("/index.json"):
+                return _HttpJsonResponse(payload=index, etag='"index"')
+            relative_path = url.split(
+                "/reference-snapshots/", maxsplit=1
+            )[1]
+            payload = json.loads(
+                (SNAPSHOT_ROOT / relative_path).read_text(encoding="utf-8")
+            )
+            return _HttpJsonResponse(payload=payload, etag=None)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch(
+                "scanner.reference_snapshot._read_http_json",
+                side_effect=read_http_json,
+            ):
+                feed = load_reference_snapshot_feed_for_app(
+                    cache_root=Path(temp_dir) / "cache",
+                    base_url="https://reference.example.test/reference-snapshots",
+                )
+
+        self.assertEqual(feed["delivery"]["refresh_status"], "refreshed")
+        self.assertEqual(
+            len(timeout_calls),
+            1 + len(index["snapshots"]),
+        )
+        self.assertTrue(timeout_calls[0][0].endswith("/index.json"))
+        self.assertTrue(
+            all(
+                url.endswith(".json") and not url.endswith("/index.json")
+                for url, _ in timeout_calls[1:]
+            )
+        )
+        self.assertEqual(
+            [timeout for _, timeout in timeout_calls],
+            [DEFAULT_REFERENCE_SNAPSHOT_TIMEOUT_SECONDS] * len(timeout_calls),
+        )
 
     def test_http_feed_accepts_a_full_index_url(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

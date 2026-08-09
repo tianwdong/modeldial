@@ -24,6 +24,7 @@ REFERENCE_RANKING_RULE = (
 REFERENCE_TREND_RULE = "latest_6_same_configuration_protocol_route_v1"
 REFERENCE_SNAPSHOT_URL_ENV = "MODELDIAL_REFERENCE_SNAPSHOT_URL"
 DEFAULT_REFERENCE_SNAPSHOT_URL = ""
+DEFAULT_REFERENCE_SNAPSHOT_TIMEOUT_SECONDS = 8.0
 MAX_INDEX_BYTES = 1024 * 1024
 MAX_SNAPSHOT_BYTES = 4 * 1024 * 1024
 # Keep the wire value below the largest duration that the Swift UI can round
@@ -126,7 +127,7 @@ def load_reference_snapshot_feed_for_app(
     *,
     cache_root: Path,
     base_url: str | None = None,
-    timeout_seconds: float = 3,
+    timeout_seconds: float = DEFAULT_REFERENCE_SNAPSHOT_TIMEOUT_SECONDS,
 ) -> dict[str, object]:
     configured_url = _configured_reference_snapshot_url(base_url)
     if not configured_url:

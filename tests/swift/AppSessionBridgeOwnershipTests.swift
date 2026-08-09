@@ -1075,17 +1075,35 @@ private func verifyReferenceRefreshPolicyTracksPublicationAndPersistsBackoff() {
 
     var afterFailure = ReferenceSnapshotRefreshPolicy(persistence: persistence)
     expect(
-        !afterFailure.claimIfDue(now: start.addingTimeInterval(4 * 60)),
-        "the first failed attempt should survive restart with a five-minute backoff"
+        !afterFailure.claimIfDue(now: start.addingTimeInterval(29)),
+        "the first failed attempt should survive restart with a thirty-second backoff"
     )
     expect(
-        afterFailure.claimIfDue(now: start.addingTimeInterval(5 * 60)),
-        "the failed refresh should become due after its backoff"
+        afterFailure.claimIfDue(now: start.addingTimeInterval(30)),
+        "the failed refresh should become due after thirty seconds"
     )
     afterFailure.record(
+        status: "failed",
+        now: start.addingTimeInterval(30)
+    )
+
+    var afterSecondFailure = ReferenceSnapshotRefreshPolicy(persistence: persistence)
+    expect(
+        !afterSecondFailure.claimIfDue(
+            now: start.addingTimeInterval(30 + (5 * 60) - 1)
+        ),
+        "the second failed attempt should keep the five-minute backoff"
+    )
+    expect(
+        afterSecondFailure.claimIfDue(
+            now: start.addingTimeInterval(30 + (5 * 60))
+        ),
+        "the second failed attempt should become due after five minutes"
+    )
+    afterSecondFailure.record(
         status: "not_modified",
         latestPublishedAt: start,
-        now: start.addingTimeInterval(5 * 60)
+        now: start.addingTimeInterval(30 + (5 * 60))
     )
 
     var afterSuccess = ReferenceSnapshotRefreshPolicy(persistence: persistence)
@@ -1153,12 +1171,12 @@ private func verifyReferenceRefreshPolicyTracksPublicationAndPersistsBackoff() {
     expect(cachedFallback.claimIfDue(now: sixAM), "the cached fallback setup should be due")
     cachedFallback.record(status: "cached", now: sixAM)
     expect(
-        !cachedFallback.isDue(now: sixAM.addingTimeInterval((5 * 60) - 1)),
-        "a cached network fallback should use failure backoff"
+        !cachedFallback.isDue(now: sixAM.addingTimeInterval(29)),
+        "a cached network fallback should use the first failure backoff"
     )
     expect(
-        cachedFallback.isDue(now: sixAM.addingTimeInterval(5 * 60)),
-        "a cached network fallback should retry after five minutes"
+        cachedFallback.isDue(now: sixAM.addingTimeInterval(30)),
+        "a cached network fallback should retry after thirty seconds"
     )
 
     let legacyPrefix = "ModelDial.ReferenceRefreshPolicyLegacy.\(UUID().uuidString)"
@@ -1166,6 +1184,7 @@ private func verifyReferenceRefreshPolicyTracksPublicationAndPersistsBackoff() {
         Date(timeIntervalSince1970: 99_999).timeIntervalSince1970,
         forKey: "\(legacyPrefix).nextAttemptAt"
     )
+    persistence.set(3, forKey: "\(legacyPrefix).scheduleVersion")
     let migrated = ReferenceSnapshotRefreshPolicy(
         persistence: persistence,
         persistencePrefix: legacyPrefix
