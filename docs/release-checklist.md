@@ -93,9 +93,9 @@
 - [x] marketing version 保持 `0.1.0`，build number 从 102 单调递增到 103；预览打包默认 label 改为 `preview.4`，并拒绝复用已公开的 `preview.1`、`preview.2` 与 `preview.3`。
 - [x] 官方 Radar 的索引和归档单请求默认超时从 3 秒提高到 8 秒；失败后的 App 首次自动重试提前到 30 秒，连续失败再按 5 分钟、15 分钟、1 小时和 6 小时退避。调度版本同步迁移，缓存／内置快照回退和 first-party provenance 门禁保持不变。
 - [x] 完成超时／刷新调度、构建合同和预览打包定向回归 `66/66`，以及全量 Python `1422/1422`（`ResourceWarning` 按错误处理）；`git diff --check` 通过。
-- [ ] 从干净源码提交完成 Build 103 fresh build，并通过版本／build／源码提交、官方 Radar URL、空更新通道、thin arm64、macOS 13 和深层 ad-hoc 签名回读。
-- [ ] 用超过旧 3 秒门限的隔离慢响应完成冻结后端刷新，并从真实官方端点在全新数据目录取得 provenance 合格的第一方结果。
-- [ ] 在独立目录生成并复验 `preview.4` DMG／ZIP／SBOM／SHA256SUMS；不得覆盖历史预览产物或清单。
+- [x] 从干净源码提交 `7237db3413a040f9ad912f7c21917aec392323f3` 完成 Build 103 fresh build，并通过版本／build／源码提交、官方 Radar URL、空更新通道、thin arm64、macOS 13 和深层 ad-hoc 签名回读。
+- [x] ZIP 内冻结后端用超过旧 3 秒门限的 4.2 秒隔离慢响应完成 `http/refreshed`，并从真实官方端点在全新数据目录取得 15 条 provenance 合格的第一方结果。
+- [x] 在独立目录生成并复验 `preview.4` DMG／ZIP／SBOM／SHA256SUMS；三项 SHA-256、DMG 只读挂载、ZIP 解包、两份 bundle 身份／签名／兼容性／SBOM 和主程序一致性均通过，没有覆盖历史预览产物或清单。
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
 - [ ] 经单独授权后才可创建 `v0.1.0-preview.4` annotated tag／GitHub prerelease、上传资产并切换双语 README；未授权前保持本地候选。
 
