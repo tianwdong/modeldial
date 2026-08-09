@@ -88,15 +88,62 @@ private struct FixtureError: LocalizedError {
     var errorDescription: String? { detail }
 }
 
-private func verifyMaintenanceClaimIsSingleUse() {
+private func verifySuccessfulMaintenanceClaimIsSingleUse() {
     var coordinator = StartupLoadCoordinator()
     expect(
         coordinator.claimMaintenanceIfNeeded(),
         "the first load should claim startup maintenance"
     )
+    coordinator.recordMaintenanceResult(successfully: true)
     expect(
         !coordinator.claimMaintenanceIfNeeded(),
-        "later loads should use the pure snapshot path"
+        "successful maintenance should not be claimed again"
+    )
+}
+
+private func verifyFailedMaintenanceCanBeClaimedAgain() throws {
+    var coordinator = StartupLoadCoordinator()
+    expect(
+        coordinator.claimMaintenanceIfNeeded(),
+        "the first load should claim startup maintenance"
+    )
+    let result = try StartupLoadCoordinator.load(
+        recoverRun: {
+            throw FixtureError(detail: "recover failed")
+        },
+        observeState: {
+            throw FixtureError(detail: "observe failed")
+        },
+        snapshot: { try snapshot() }
+    )
+    expect(
+        result.warningDetail?.contains("recover failed") == true
+            && result.warningDetail?.contains("observe failed") == true,
+        "recover and observe warnings should remain visible"
+    )
+    coordinator.recordMaintenanceResult(successfully: result.warningDetail == nil)
+    expect(
+        coordinator.claimMaintenanceIfNeeded(),
+        "a failed startup maintenance attempt should be retryable"
+    )
+}
+
+private func verifyMaintenanceStopsAfterMaximumAttempts() {
+    var coordinator = StartupLoadCoordinator()
+    for attempt in 0..<StartupLoadCoordinator.maximumMaintenanceAttempts {
+        expect(
+            coordinator.claimMaintenanceIfNeeded(),
+            "maintenance attempt \(attempt + 1) should be available"
+        )
+        coordinator.recordMaintenanceResult(successfully: false)
+    }
+    expect(
+        !coordinator.canRetryMaintenance,
+        "maintenance should report no retry after its bounded attempts"
+    )
+    expect(
+        !coordinator.claimMaintenanceIfNeeded(),
+        "maintenance should stop after its bounded attempts"
     )
 }
 
@@ -182,6 +229,11 @@ private func verifyReferenceRefreshRunsSeparately() throws {
 }
 
 private func verifySnapshotFailurePropagates() {
+    var coordinator = StartupLoadCoordinator()
+    expect(
+        coordinator.claimMaintenanceIfNeeded(),
+        "a startup load with a snapshot failure should consume one attempt"
+    )
     do {
         _ = try StartupLoadCoordinator.load(
             recoverRun: { try recovery() },
@@ -195,13 +247,20 @@ private func verifySnapshotFailurePropagates() {
             "snapshot failure detail should be preserved"
         )
     }
+    coordinator.recordMaintenanceResult(successfully: false)
+    expect(
+        coordinator.claimMaintenanceIfNeeded(),
+        "a snapshot failure should leave a later startup retry opportunity"
+    )
 }
 
 @main
 private enum StartupLoadCoordinatorTestMain {
     static func main() {
         do {
-            verifyMaintenanceClaimIsSingleUse()
+            verifySuccessfulMaintenanceClaimIsSingleUse()
+            try verifyFailedMaintenanceCanBeClaimedAgain()
+            verifyMaintenanceStopsAfterMaximumAttempts()
             try verifyStrictOrder()
             try verifyMaintenanceFailuresRemainNonBlocking()
             try verifyIncompleteRecoveryRequiresAttention()

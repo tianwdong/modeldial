@@ -211,7 +211,7 @@ class ReferenceSnapshotTests(unittest.TestCase):
         self.assertEqual(read_feed["delivery"]["source"], "bundled")
         self.assertEqual(read_feed["delivery"]["refresh_status"], "failed")
         self.assertEqual(read_feed["delivery"]["error_code"], "https_required")
-        self.assertEqual(cached_read_feed["delivery"]["source"], "cache")
+        self.assertEqual(cached_read_feed["delivery"]["source"], "bundled")
         self.assertEqual(cached_read_feed["delivery"]["refresh_status"], "failed")
         self.assertEqual(cached_read_feed["delivery"]["error_code"], "https_required")
 
@@ -602,9 +602,10 @@ class ReferenceSnapshotTests(unittest.TestCase):
             self.assertEqual(feed["latest"]["entry_count"], 18)
             cached = load_reference_snapshot_feed(cache_root)
             self.assertEqual(cached["status"], "loaded")
-            cached_index = json.loads(
-                (cache_root / "index.json").read_text(encoding="utf-8")
+            bundle = json.loads(
+                (cache_root / ".http-cache-bundle.json").read_text(encoding="utf-8")
             )
+            cached_index = bundle["index"]
             self.assertEqual(cached_index["latest_path"], "latest.json")
             self.assertTrue(
                 all(
@@ -624,6 +625,294 @@ class ReferenceSnapshotTests(unittest.TestCase):
                     for summary in index["snapshots"]
                 ],
             )
+
+    def test_http_cache_is_bound_to_the_normalized_index_url(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            remote_root = root / "remote"
+            cache_root = root / "cache"
+            shutil.copytree(SNAPSHOT_ROOT, remote_root)
+            with _serve_directory(remote_root) as base_url_a:
+                first = load_reference_snapshot_feed_for_app(
+                    cache_root=cache_root,
+                    base_url=base_url_a,
+                )
+                matching = read_reference_snapshot_feed_for_app(
+                    cache_root=cache_root,
+                    base_url=base_url_a,
+                )
+            mismatched_read = read_reference_snapshot_feed_for_app(
+                cache_root=cache_root,
+                base_url="https://reference-b.example.test/reference-snapshots",
+            )
+            mismatched_refresh = load_reference_snapshot_feed_for_app(
+                cache_root=cache_root,
+                base_url="https://127.0.0.1:1/reference-snapshots",
+                timeout_seconds=0.2,
+            )
+
+        self.assertEqual(first["delivery"]["source"], "http")
+        self.assertEqual(matching["delivery"]["source"], "http")
+        self.assertEqual(matching["delivery"]["refresh_status"], "cached")
+        self.assertEqual(mismatched_read["delivery"]["source"], "bundled")
+        self.assertEqual(mismatched_read["delivery"]["refresh_status"], "not_cached")
+        self.assertEqual(mismatched_refresh["delivery"]["source"], "bundled")
+        self.assertEqual(mismatched_refresh["delivery"]["refresh_status"], "failed")
+        self.assertNotEqual(
+            mismatched_refresh["delivery"].get("error_code"),
+            "cache_write_failed",
+        )
+
+    def test_legacy_http_metadata_binds_existing_root_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "cache"
+            shutil.copytree(SNAPSHOT_ROOT, root)
+            (root / ".http-cache.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "index_url": "https://reference-a.example.test/reference-snapshots/index.json",
+                        "index_etag": '"legacy"',
+                    }
+                ),
+                encoding="utf-8",
+            )
+            matching = read_reference_snapshot_feed_for_app(
+                cache_root=root,
+                base_url="https://reference-a.example.test/reference-snapshots",
+            )
+            mismatched = read_reference_snapshot_feed_for_app(
+                cache_root=root,
+                base_url="https://reference-b.example.test/reference-snapshots",
+            )
+
+        self.assertEqual(matching["delivery"]["source"], "http")
+        self.assertEqual(matching["delivery"]["refresh_status"], "cached")
+        self.assertEqual(mismatched["delivery"]["source"], "bundled")
+        self.assertEqual(mismatched["delivery"]["refresh_status"], "not_cached")
+
+    def test_corrupt_new_bundle_does_not_fall_back_to_legacy_other_source(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "cache"
+            shutil.copytree(SNAPSHOT_ROOT, root)
+            (root / ".http-cache.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "index_url": "https://reference-a.example.test/reference-snapshots/index.json",
+                        "index_etag": '"legacy"',
+                    }
+                ),
+                encoding="utf-8",
+            )
+            (root / ".http-cache-bundle.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "index_url": "https://reference-b.example.test/reference-snapshots/index.json",
+                        "index": {},
+                        "latest": {},
+                        "snapshots": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = read_reference_snapshot_feed_for_app(
+                cache_root=root,
+                base_url="https://reference-b.example.test/reference-snapshots",
+            )
+
+        self.assertEqual(result["delivery"]["source"], "bundled")
+        self.assertEqual(result["delivery"]["refresh_status"], "not_cached")
+
+    def test_broken_bundle_symlink_does_not_fall_back_to_same_source_legacy(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir) / "cache"
+            shutil.copytree(SNAPSHOT_ROOT, root)
+            (root / ".http-cache.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "index_url": "https://reference-a.example.test/reference-snapshots/index.json",
+                        "index_etag": '"legacy"',
+                    }
+                ),
+                encoding="utf-8",
+            )
+            try:
+                os.symlink(
+                    "missing-http-cache-bundle.json",
+                    root / ".http-cache-bundle.json",
+                )
+            except (OSError, NotImplementedError) as error:
+                self.skipTest(f"symlink unavailable: {error}")
+            result = read_reference_snapshot_feed_for_app(
+                cache_root=root,
+                base_url="https://reference-a.example.test/reference-snapshots",
+            )
+
+        self.assertEqual(result["delivery"]["source"], "bundled")
+        self.assertEqual(result["delivery"]["refresh_status"], "not_cached")
+
+    def test_failed_bundle_write_keeps_previous_cache_loaded(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            remote_root = root / "remote"
+            cache_root = root / "cache"
+            shutil.copytree(SNAPSHOT_ROOT, remote_root)
+            with _serve_directory(remote_root) as base_url:
+                first = load_reference_snapshot_feed_for_app(
+                    cache_root=cache_root,
+                    base_url=base_url,
+                )
+                index_path = remote_root / "index.json"
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+                index["latest_batch_id"] = index["snapshots"][0]["batch_id"]
+                index_path.write_text(
+                    json.dumps(index, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                original_write = __import__(
+                    "scanner.reference_snapshot", fromlist=["_write_json_atomic"]
+                )._write_json_atomic
+
+                def fail_bundle_write(path: Path, payload: dict[str, object]) -> None:
+                    if path.name == ".http-cache-bundle.json":
+                        raise OSError("injected bundle write failure")
+                    original_write(path, payload)
+
+                with patch(
+                    "scanner.reference_snapshot._write_json_atomic",
+                    side_effect=fail_bundle_write,
+                ):
+                    fallback = load_reference_snapshot_feed_for_app(
+                        cache_root=cache_root,
+                        base_url=base_url,
+                    )
+            loaded = load_reference_snapshot_feed(cache_root)
+
+        self.assertEqual(fallback["delivery"]["source"], "cache")
+        self.assertEqual(fallback["delivery"]["refresh_status"], "failed")
+        self.assertEqual(
+            fallback["latest"]["batch_sha256"],
+            first["latest"]["batch_sha256"],
+        )
+        self.assertEqual(loaded["status"], "loaded")
+        self.assertEqual(
+            loaded["latest"]["batch_sha256"],
+            first["latest"]["batch_sha256"],
+        )
+
+    def test_failed_atomic_replace_keeps_previous_cache_loaded(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            remote_root = root / "remote"
+            cache_root = root / "cache"
+            shutil.copytree(SNAPSHOT_ROOT, remote_root)
+            with _serve_directory(remote_root) as base_url:
+                first = load_reference_snapshot_feed_for_app(
+                    cache_root=cache_root,
+                    base_url=base_url,
+                )
+                bundle_before = (cache_root / ".http-cache-bundle.json").read_bytes()
+                index_path = remote_root / "index.json"
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+                index["latest_batch_id"] = index["snapshots"][0]["batch_id"]
+                index_path.write_text(
+                    json.dumps(index, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                original_replace = Path.replace
+
+                def fail_bundle_replace(self: Path, target: Path) -> Path:
+                    if target.name == ".http-cache-bundle.json":
+                        raise OSError("injected bundle replace failure")
+                    return original_replace(self, target)
+
+                with patch.object(Path, "replace", new=fail_bundle_replace):
+                    fallback = load_reference_snapshot_feed_for_app(
+                        cache_root=cache_root,
+                        base_url=base_url,
+                    )
+            bundle_after = (cache_root / ".http-cache-bundle.json").read_bytes()
+            loaded = load_reference_snapshot_feed(cache_root)
+
+        self.assertEqual(fallback["delivery"]["source"], "cache")
+        self.assertEqual(fallback["delivery"]["refresh_status"], "failed")
+        self.assertEqual(bundle_after, bundle_before)
+        self.assertEqual(loaded["status"], "loaded")
+        self.assertEqual(
+            loaded["latest"]["batch_sha256"],
+            first["latest"]["batch_sha256"],
+        )
+
+    def test_legacy_source_is_not_rebound_when_new_bundle_replace_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            cache_root = root / "cache"
+            remote_root = root / "remote"
+            shutil.copytree(SNAPSHOT_ROOT, cache_root)
+            shutil.copytree(SNAPSHOT_ROOT, remote_root)
+            (cache_root / ".http-cache.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "index_url": "https://reference-a.example.test/reference-snapshots/index.json",
+                        "index_etag": '"legacy"',
+                    }
+                ),
+                encoding="utf-8",
+            )
+            with _serve_directory(remote_root) as base_url_b:
+                original_replace = Path.replace
+
+                def fail_bundle_replace(self: Path, target: Path) -> Path:
+                    if target.name == ".http-cache-bundle.json":
+                        raise OSError("injected bundle replace failure")
+                    return original_replace(self, target)
+
+                with patch.object(Path, "replace", new=fail_bundle_replace):
+                    result = load_reference_snapshot_feed_for_app(
+                        cache_root=cache_root,
+                        base_url=base_url_b,
+                    )
+
+        self.assertEqual(result["delivery"]["source"], "bundled")
+        self.assertEqual(result["delivery"]["refresh_status"], "failed")
+        self.assertEqual(result["delivery"]["error_code"], "cache_write_failed")
+
+    def test_successful_bundle_switch_reloads(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            remote_root = root / "remote"
+            cache_root = root / "cache"
+            shutil.copytree(SNAPSHOT_ROOT, remote_root)
+            with _serve_directory(remote_root) as base_url:
+                first = load_reference_snapshot_feed_for_app(
+                    cache_root=cache_root,
+                    base_url=base_url,
+                )
+                index_path = remote_root / "index.json"
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+                index["latest_batch_id"] = index["snapshots"][0]["batch_id"]
+                index_path.write_text(
+                    json.dumps(index, ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
+                second = load_reference_snapshot_feed_for_app(
+                    cache_root=cache_root,
+                    base_url=base_url,
+                )
+            bundle = json.loads(
+                (cache_root / ".http-cache-bundle.json").read_text(encoding="utf-8")
+            )
+            reloaded = load_reference_snapshot_feed(cache_root)
+
+        self.assertEqual(second["delivery"]["source"], "http")
+        self.assertEqual(second["delivery"]["refresh_status"], "refreshed")
+        self.assertNotEqual(second["latest"]["batch_sha256"], first["latest"]["batch_sha256"])
+        self.assertEqual(reloaded["latest"]["batch_sha256"], second["latest"]["batch_sha256"])
+        self.assertEqual(bundle["schema_version"], 1)
 
     def test_default_http_timeout_is_applied_to_index_and_archives(self) -> None:
         index = json.loads(
@@ -789,7 +1078,7 @@ class ReferenceSnapshotTests(unittest.TestCase):
                 ],
             )
 
-    def test_http_feed_recovers_when_etag_survives_a_corrupt_cache(self) -> None:
+    def test_http_feed_recovers_from_a_corrupt_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             remote_root = root / "remote"
@@ -807,7 +1096,10 @@ class ReferenceSnapshotTests(unittest.TestCase):
                     cache_root=cache_root,
                     base_url=base_url,
                 )
-                (cache_root / "index.json").write_text("{}\n", encoding="utf-8")
+                (cache_root / ".http-cache-bundle.json").write_text(
+                    "{}\n",
+                    encoding="utf-8",
+                )
                 second_request_start = len(request_log)
                 recovered = load_reference_snapshot_feed_for_app(
                     cache_root=cache_root,
@@ -815,11 +1107,7 @@ class ReferenceSnapshotTests(unittest.TestCase):
                 )
 
             self.assertEqual(recovered["delivery"]["refresh_status"], "refreshed")
-            self.assertEqual(
-                request_log[second_request_start:2 + second_request_start],
-                ["/index.json", "/index.json"],
-            )
-            self.assertTrue(index_request_headers[-2])
+            self.assertEqual(request_log[second_request_start], "/index.json")
             self.assertIsNone(index_request_headers[-1])
 
     def test_tampered_http_feed_keeps_last_valid_cache(self) -> None:
@@ -959,7 +1247,9 @@ class ReferenceSnapshotTests(unittest.TestCase):
             )
             self.assertEqual(feed["delivery"]["source"], "http")
             self.assertEqual(feed["delivery"]["refresh_status"], "cached")
-            self.assertTrue((root / "reference_snapshots" / "index.json").is_file())
+            self.assertTrue(
+                (root / "reference_snapshots" / ".http-cache-bundle.json").is_file()
+            )
 
 
 if __name__ == "__main__":

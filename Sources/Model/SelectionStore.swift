@@ -52,6 +52,8 @@ final class AppSessionStore: ObservableObject {
     private var scheduledScanFingerprint: String?
     private var glanceBoundaryTimer: Timer?
     private var currentModelRefreshTimer: Timer?
+    private var startupMaintenanceRetryTask: Task<Void, Never>?
+    private var startupMaintenanceRetryScheduled = false
     private var isSnapshotReloadInFlight = false
     private var isSnapshotReloadPending = false
     private var pendingSnapshotReloadAutoResumeOnInterruption = false
@@ -74,6 +76,7 @@ final class AppSessionStore: ObservableObject {
     private var referenceSnapshotRefreshPolicy: ReferenceSnapshotRefreshPolicy
     private var referenceSnapshotRefreshFeedbackDismissTask: Task<Void, Never>?
     private var stableActiveModelSessionKeys: [String] = []
+    private static let startupMaintenanceRetryDelayNanoseconds: UInt64 = 250_000_000
 
     init(
         bridge: NativeBridgeClient = NativeBridgeClient(),
@@ -109,6 +112,7 @@ final class AppSessionStore: ObservableObject {
         scheduledScanTimer?.invalidate()
         glanceBoundaryTimer?.invalidate()
         currentModelRefreshTimer?.invalidate()
+        startupMaintenanceRetryTask?.cancel()
     }
 
     var bestLabel: String {
@@ -1624,9 +1628,12 @@ final class AppSessionStore: ObservableObject {
             )
         if shouldPerformStartupMaintenance
             && allowsReferenceRefresh
-            && referenceSnapshotRefreshPolicy.isDue() {
+            && (forceReferenceRefresh || referenceSnapshotRefreshPolicy.isDue()) {
             isSnapshotReloadPending = true
             pendingSnapshotReloadAllowsReferenceRefresh = true
+            pendingSnapshotReloadForcesReferenceRefresh =
+                pendingSnapshotReloadForcesReferenceRefresh
+                || forceReferenceRefresh
         }
         let shouldObserveLocalState = !shouldPerformStartupMaintenance
             && activeBridgeOperationID == nil
@@ -1672,6 +1679,14 @@ final class AppSessionStore: ObservableObject {
                     performStartupMaintenance: shouldPerformStartupMaintenance,
                     refreshReference: shouldRefreshReference
                 )
+                if shouldPerformStartupMaintenance {
+                    startupLoadCoordinator.recordMaintenanceResult(
+                        successfully: loadResult.warningDetail == nil
+                    )
+                    if loadResult.warningDetail != nil {
+                        enqueueStartupMaintenanceRetryIfAvailable()
+                    }
+                }
                 let newSnapshot = loadResult.snapshot
                 let maintenanceFailureDetail = [
                     observationFailureDetail,
@@ -1723,6 +1738,9 @@ final class AppSessionStore: ObservableObject {
                 if shouldRefreshReference {
                     referenceSnapshotRefreshPolicy.record(status: "failed")
                 }
+                if shouldPerformStartupMaintenance {
+                    enqueueStartupMaintenanceRetryIfAvailable()
+                }
                 isSnapshotReloadInFlight = false
                 if forceReferenceRefresh {
                     isReferenceSnapshotRefreshInFlight = false
@@ -1735,6 +1753,23 @@ final class AppSessionStore: ObservableObject {
                 }
                 recordSnapshotRefreshFailure(error)
             }
+        }
+    }
+
+    private func enqueueStartupMaintenanceRetryIfAvailable() {
+        guard startupLoadCoordinator.canRetryMaintenance else { return }
+        isSnapshotReloadPending = true
+        pendingSnapshotReloadAllowsStartupMaintenance = true
+        guard !startupMaintenanceRetryScheduled else { return }
+        startupMaintenanceRetryScheduled = true
+        startupMaintenanceRetryTask = Task { [weak self] in
+            try? await Task.sleep(
+                nanoseconds: Self.startupMaintenanceRetryDelayNanoseconds
+            )
+            guard let self, !Task.isCancelled else { return }
+            self.startupMaintenanceRetryTask = nil
+            self.startupMaintenanceRetryScheduled = false
+            self.startPendingSnapshotReloadIfNeeded()
         }
     }
 
@@ -1780,6 +1815,7 @@ final class AppSessionStore: ObservableObject {
 
     private func startPendingSnapshotReloadIfNeeded() {
         guard isSnapshotReloadPending else { return }
+        guard !startupMaintenanceRetryScheduled else { return }
         let autoResumeOnInterruption = pendingSnapshotReloadAutoResumeOnInterruption
         let allowsStartupMaintenance = pendingSnapshotReloadAllowsStartupMaintenance
         let allowsReferenceRefresh = pendingSnapshotReloadAllowsReferenceRefresh

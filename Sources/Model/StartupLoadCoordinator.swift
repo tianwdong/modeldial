@@ -7,12 +7,25 @@ struct StartupLoadResult {
 }
 
 struct StartupLoadCoordinator {
-    private var hasClaimedMaintenance = false
+    static let maximumMaintenanceAttempts = 3
+    private var maintenanceAttemptCount = 0
+    private var didCompleteMaintenance = false
+
+    var canRetryMaintenance: Bool {
+        !didCompleteMaintenance
+            && maintenanceAttemptCount < Self.maximumMaintenanceAttempts
+    }
 
     mutating func claimMaintenanceIfNeeded() -> Bool {
-        guard !hasClaimedMaintenance else { return false }
-        hasClaimedMaintenance = true
+        guard canRetryMaintenance else { return false }
+        maintenanceAttemptCount += 1
         return true
+    }
+
+    mutating func recordMaintenanceResult(successfully: Bool) {
+        if successfully {
+            didCompleteMaintenance = true
+        }
     }
 
     static func load(

@@ -64,6 +64,8 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
     private let observationError: StubGatewayError?
     private var snapshotResults: [BridgeSnapshot]
     private var loadSnapshots: [BridgeSnapshot]
+    private var loadWarnings: [String?]
+    private var loadErrors: [StubGatewayError]
     private let manualReferenceRefreshStatus: String
     private var loadSnapshotMaintenanceRequests: [Bool] = []
     private var loadSnapshotReferenceRefreshRequests: [Bool] = []
@@ -94,6 +96,8 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
         patchResults: [Result<BridgeSnapshot, StubGatewayError>] = [],
         firstPatchGate: BlockingSnapshotGate? = nil,
         snapshotResults: [BridgeSnapshot] = [],
+        loadWarnings: [String?] = [],
+        loadErrors: [StubGatewayError] = [],
         clearResult: BridgeDataOperationResponse? = nil,
         localImportResult: BridgeLocalImportResponse? = nil,
         connectionTestResult: BridgeConnectionTestResponse? = nil,
@@ -108,6 +112,8 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
         self.firstLoadGate = firstLoadGate
         self.firstPatchGate = firstPatchGate
         self.snapshotResults = snapshotResults
+        self.loadWarnings = loadWarnings
+        self.loadErrors = loadErrors
         self.clearResult = clearResult
         self.localImportResult = localImportResult
         self.connectionTestResult = connectionTestResult
@@ -124,12 +130,15 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
             didBlockFirstLoad = true
             firstLoadGate.blockUntilReleased()
         }
+        if !loadErrors.isEmpty {
+            throw loadErrors.removeFirst()
+        }
         guard !loadSnapshots.isEmpty else {
             throw StubGatewayError.unexpectedCall
         }
         return StartupLoadResult(
             snapshot: loadSnapshots.removeFirst(),
-            warningDetail: nil,
+            warningDetail: loadWarnings.isEmpty ? nil : loadWarnings.removeFirst(),
             referenceRefreshStatus: refreshReference ? manualReferenceRefreshStatus : nil
         )
     }
@@ -1282,6 +1291,130 @@ private func verifyStartupPublishesCacheBeforeMaintenanceAndRemoteRefresh() asyn
     expect(
         maintenanceRequests == [true, false] && referenceRequests == [false, true],
         "startup should publish cache, maintain local state, then refresh remote data"
+    )
+}
+
+@MainActor
+private func verifyStartupMaintenanceWarningSchedulesBoundedRetry() async throws {
+    let first = try decodedSnapshot(historyCount: 21)
+    let second = try decodedSnapshot(historyCount: 22)
+    var referencePolicy = ReferenceSnapshotRefreshPolicy(persistence: nil)
+    let now = Date()
+    expect(
+        referencePolicy.claimIfDue(now: now),
+        "the startup retry contract should reserve its remote refresh slot"
+    )
+    referencePolicy.record(
+        status: "not_modified",
+        latestPublishedAt: now,
+        now: now
+    )
+    let gateway = StubBridgeGateway(
+        patchResult: .failure(.unexpectedCall),
+        loadSnapshots: [first, second],
+        loadWarnings: ["startup maintenance warning", nil]
+    )
+    let store = makeStore(
+        gateway: gateway,
+        referenceSnapshotRefreshPolicy: referencePolicy
+    )
+
+    store.refresh()
+    try await waitForHistoryCount(22, in: store)
+
+    let maintenanceRequests = await gateway.recordedLoadSnapshotMaintenanceRequests()
+    expect(
+        maintenanceRequests == [true, true],
+        "a startup maintenance warning should schedule a later startup maintenance reload"
+    )
+}
+
+@MainActor
+private func verifyStartupMaintenanceLoadErrorSchedulesRetry() async throws {
+    let recovered = try decodedSnapshot(historyCount: 23)
+    var referencePolicy = ReferenceSnapshotRefreshPolicy(persistence: nil)
+    let now = Date()
+    expect(
+        referencePolicy.claimIfDue(now: now),
+        "the startup load error contract should reserve its remote refresh slot"
+    )
+    referencePolicy.record(
+        status: "not_modified",
+        latestPublishedAt: now,
+        now: now
+    )
+    let gateway = StubBridgeGateway(
+        patchResult: .failure(.unexpectedCall),
+        loadSnapshots: [recovered],
+        loadErrors: [.expectedFailure]
+    )
+    let store = makeStore(
+        gateway: gateway,
+        referenceSnapshotRefreshPolicy: referencePolicy
+    )
+
+    store.refresh()
+    try await waitForHistoryCount(23, in: store)
+
+    let maintenanceRequests = await gateway.recordedLoadSnapshotMaintenanceRequests()
+    expect(
+        maintenanceRequests == [true, true],
+        "a startup load error should schedule a later startup maintenance reload"
+    )
+}
+
+@MainActor
+private func verifyQueuedForcedReferenceRefreshSurvivesStartupRetry() async throws {
+    let first = try decodedSnapshot(historyCount: 24)
+    let retry = try decodedSnapshot(historyCount: 25)
+    let refreshed = try decodedSnapshot(historyCount: 26)
+    let loadGate = BlockingSnapshotGate()
+    defer { loadGate.release() }
+    var referencePolicy = ReferenceSnapshotRefreshPolicy(persistence: nil)
+    let now = Date()
+    expect(
+        referencePolicy.claimIfDue(now: now),
+        "the forced refresh queue contract should reserve its remote refresh slot"
+    )
+    referencePolicy.record(
+        status: "not_modified",
+        latestPublishedAt: now,
+        now: now
+    )
+    let gateway = StubBridgeGateway(
+        patchResult: .failure(.unexpectedCall),
+        loadSnapshots: [first, retry, refreshed],
+        firstLoadGate: loadGate,
+        loadWarnings: ["startup maintenance warning", nil, nil]
+    )
+    let store = makeStore(
+        gateway: gateway,
+        referenceSnapshotRefreshPolicy: referencePolicy
+    )
+
+    store.refresh()
+    try await waitUntil("startup load should be in flight before forced refresh") {
+        loadGate.hasStarted()
+    }
+    store.refreshReferenceSnapshotNow()
+    expect(
+        store.isReferenceSnapshotRefreshInFlight,
+        "a queued forced refresh should expose its in-flight state immediately"
+    )
+    loadGate.release()
+
+    try await waitForHistoryCount(26, in: store)
+    let maintenanceRequests = await gateway.recordedLoadSnapshotMaintenanceRequests()
+    let referenceRequests = await gateway.recordedLoadSnapshotReferenceRefreshRequests()
+    expect(
+        maintenanceRequests == [true, true, false]
+            && referenceRequests == [false, false, true],
+        "a forced refresh queued during startup retry should run after maintenance"
+    )
+    expect(
+        !store.isReferenceSnapshotRefreshInFlight
+            && store.referenceSnapshotRefreshFeedbackStatus == "refreshed",
+        "the queued forced refresh should clear in-flight state and publish feedback"
     )
 }
 
@@ -2441,6 +2574,9 @@ private enum AppSessionBridgeOwnershipTestMain {
             try await verifyWakeRefreshUsesTheRemoteRefreshGate()
             verifyReferenceRefreshPolicyTracksPublicationAndPersistsBackoff()
             try await verifyStartupPublishesCacheBeforeMaintenanceAndRemoteRefresh()
+            try await verifyStartupMaintenanceWarningSchedulesBoundedRetry()
+            try await verifyStartupMaintenanceLoadErrorSchedulesRetry()
+            try await verifyQueuedForcedReferenceRefreshSurvivesStartupRetry()
             try await verifyInitialFixtureDoesNotSuppressNormalInitialLoad()
             try verifyLocalRadarConsumesBackendEligibilityDecisions()
             try verifyAutoSourceUsesPortfolioResolvedOfficialIdentity()

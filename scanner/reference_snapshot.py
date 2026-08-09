@@ -33,6 +33,8 @@ MAX_SNAPSHOT_BYTES = 4 * 1024 * 1024
 # duration limits.
 MAX_REFERENCE_ELAPSED_MS = float(2**52) * 1_000
 _HTTP_CACHE_METADATA_NAME = ".http-cache.json"
+_HTTP_CACHE_BUNDLE_NAME = ".http-cache-bundle.json"
+_HTTP_CACHE_BUNDLE_SCHEMA_VERSION = 1
 _REFERENCE_TREND_WINDOW = 6
 _TARGET_LABELS = (
     ("highest_score", "Highest score"),
@@ -65,6 +67,13 @@ class _DownloadedReferenceSnapshotFeed:
 
 def load_reference_snapshot_feed(root: Path | None = None) -> dict[str, object]:
     snapshot_root = root or _reference_snapshot_root()
+    bundle = _load_reference_snapshot_bundle(snapshot_root)
+    if bundle["status"] == "loaded":
+        return bundle
+    return _load_reference_snapshot_feed_root(snapshot_root)
+
+
+def _load_reference_snapshot_feed_root(snapshot_root: Path) -> dict[str, object]:
     index_path = snapshot_root / "index.json"
     if not index_path.is_file():
         return _empty_feed("missing")
@@ -140,12 +149,13 @@ def load_reference_snapshot_feed_for_app(
             "not_configured",
         )
 
+    index_url = ""
     try:
-        cached = load_reference_snapshot_feed(cache_root)
         index_url = _same_origin_url(
             _normalize_base_url(configured_url),
             "index.json",
         )
+        cached = _load_reference_snapshot_cache_for_url(cache_root, index_url)
         downloaded = _download_reference_snapshot_feed(
             configured_url,
             cached_feed=cached,
@@ -166,20 +176,21 @@ def load_reference_snapshot_feed_for_app(
             index=downloaded.index,
             latest=downloaded.latest,
             snapshots=downloaded.snapshots,
+            index_url=index_url,
+            index_etag=downloaded.index_etag,
         )
         loaded = load_reference_snapshot_feed(cache_root)
         if loaded["status"] != "loaded":
             raise ReferenceSnapshotDownloadError("invalid_payload")
-        _write_reference_snapshot_index_etag(
-            cache_root,
-            index_url,
-            downloaded.index_etag,
-        )
         return _with_delivery(loaded, "http", "refreshed")
     except ReferenceSnapshotDownloadError as error:
-        return _reference_snapshot_fallback(cache_root, error.code)
+        return _reference_snapshot_fallback(cache_root, error.code, index_url)
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
-        return _reference_snapshot_fallback(cache_root, "cache_write_failed")
+        return _reference_snapshot_fallback(
+            cache_root,
+            "cache_write_failed",
+            index_url,
+        )
 
 
 def read_reference_snapshot_feed_for_app(
@@ -188,12 +199,17 @@ def read_reference_snapshot_feed_for_app(
     base_url: str | None = None,
 ) -> dict[str, object]:
     configured_url = _configured_reference_snapshot_url(base_url)
-    cached = load_reference_snapshot_feed(cache_root)
     if configured_url:
         try:
-            _normalize_base_url(configured_url)
+            index_url = _same_origin_url(
+                _normalize_base_url(configured_url),
+                "index.json",
+            )
         except ReferenceSnapshotDownloadError as error:
-            return _reference_snapshot_fallback(cache_root, error.code)
+            return _reference_snapshot_fallback(cache_root, error.code, "")
+        cached = _load_reference_snapshot_cache_for_url(cache_root, index_url)
+    else:
+        cached = load_reference_snapshot_feed(cache_root)
     if cached["status"] == "loaded":
         return _with_delivery(
             cached,
@@ -210,8 +226,12 @@ def read_reference_snapshot_feed_for_app(
 def _reference_snapshot_fallback(
     cache_root: Path,
     error_code: str,
+    index_url: str,
 ) -> dict[str, object]:
-    cached = load_reference_snapshot_feed(cache_root)
+    if index_url:
+        cached = _load_reference_snapshot_cache_for_url(cache_root, index_url)
+    else:
+        cached = _empty_feed("missing")
     if cached["status"] == "loaded":
         return _with_delivery(
             cached,
@@ -832,6 +852,113 @@ def _read_json_object(path: Path) -> dict[str, object]:
     return payload
 
 
+def _load_reference_snapshot_bundle(root: Path) -> dict[str, object]:
+    try:
+        bundle = _read_json_object(root / _HTTP_CACHE_BUNDLE_NAME)
+        if bundle.get("schema_version") != _HTTP_CACHE_BUNDLE_SCHEMA_VERSION:
+            raise ValueError("unsupported reference snapshot cache bundle")
+        index = bundle.get("index")
+        latest = bundle.get("latest")
+        snapshots = bundle.get("snapshots")
+        if not isinstance(index, Mapping) or not isinstance(latest, Mapping):
+            raise ValueError("reference snapshot cache bundle payload is invalid")
+        if not isinstance(snapshots, list) or not all(
+            isinstance(snapshot, Mapping) for snapshot in snapshots
+        ):
+            raise ValueError("reference snapshot cache bundle snapshots are invalid")
+        return _validated_snapshot_feed(
+            index,
+            latest,
+            tuple(snapshots),
+        )
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return _empty_feed("missing")
+
+
+def _validated_snapshot_feed(
+    index: Mapping[str, object],
+    latest: Mapping[str, object],
+    snapshots: Sequence[Mapping[str, object]],
+) -> dict[str, object]:
+    kind, summaries, latest_batch_id, _latest_path = (
+        _validate_reference_snapshot_index(index)
+    )
+    by_batch_id: dict[str, Mapping[str, object]] = {}
+    for snapshot in snapshots:
+        validated = validate_reference_snapshot(snapshot)
+        batch_id = _required_text(validated, "batch_id")
+        if batch_id in by_batch_id:
+            raise ValueError("duplicate reference snapshot cache batch")
+        by_batch_id[batch_id] = validated
+    if set(by_batch_id) != {
+        _required_text(summary, "batch_id") for summary in summaries
+    }:
+        raise ValueError("reference snapshot cache batch set mismatch")
+    ordered: list[dict[str, object]] = []
+    for summary in summaries:
+        snapshot = by_batch_id[_required_text(summary, "batch_id")]
+        _validate_indexed_snapshot(kind, summary, snapshot)
+        ordered.append(snapshot)
+    latest_snapshot = by_batch_id.get(latest_batch_id)
+    if latest_snapshot is None:
+        raise ValueError("latest reference snapshot is missing from cache")
+    validated_latest = validate_reference_snapshot(latest)
+    _validate_indexed_snapshot(
+        kind,
+        next(
+            summary
+            for summary in summaries
+            if summary["batch_id"] == latest_batch_id
+        ),
+        validated_latest,
+    )
+    if validated_latest != latest_snapshot:
+        raise ValueError("latest reference snapshot does not match cache")
+    return {
+        "schema_version": REFERENCE_SNAPSHOT_SCHEMA_VERSION,
+        "status": "loaded",
+        "kind": kind,
+        "latest": dict(latest_snapshot),
+        "snapshots": ordered,
+    }
+
+
+def _read_legacy_reference_snapshot_cache_source(root: Path) -> str | None:
+    try:
+        metadata = _read_json_object(root / _HTTP_CACHE_METADATA_NAME)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        metadata = None
+    if metadata is not None:
+        source = metadata.get("index_url")
+        if isinstance(source, str) and source:
+            return source
+    try:
+        index = _read_json_object(root / "index.json")
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        return None
+    source = index.get("cache_source_url")
+    return source if isinstance(source, str) and source else None
+
+
+def _load_reference_snapshot_cache_for_url(
+    root: Path,
+    index_url: str,
+) -> dict[str, object]:
+    bundle_path = root / _HTTP_CACHE_BUNDLE_NAME
+    if bundle_path.exists() or bundle_path.is_symlink():
+        try:
+            bundle = _read_json_object(bundle_path)
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            return _empty_feed("invalid")
+        if bundle.get("index_url") != index_url:
+            return _empty_feed("missing")
+        return _load_reference_snapshot_bundle(root)
+    source = _read_legacy_reference_snapshot_cache_source(root)
+    if source != index_url:
+        return _empty_feed("missing")
+    return load_reference_snapshot_feed(root)
+
+
 def _download_reference_snapshot_feed(
     base_url: str,
     *,
@@ -1005,6 +1132,12 @@ def _read_reference_snapshot_index_etag(
     index_url: str,
 ) -> str | None:
     try:
+        bundle = _read_json_object(root / _HTTP_CACHE_BUNDLE_NAME)
+    except (OSError, json.JSONDecodeError, TypeError, ValueError):
+        bundle = None
+    if bundle is not None and bundle.get("index_url") == index_url:
+        return _valid_http_etag(bundle.get("index_etag"))
+    try:
         metadata = _read_json_object(root / _HTTP_CACHE_METADATA_NAME)
     except (OSError, json.JSONDecodeError, TypeError, ValueError):
         return None
@@ -1016,50 +1149,36 @@ def _read_reference_snapshot_index_etag(
     return _valid_http_etag(metadata.get("index_etag"))
 
 
-def _write_reference_snapshot_index_etag(
-    root: Path,
-    index_url: str,
-    etag: str | None,
-) -> None:
-    _write_json_atomic(
-        root / _HTTP_CACHE_METADATA_NAME,
-        {
-            "schema_version": 1,
-            "index_url": index_url,
-            "index_etag": _valid_http_etag(etag),
-        },
-    )
-
-
 def _write_reference_snapshot_cache(
     root: Path,
     *,
     index: Mapping[str, object],
     latest: Mapping[str, object],
     snapshots: Sequence[Mapping[str, object]],
+    index_url: str | None = None,
+    index_etag: str | None = None,
 ) -> None:
     cache_index = _cache_index(index)
-    summaries = _mapping_items(cache_index.get("snapshots"))
-    snapshots_by_id = {
-        str(snapshot["batch_id"]): snapshot for snapshot in snapshots
+    bundle = {
+        "schema_version": _HTTP_CACHE_BUNDLE_SCHEMA_VERSION,
+        "index_url": index_url,
+        "index_etag": _valid_http_etag(index_etag),
+        "index": cache_index,
+        "latest": dict(latest),
+        "snapshots": [dict(snapshot) for snapshot in snapshots],
     }
-    for summary in summaries:
-        snapshot = snapshots_by_id[str(summary["batch_id"])]
-        path = _safe_child(root, _required_text(summary, "path"))
-        if path.is_file():
-            try:
-                existing = validate_reference_snapshot(_read_json_object(path))
-            except (OSError, json.JSONDecodeError, TypeError, ValueError):
-                existing = None
-            if existing is None:
-                _write_json_atomic(path, snapshot)
-            elif existing != snapshot:
-                raise ReferenceSnapshotDownloadError("invalid_payload")
-        else:
-            _write_json_atomic(path, snapshot)
-    latest_path = _safe_child(root, _required_text(cache_index, "latest_path"))
-    _write_json_atomic(latest_path, latest)
-    _write_json_atomic(root / "index.json", cache_index)
+    # Validate the complete candidate before replacing the last-good bundle.
+    candidate = _validated_snapshot_feed(
+        bundle["index"],
+        bundle["latest"],
+        bundle["snapshots"],
+    )
+    if candidate["status"] != "loaded":
+        raise ReferenceSnapshotDownloadError("invalid_payload")
+    _write_json_atomic(root / _HTTP_CACHE_BUNDLE_NAME, bundle)
+    committed = _load_reference_snapshot_bundle(root)
+    if committed["status"] != "loaded":
+        raise ReferenceSnapshotDownloadError("invalid_payload")
 
 
 def _cache_index(index: Mapping[str, object]) -> dict[str, object]:
