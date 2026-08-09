@@ -1235,6 +1235,30 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("onPresentEvidence", self.source)
         self.assertIn("CandidateEvidenceDetailView", self.source)
 
+    def test_radar_evidence_and_questions_follow_the_displayed_source(self) -> None:
+        store_source = (
+            Path(__file__).resolve().parent.parent
+            / "Sources"
+            / "Model"
+            / "SelectionStore.swift"
+        ).read_text(encoding="utf-8")
+        detail_source = (
+            Path(__file__).resolve().parent.parent
+            / "Sources"
+            / "Views"
+            / "CandidateEvidenceDetailView.swift"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("@State private var selectedEvidence: RadarEvidenceSelection?", self.source)
+        self.assertIn("store.radarQuestionSemantics", self.source)
+        self.assertIn("store.radarEvidenceSelection(for: candidateID)", self.source)
+        self.assertIn("case .local(let entry, let evidenceState)", self.source)
+        self.assertIn("case .official(let entry, let sourceSnapshot)", self.source)
+        self.assertIn("OfficialCandidateEvidenceDetailView(", self.source)
+        self.assertIn(".onChange(of: store.radarDisplaySource)", self.source)
+        self.assertIn("switch radarDisplaySource", store_source)
+        self.assertIn("struct OfficialCandidateEvidenceDetailView: View", detail_source)
+
     def test_leaderboard_bridge_decodes_evidence_identity_and_attempt_timestamps(self) -> None:
         for field in (
             "sourceId", "connectionId", "familyId", "variantId", "modelId",

@@ -132,25 +132,29 @@ final class RecommendationNotificationEngine: ObservableObject {
     }
 
     private func notificationEvent(previous: BridgeSnapshot, current: BridgeSnapshot) -> NotificationEvent? {
-        let best = current.stableDashboard?.bestCombination
-            ?? current.dashboard.bestCombination
-        let previousBest = previous.stableDashboard?.bestCombination
-            ?? previous.dashboard.bestCombination
+        let best = current.dashboard.bestCombination
+        let previousBest = previous.dashboard.bestCombination
+        let fallbackBest = best
+            ?? current.stableEvidenceDashboard?.bestCombination
+            ?? current.stableDashboard?.bestCombination
         let operationalRunID = current.runtime.currentRunId
             ?? current.runtime.resumableRunId
+            ?? current.stableEvidenceDashboard?.runMetadata.runId
             ?? current.stableDashboard?.runMetadata.runId
             ?? current.dashboard.runMetadata.runId
         let recommendationRunID = current.recommendationPortfolioV2
             .representativeEvidence?.sourceSnapshotId
             ?? current.advisorV2Evidence.sourceSnapshotId
             ?? operationalRunID
-        let fallbackCandidateID = best?.candidateId ?? "unknown"
-        let fallbackDisplayName = best?.displayLabel ?? best?.label ?? L10n.tr("候选模型")
+        let fallbackCandidateID = fallbackBest?.candidateId ?? "unknown"
+        let fallbackDisplayName = fallbackBest?.displayLabel
+            ?? fallbackBest?.label
+            ?? L10n.tr("候选模型")
 
         if best?.decisionState == "retain_after_failure",
            previousBest?.evidenceState != "retained_after_failure" {
-            let summary = (current.stableDashboard ?? current.dashboard)
-                .leaderboard.first(where: { $0.candidateId == fallbackCandidateID })?
+            let summary = current.dashboard
+                .leaderboard.first(where: { $0.candidateId == best?.candidateId })?
                 .latestAttemptErrorSummary
                 ?? L10n.tr("本次重扫失败")
             return NotificationEvent(
@@ -208,7 +212,9 @@ final class RecommendationNotificationEngine: ObservableObject {
                 effort: candidate.scanProfile
             )
         }
-        if let entry = (snapshot.stableDashboard ?? snapshot.dashboard)
+        if let entry = (snapshot.stableEvidenceDashboard
+            ?? snapshot.stableDashboard
+            ?? snapshot.dashboard)
             .leaderboard.first(where: { $0.candidateId == configurationID }) {
             return ModelIdentityPresentation.displayLabel(
                 model: entry.modelId,

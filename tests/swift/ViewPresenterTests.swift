@@ -309,6 +309,82 @@ private func verifyCompactRecommendationPresentation() throws {
     expect(keepPresentation.comparisonState == .suppressed, "keep should suppress comparison")
     expect(keepPresentation.metrics == nil, "keep presentation should not imply a hidden next-step recommendation")
 
+    var needsTestPayload = keepPayload
+    needsTestPayload["status"] = "needs_test"
+    needsTestPayload["decisions"] = [[
+        "current_model_configuration_id": "current",
+        "candidate_model_configuration_id": NSNull(),
+        "comparison_candidate_model_configuration_id": NSNull(),
+        "decision": "needs_test",
+        "reason": "current_needs_test",
+        "quality_tradeoff": false,
+        "quality_warning_question_ids": [],
+        "quality": [:],
+        "time": [:],
+        "reference_cost": [:],
+    ]]
+    let needsTestPortfolio = try decoder.decode(
+        BridgeRecommendationPortfolioV2.self,
+        from: JSONSerialization.data(withJSONObject: needsTestPayload)
+    )
+    let needsTestPresentation = CompactSessionPresenter.recommendation(
+        snapshot: nil,
+        dashboard: nil,
+        portfolio: needsTestPortfolio,
+        displaySource: "local_evaluation",
+        displayFreshness: nil,
+        leaderboardItems: [
+            RadarLeaderboardItem(
+                id: "current",
+                displayName: "GPT-5.6 Terra High",
+                modelName: "gpt-5.6-terra",
+                providerId: "openai",
+                effort: "high",
+                score: 90,
+                maxScore: 100,
+                elapsedSeconds: 10,
+                referenceCostUsd: 0.1,
+                costCoverage: "complete",
+                questionScores: [:],
+                isCurrent: true,
+                isRecommended: false
+            ),
+        ]
+    )
+    expect(
+        needsTestPresentation.contextLabel == "等待比较证据",
+        "needs-test decisions must not claim that no switch is needed"
+    )
+    expect(
+        needsTestPresentation.tone == .comparison,
+        "needs-test decisions should remain pending instead of affirmative"
+    )
+    expect(
+        needsTestPresentation.comparisonState == .pending,
+        "needs-test decisions should wait for comparable evidence"
+    )
+
+    var stalePayload = needsTestPayload
+    stalePayload["status"] = "stale"
+    var staleDecisions = stalePayload["decisions"] as! [[String: Any]]
+    staleDecisions[0]["decision"] = "stale"
+    stalePayload["decisions"] = staleDecisions
+    let stalePortfolio = try decoder.decode(
+        BridgeRecommendationPortfolioV2.self,
+        from: JSONSerialization.data(withJSONObject: stalePayload)
+    )
+    let stalePresentation = CompactSessionPresenter.recommendation(
+        snapshot: nil,
+        dashboard: nil,
+        portfolio: stalePortfolio,
+        displaySource: "local_evaluation",
+        displayFreshness: nil,
+        leaderboardItems: []
+    )
+    expect(stalePresentation.contextLabel == "结果已过期", "stale evidence should be explicit")
+    expect(stalePresentation.tone == .unavailable, "stale evidence should not use recommendation tone")
+    expect(stalePresentation.comparisonState == .pending, "stale evidence should wait for a rescan")
+
     var pendingPayload = payload
     pendingPayload["status"] = "needs_test"
     pendingPayload["decisions"] = []

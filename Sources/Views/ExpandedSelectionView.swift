@@ -43,7 +43,7 @@ struct ExpandedSelectionView: View, Equatable {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @State private var pageIndex = 0
-    @State private var selectedEvidence: BridgeLeaderboardEntry?
+    @State private var selectedEvidence: RadarEvidenceSelection?
     @State private var showsCurrentInUsePicker = false
     @State private var showsRadarSessionsPopover = false
     @State private var showsScanModelPicker = false
@@ -55,15 +55,7 @@ struct ExpandedSelectionView: View, Equatable {
     @Namespace private var pageSelectionNamespace
 
     private var questionSemantics: [QuestionSemantic] {
-        guard let definitions = store.snapshot?.questionPack.questions else {
-            return []
-        }
-        let available = definitions.map(QuestionSemantic.from)
-        let runQuestionIDs = store.snapshot?.dashboard.runMetadata.questionIds ?? []
-        return RadarPresenter.relevantQuestionSemantics(
-            available: available,
-            runQuestionIDs: runQuestionIDs
-        )
+        store.radarQuestionSemantics
     }
 
     private var questionRoundLabel: String {
@@ -87,11 +79,23 @@ struct ExpandedSelectionView: View, Equatable {
             if let selectedEvidence {
                 evidenceBackdrop
 
-                CandidateEvidenceDetailView(
-                    entry: selectedEvidence,
-                    evidenceState: store.snapshot?.dashboard.bestCombination?.evidenceState ?? "fresh",
-                    onDismiss: dismissEvidence
-                )
+                Group {
+                    switch selectedEvidence {
+                    case .local(let entry, let evidenceState):
+                        CandidateEvidenceDetailView(
+                            entry: entry,
+                            evidenceState: evidenceState,
+                            onDismiss: dismissEvidence
+                        )
+                    case .official(let entry, let sourceSnapshot):
+                        OfficialCandidateEvidenceDetailView(
+                            entry: entry,
+                            sourceSnapshot: sourceSnapshot,
+                            questions: sourceSnapshot.leaderboardProjection?.questions ?? [],
+                            onDismiss: dismissEvidence
+                        )
+                    }
+                }
                 .frame(
                     width: min(620, expandedSize.width - 72),
                     height: min(460, max(360, expandedSize.height * 0.82))
@@ -127,6 +131,12 @@ struct ExpandedSelectionView: View, Equatable {
         }
         .onChange(of: entryDestination) { destination in
             applyEntryDestination(destination)
+        }
+        .onChange(of: store.radarDisplaySource) { _ in
+            selectedEvidence = nil
+        }
+        .onChange(of: store.radarResultsUpdatedAt) { _ in
+            selectedEvidence = nil
         }
         .onExitCommand {
             handleExitCommand()
@@ -3064,7 +3074,7 @@ struct ExpandedSelectionView: View, Equatable {
     }
 
     private func presentEvidence(candidateID: String) {
-        selectedEvidence = store.leaderboard.first { $0.candidateId == candidateID }
+        selectedEvidence = store.radarEvidenceSelection(for: candidateID)
     }
 
     private var heroDecisionReasonText: String {

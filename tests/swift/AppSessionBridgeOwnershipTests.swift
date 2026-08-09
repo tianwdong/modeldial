@@ -1521,6 +1521,88 @@ private func verifyLocalRadarConsumesBackendEligibilityDecisions() throws {
 }
 
 @MainActor
+private func verifyLocalRadarRetainsLastCompletedRowsWhenCurrentConfigurationNeedsTest() throws {
+    let currentID = "current-needs-test"
+    let lastCurrentID = "last-current"
+    let lastCandidateID = "last-candidate"
+    let completedAt = "2026-08-09T12:05:09Z"
+    let snapshot = try decodedSnapshot(historyCount: 2) { payload in
+        payload["stable_dashboard"] = NSNull()
+        payload["stable_evidence_dashboard"] = NSNull()
+
+        var dashboard = payload["dashboard"] as! [String: Any]
+        var runMetadata = dashboard["run_metadata"] as! [String: Any]
+        runMetadata["run_id"] = "run-last-complete"
+        runMetadata["status"] = "completed"
+        runMetadata["completed_at"] = completedAt
+        dashboard["run_metadata"] = runMetadata
+        dashboard["leaderboard"] = [
+            leaderboardEntryPayload(id: lastCurrentID, model: "local-last-current", score: 72),
+            leaderboardEntryPayload(id: lastCandidateID, model: "local-last-candidate", score: 84),
+        ]
+        payload["dashboard"] = dashboard
+
+        var evidence = advisorEvidencePayload(
+            currentID: currentID,
+            eligibleCandidateIDs: [],
+            decisions: [],
+            resolvedDataSource: "local_evaluation"
+        )
+        evidence["source_mode"] = "local_evaluation"
+        evidence["source_snapshot_id"] = "local:run-last-complete"
+        evidence["current_status"] = "needs_test"
+        evidence["testable_candidate_ids"] = [currentID]
+        payload["advisor_v2_evidence"] = evidence
+
+        var portfolio = recommendationPortfolioPayload(
+            currentID: currentID,
+            candidateID: lastCandidateID,
+            resolvedDataSource: "local_evaluation"
+        )
+        portfolio["source_mode"] = "local_evaluation"
+        portfolio["source_mode_by_configuration_id"] = [currentID: "local_evaluation"]
+        portfolio["status"] = "needs_test"
+        portfolio["decisions"] = []
+        portfolio["testable_candidate_ids"] = [currentID]
+        payload["recommendation_portfolio_v2"] = portfolio
+    }
+    let store = makeStore(
+        gateway: StubBridgeGateway(patchResult: .failure(.unexpectedCall)),
+        initialSnapshot: snapshot
+    )
+
+    expect(
+        store.radarSelectedSourceMode == "local_evaluation",
+        "the current configuration should keep its explicit local source mode"
+    )
+    expect(
+        store.radarDisplaySource == "local_evaluation",
+        "saved local evidence should remain the displayed source while the current configuration needs testing"
+    )
+    expect(
+        store.radarLeaderboardItems.map(\.id) == [lastCurrentID, lastCandidateID],
+        "the last completed local leaderboard should remain visible until replacement evidence is complete"
+    )
+    expect(
+        store.radarLeaderboardItems.allSatisfy { !$0.isCurrent },
+        "historical rows must not be relabeled as the untested current configuration"
+    )
+    expect(
+        store.radarResultsUpdatedAt == completedAt,
+        "the retained leaderboard should keep the completion time of its saved run"
+    )
+    switch store.radarEvidenceSelection(for: lastCandidateID) {
+    case .local(let entry, _):
+        expect(
+            entry.candidateId == lastCandidateID,
+            "retained local rows should open evidence from the displayed dashboard"
+        )
+    default:
+        expect(false, "retained local rows should resolve local evidence")
+    }
+}
+
+@MainActor
 private func verifyAutoSourceUsesPortfolioResolvedOfficialIdentity() throws {
     let currentID = "current"
     let candidateID = "candidate"
@@ -1550,10 +1632,29 @@ private func verifyAutoSourceUsesPortfolioResolvedOfficialIdentity() throws {
             candidateID: candidateID,
             resolvedDataSource: "official_snapshot"
         )
-        payload["reference_snapshot_feed"] = referenceFeedPayload(entries: [
+        var referenceFeed = referenceFeedPayload(
+            entries: [
             referenceEntryPayload(id: currentID, model: "official-current", score: 80),
             referenceEntryPayload(id: candidateID, model: "official-candidate", score: 90),
-        ])
+            ],
+            leaderboardOrder: [candidateID, currentID],
+            recommendedID: candidateID
+        )
+        var latest = referenceFeed["latest"] as! [String: Any]
+        var projection = latest["leaderboard_projection"] as! [String: Any]
+        projection["questions"] = [[
+            "id": "fixture-question",
+            "short_label": "Q1",
+            "title": "Fixture question",
+            "capability_id": "fixture-capability",
+            "capability_label": "Fixture capability",
+            "detail_label": "Fixture detail",
+            "ordinal": 1,
+        ]]
+        latest["leaderboard_projection"] = projection
+        referenceFeed["latest"] = latest
+        referenceFeed["snapshots"] = [latest]
+        payload["reference_snapshot_feed"] = referenceFeed
     }
     let store = makeStore(
         gateway: StubBridgeGateway(patchResult: .failure(.unexpectedCall)),
@@ -1576,6 +1677,23 @@ private func verifyAutoSourceUsesPortfolioResolvedOfficialIdentity() throws {
     expect(
         store.glancePresentation.peekLeftPrimary == "official-candidate",
         "the glance recommendation identity should come from the portfolio resolved source"
+    )
+    switch store.radarEvidenceSelection(for: candidateID) {
+    case .official(let entry, let sourceSnapshot):
+        expect(
+            entry.modelConfiguration.canonicalModelId == "official-candidate",
+            "official rows should open evidence from the official snapshot"
+        )
+        expect(
+            sourceSnapshot.batchId == "fixture-official",
+            "official evidence should retain its source batch"
+        )
+    default:
+        expect(false, "official rows should resolve official evidence")
+    }
+    expect(
+        store.radarQuestionSemantics.map(\.questionId) == ["fixture-question"],
+        "official question semantics should follow the displayed reference projection"
     )
 }
 
@@ -2560,6 +2678,59 @@ private func verifyStaleRefreshCannotReplaceNewerRuntimeEvent() async throws {
     )
 }
 
+@MainActor
+private func verifyManualReferenceRefreshKeepsFeedbackAcrossRuntimeEvents() async throws {
+    let initial = try configuredSnapshot(
+        historyCount: 3,
+        historyLimit: 33,
+        schedulerEnabled: false
+    )
+    let stale = try configuredSnapshot(
+        historyCount: 999,
+        historyLimit: 999,
+        schedulerEnabled: true
+    )
+    let settled = try configuredSnapshot(
+        historyCount: 12,
+        historyLimit: 44,
+        schedulerEnabled: false
+    )
+    var runtimeEvent = try scanEventPayload("scan.started")
+    runtimeEvent["_delay_after"] = 0.4
+    let streaming = try makeStreamingBridge(events: [runtimeEvent])
+    defer { try? FileManager.default.removeItem(at: streaming.root) }
+    let gate = BlockingSnapshotGate()
+    let gateway = StubBridgeGateway(
+        patchResult: .failure(.unexpectedCall),
+        loadSnapshots: [stale, settled],
+        firstLoadGate: gate
+    )
+    let store = makeStore(
+        gateway: gateway,
+        bridge: streaming.client,
+        initialSnapshot: initial
+    )
+
+    store.refreshReferenceSnapshotNow()
+    try await waitUntil("manual refresh should reach the controlled gateway") {
+        gate.hasStarted()
+    }
+    store.startRegularScan()
+    try await waitUntil("runtime event did not arrive while manual refresh was pending") {
+        store.snapshot?.runtime.isRunning == true
+    }
+    gate.release()
+
+    try await waitUntil("manual refresh feedback was lost after the runtime event") {
+        store.referenceSnapshotRefreshFeedbackStatus == "refreshed"
+    }
+    try await waitForHistoryCount(12, in: store)
+    expect(
+        store.snapshot?.runtime.historyCount != 999,
+        "manual reference refresh must not publish a stale full snapshot"
+    )
+}
+
 @main
 private enum AppSessionBridgeOwnershipTestMain {
     static func main() async {
@@ -2579,6 +2750,7 @@ private enum AppSessionBridgeOwnershipTestMain {
             try await verifyQueuedForcedReferenceRefreshSurvivesStartupRetry()
             try await verifyInitialFixtureDoesNotSuppressNormalInitialLoad()
             try verifyLocalRadarConsumesBackendEligibilityDecisions()
+            try verifyLocalRadarRetainsLastCompletedRowsWhenCurrentConfigurationNeedsTest()
             try verifyAutoSourceUsesPortfolioResolvedOfficialIdentity()
             try verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdentity()
             try verifyAmbiguousRemoteIdentityFailsClosed()
@@ -2597,6 +2769,7 @@ private enum AppSessionBridgeOwnershipTestMain {
             try await verifyRuntimeDeltaAndTerminalSnapshotOwnDistinctStoreUpdates()
             try await verifyBridgeFailureWithoutSnapshotPreservesCurrentState()
             try await verifyStaleRefreshCannotReplaceNewerRuntimeEvent()
+            try await verifyManualReferenceRefreshKeepsFeedbackAcrossRuntimeEvents()
         } catch {
             failureCount += 1
             fputs("FAIL: \(error)\n", stderr)

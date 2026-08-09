@@ -50,6 +50,7 @@ enum CompactSessionPresenter {
             effectiveDisplaySource = displaySource
         }
         let decision = portfolio?.representativeDecision
+        let portfolioStatus = portfolio?.status
         let lifecycle = portfolio?.recommendationLifecycle ?? .none
         let targetID: String?
         if decision?.decision == "recommend" {
@@ -69,7 +70,9 @@ enum CompactSessionPresenter {
         let comparisonState: CompactRecommendationComparisonState
         if lifecycle.isAdopted {
             comparisonState = .suppressed
-        } else if decision?.decision == "recommend", let decision {
+        } else if decision?.decision == "recommend",
+                  portfolioStatus == nil || portfolioStatus == "recommend",
+                  let decision {
             comparisonState = .metrics(
                 CompactRecommendationMetrics(
                     quality: IslandDecisionMetricPresentation.quality(decision),
@@ -80,17 +83,25 @@ enum CompactSessionPresenter {
                     )
                 )
             )
-        } else if decision == nil {
-            comparisonState = .pending
-        } else {
+        } else if portfolioStatus == "keep" {
             comparisonState = .suppressed
+        } else {
+            comparisonState = .pending
         }
         let rawTimestamp = effectiveDisplaySource == "official_snapshot"
             ? snapshot?.referenceSnapshotFeed.trustedLatest?.publishedAt
             : dashboard?.runMetadata.completedAt
-        let questionCount = dashboard?.runMetadata.questionCount
-            ?? snapshot?.questionPack.questionCount
-            ?? 0
+        let questionCount: Int
+        if effectiveDisplaySource == "official_snapshot" {
+            questionCount = snapshot?.referenceSnapshotFeed.trustedLatest?
+                .leaderboardProjection?.questions.count
+                ?? snapshot?.questionPack.questionCount
+                ?? 0
+        } else {
+            questionCount = dashboard?.runMetadata.questionCount
+                ?? snapshot?.questionPack.questionCount
+                ?? 0
+        }
         let sourceText: String
         switch effectiveDisplaySource {
         case "official_snapshot": sourceText = L10n.tr("官网实测")
@@ -110,14 +121,22 @@ enum CompactSessionPresenter {
         let tone: CompactRecommendationTone
         if targetName == nil {
             tone = .unavailable
-        } else if decision != nil {
-            tone = .recommendation
         } else {
-            tone = .comparison
+            switch portfolioStatus {
+            case "recommend", "keep":
+                tone = .recommendation
+            case "needs_test":
+                tone = .comparison
+            case "stale", "no_usage":
+                tone = .unavailable
+            default:
+                tone = decision != nil ? .recommendation : .comparison
+            }
         }
         return CompactRecommendationPresentation(
             contextLabel: contextLabel(
                 decision: decision,
+                portfolioStatus: portfolioStatus,
                 lifecycle: lifecycle
             ),
             title: targetName ?? L10n.tr("暂无可比较候选"),
@@ -130,6 +149,7 @@ enum CompactSessionPresenter {
 
     private static func contextLabel(
         decision: BridgeRecommendationDecisionV2?,
+        portfolioStatus: String?,
         lifecycle: BridgeRecommendationLifecycleV1
     ) -> String {
         if lifecycle.isAdopted {
@@ -141,12 +161,25 @@ enum CompactSessionPresenter {
         if lifecycle.status == "reoptimize_required" {
             return L10n.tr("需要重新评估")
         }
-        guard let decision else {
-            return L10n.tr("即时建议")
+        switch portfolioStatus {
+        case "recommend":
+            return L10n.tr("切换建议")
+        case "keep":
+            return L10n.tr("当前无需切换")
+        case "needs_test":
+            return L10n.tr("等待比较证据")
+        case "stale":
+            return L10n.tr("结果已过期")
+        case "no_usage":
+            return L10n.tr("等待使用记录")
+        default:
+            guard let decision else {
+                return L10n.tr("即时建议")
+            }
+            return decision.decision == "recommend"
+                ? L10n.tr("切换建议")
+                : L10n.tr("当前无需切换")
         }
-        return decision.decision == "recommend"
-            ? L10n.tr("切换建议")
-            : L10n.tr("当前无需切换")
     }
 
     private static func displayName(

@@ -21,6 +21,14 @@ enum ScanConflictPresentation {
     case background
 }
 
+enum RadarEvidenceSelection {
+    case local(entry: BridgeLeaderboardEntry, evidenceState: String)
+    case official(
+        entry: BridgeReferenceSnapshotEntry,
+        sourceSnapshot: BridgeReferenceSnapshot
+    )
+}
+
 @MainActor
 final class AppSessionStore: ObservableObject {
     static let shared = AppSessionStore()
@@ -298,6 +306,54 @@ final class AppSessionStore: ObservableObject {
         }
     }
 
+    var radarQuestionSemantics: [QuestionSemantic] {
+        guard let definitions = snapshot?.questionPack.questions else {
+            return []
+        }
+        let questionIDs: [String]
+        switch radarDisplaySource {
+        case "official_snapshot":
+            questionIDs = snapshot?.referenceSnapshotFeed.trustedLatest?
+                .leaderboardProjection?.questions.map(\.id) ?? []
+        case "local_evaluation":
+            questionIDs = radarDashboard?.runMetadata.questionIds ?? []
+        default:
+            questionIDs = []
+        }
+        return RadarPresenter.relevantQuestionSemantics(
+            available: definitions.map(QuestionSemantic.from),
+            runQuestionIDs: questionIDs
+        )
+    }
+
+    func radarEvidenceSelection(for configurationID: String) -> RadarEvidenceSelection? {
+        switch radarDisplaySource {
+        case "official_snapshot":
+            guard let sourceSnapshot = snapshot?.referenceSnapshotFeed.trustedLatest,
+                  let entry = sourceSnapshot.entries.first(where: {
+                      $0.modelConfigurationId == configurationID
+                  }) else {
+                return nil
+            }
+            return .official(entry: entry, sourceSnapshot: sourceSnapshot)
+        case "local_evaluation":
+            guard let dashboard = radarDashboard,
+                  let entry = dashboard.leaderboard.first(where: {
+                      $0.candidateId == configurationID
+                  }) else {
+                return nil
+            }
+            let evidenceState = dashboard.bestCombination?.candidateId == configurationID
+                ? dashboard.bestCombination?.evidenceState ?? "fresh"
+                : entry.isUsingPreviousValidResult
+                ? "retained_after_failure"
+                : "fresh"
+            return .local(entry: entry, evidenceState: evidenceState)
+        default:
+            return nil
+        }
+    }
+
     var radarDisplayFreshness: String? {
         switch radarDisplaySource {
         case "official_snapshot":
@@ -526,23 +582,34 @@ final class AppSessionStore: ObservableObject {
     }
 
     private var localEvaluationLeaderboardItems: [RadarLeaderboardItem] {
-        guard let evidence = radarEvidence,
-              evidence.resolvedDataSource == "local_evaluation",
-              evidence.currentStatus == "ready",
-              let currentID = evidence.currentModelConfigurationId else {
-            return []
-        }
+        guard let dashboard = radarDashboard else { return [] }
+        let currentID = radarEvidence?.currentModelConfigurationId
         let recommendedID = radarRepresentativeDecision?.candidateModelConfigurationId
-        let decisionEligibleCandidateIDs = Set(
-            evidence.candidateDecisions.compactMap { decision in
-                decision.status == "eligible" ? decision.modelConfigurationId : nil
+        let visibleEntries: [BridgeLeaderboardEntry]
+        if let evidence = radarEvidence,
+           evidence.resolvedDataSource == "local_evaluation",
+           evidence.currentStatus == "ready",
+           let readyCurrentID = evidence.currentModelConfigurationId {
+            let decisionEligibleCandidateIDs = Set(
+                evidence.candidateDecisions.compactMap { decision in
+                    decision.status == "eligible" ? decision.modelConfigurationId : nil
+                }
+            )
+            var eligibleCandidateIDs = Set(evidence.eligibleCandidateIds)
+                .intersection(decisionEligibleCandidateIDs)
+            eligibleCandidateIDs.insert(readyCurrentID)
+            visibleEntries = dashboard.leaderboard.filter {
+                eligibleCandidateIDs.contains($0.candidateId)
             }
-        )
-        var eligibleCandidateIDs = Set(evidence.eligibleCandidateIds)
-            .intersection(decisionEligibleCandidateIDs)
-        eligibleCandidateIDs.insert(currentID)
-        return (radarDashboard?.leaderboard ?? [])
-            .filter { eligibleCandidateIDs.contains($0.candidateId) }
+        } else {
+            guard radarSelectedSourceMode == "local_evaluation",
+                  dashboard.runMetadata.status == "completed",
+                  dashboard.runMetadata.completedAt != nil else {
+                return []
+            }
+            visibleEntries = dashboard.leaderboard
+        }
+        return visibleEntries
             .map { entry in
                 RadarLeaderboardItem(
                     id: entry.candidateId,
@@ -562,7 +629,7 @@ final class AppSessionStore: ObservableObject {
                         guard let score = result.semanticScore else { return }
                         scores[result.questionId] = Double(score)
                     },
-                    isCurrent: entry.candidateId == currentID,
+                    isCurrent: currentID == entry.candidateId,
                     isRecommended: entry.candidateId == recommendedID
                 )
             }
@@ -1707,13 +1774,13 @@ final class AppSessionStore: ObservableObject {
                     isReferenceSnapshotRefreshInFlight = false
                 }
                 defer { startPendingSnapshotReloadIfNeeded() }
-                guard requestGeneration == self.snapshotGeneration else {
-                    DebugLog.write("AppSessionStore.reloadSnapshotAsync ignored stale generation")
-                    return
-                }
                 if forceReferenceRefresh,
                    let refreshStatus = loadResult.referenceRefreshStatus {
                     presentReferenceSnapshotRefreshFeedback(status: refreshStatus)
+                }
+                guard requestGeneration == self.snapshotGeneration else {
+                    DebugLog.write("AppSessionStore.reloadSnapshotAsync ignored stale generation")
+                    return
                 }
                 DebugLog.write("AppSessionStore.reloadSnapshotAsync success")
                 let autoResumeTrigger: BridgeAutoResumeTrigger? =
@@ -1746,11 +1813,11 @@ final class AppSessionStore: ObservableObject {
                     isReferenceSnapshotRefreshInFlight = false
                 }
                 defer { startPendingSnapshotReloadIfNeeded() }
-                guard requestGeneration == self.snapshotGeneration else { return }
-                DebugLog.write("AppSessionStore.reloadSnapshotAsync error=\(error.localizedDescription)")
                 if forceReferenceRefresh {
                     presentReferenceSnapshotRefreshFeedback(status: "failed")
                 }
+                guard requestGeneration == self.snapshotGeneration else { return }
+                DebugLog.write("AppSessionStore.reloadSnapshotAsync error=\(error.localizedDescription)")
                 recordSnapshotRefreshFailure(error)
             }
         }

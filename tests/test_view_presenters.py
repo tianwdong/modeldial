@@ -52,6 +52,9 @@ class ViewPresenterBoundaryTest(unittest.TestCase):
         expanded = (ROOT / "Sources/Views/ExpandedSelectionView.swift").read_text(
             encoding="utf-8"
         )
+        selection_store = (ROOT / "Sources/Model/SelectionStore.swift").read_text(
+            encoding="utf-8"
+        )
 
         self.assertIn("SettingsAdvisorReasonPresenter.presentation(", settings)
         self.assertIn("Text(advisorReason.text)", settings)
@@ -175,7 +178,9 @@ class ViewPresenterBoundaryTest(unittest.TestCase):
             'store.radarDisplaySource == "official_snapshot"',
         ):
             self.assertNotIn(removed_operational_rule, expanded)
-        self.assertIn("RadarPresenter.relevantQuestionSemantics(", expanded)
+        self.assertNotIn("RadarPresenter.relevantQuestionSemantics(", expanded)
+        self.assertIn("store.radarQuestionSemantics", expanded)
+        self.assertIn("RadarPresenter.relevantQuestionSemantics(", selection_store)
         self.assertIn("RadarPresenter.configurationDecision(", expanded)
         self.assertIn(
             "operationalPresentation.heroDecisionTitle",
