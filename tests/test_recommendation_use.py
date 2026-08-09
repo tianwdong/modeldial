@@ -278,6 +278,121 @@ def _observation(
 
 
 class RecommendationUseEpochTests(unittest.TestCase):
+    def test_actual_switch_counts_new_work_in_a_reused_session(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = UsageStore(Path(temp_dir))
+            update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(MAX_ID),
+                contexts=[_switch_chain_context(MAX_ID)],
+                portfolio=_switch_chain_portfolio(MAX_ID),
+                now=NOW,
+            )
+            usage_state = store.load_usage_state()
+            usage_state["observations"] = {
+                "before-switch": _observation(
+                    "before-switch",
+                    effort="xhigh",
+                    session_key="reused-session",
+                    ended_at=NOW - timedelta(minutes=1),
+                ),
+            }
+            store.save_usage_state(usage_state)
+            update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(CURRENT_ID),
+                contexts=[_switch_chain_context(CURRENT_ID)],
+                portfolio=_switch_chain_portfolio(CURRENT_ID),
+                now=NOW + timedelta(minutes=5),
+            )
+            usage_state = store.load_usage_state()
+            usage_state["observations"]["after-switch"] = _observation(
+                "after-switch",
+                effort="xhigh",
+                session_key="reused-session",
+                ended_at=NOW + timedelta(minutes=7),
+            )
+            store.save_usage_state(usage_state)
+            summary = refresh_recommendation_use_observations(
+                store=store,
+                now=NOW + timedelta(minutes=8),
+            )
+
+        actual = next(
+            epoch
+            for epoch in summary["epochs"]
+            if epoch["segment_kind"] == "actual_switch"
+        )
+        self.assertEqual(actual["observed_candidate_work_unit_count"], 1)
+        self.assertEqual(summary["benefit_summary"]["observed_work_unit_count"], 1)
+
+    def test_actual_switch_backdates_to_new_usage_observed_between_polls(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = UsageStore(Path(temp_dir))
+            update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(MAX_ID),
+                contexts=[_switch_chain_context(MAX_ID)],
+                portfolio=_switch_chain_portfolio(MAX_ID),
+                now=NOW,
+            )
+            usage_state = store.load_usage_state()
+            usage_state["observations"] = {
+                "before-detection": _observation(
+                    "before-detection",
+                    effort="xhigh",
+                    ended_at=NOW + timedelta(minutes=7),
+                )
+            }
+            store.save_usage_state(usage_state)
+
+            summary = update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(CURRENT_ID),
+                contexts=[_switch_chain_context(CURRENT_ID)],
+                portfolio=_switch_chain_portfolio(CURRENT_ID),
+                now=NOW + timedelta(minutes=10),
+            )
+
+        actual = next(
+            epoch
+            for epoch in summary["epochs"]
+            if epoch["segment_kind"] == "actual_switch"
+        )
+        self.assertEqual(
+            actual["started_at"],
+            "2026-07-26T01:06:00Z",
+        )
+        self.assertEqual(actual["observed_candidate_work_unit_count"], 1)
+
+    def test_actual_switch_is_recorded_without_comparison_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = UsageStore(Path(temp_dir))
+            update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(MAX_ID),
+                contexts=[],
+                portfolio=_switch_chain_portfolio(MAX_ID),
+                now=NOW,
+            )
+
+            summary = update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(CURRENT_ID),
+                contexts=[],
+                portfolio=_switch_chain_portfolio(CURRENT_ID),
+                now=NOW + timedelta(minutes=5),
+            )
+
+        actual = next(
+            epoch
+            for epoch in summary["epochs"]
+            if epoch["segment_kind"] == "actual_switch"
+        )
+        self.assertEqual(actual["current_model_configuration_id"], MAX_ID)
+        self.assertEqual(actual["recommended_model_configuration_id"], CURRENT_ID)
+        self.assertEqual(actual["reference_cost_estimate_status"], "prospective")
+
     def test_actual_switch_segments_coexist_with_next_recommendation_and_accumulate(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             store = UsageStore(Path(temp_dir))
@@ -446,6 +561,37 @@ class RecommendationUseEpochTests(unittest.TestCase):
                     CURRENT_ID,
                     candidate_id=CANDIDATE_ID,
                 ),
+                now=NOW + timedelta(minutes=5),
+            )
+
+        self.assertFalse(
+            any(
+                epoch["segment_kind"] == "actual_switch"
+                for epoch in summary["epochs"]
+            )
+        )
+
+    def test_unobserved_default_change_does_not_create_actual_switch_segment(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = UsageStore(Path(temp_dir))
+            update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(MAX_ID),
+                contexts=[_switch_chain_context(MAX_ID)],
+                portfolio=_switch_chain_portfolio(MAX_ID),
+                now=NOW,
+            )
+            unavailable_state = _switch_chain_state(CURRENT_ID)
+            unavailable_state["config"]["recommendation"] = {
+                "effective_current_candidate_id": None,
+                "current_default_candidate_id": CURRENT_ID,
+            }
+
+            summary = update_recommendation_use_epochs(
+                store=store,
+                state=unavailable_state,
+                contexts=[_switch_chain_context(CURRENT_ID)],
+                portfolio=_switch_chain_portfolio(CURRENT_ID),
                 now=NOW + timedelta(minutes=5),
             )
 
@@ -1047,6 +1193,103 @@ class RecommendationUseEpochTests(unittest.TestCase):
                 now=NOW + timedelta(hours=6, minutes=3),
             )
             self.assertEqual(closed["epochs"][0]["lifecycle_status"], "closed")
+
+    def test_late_observation_reconciles_into_a_closed_actual_switch(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = UsageStore(Path(temp_dir))
+            update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(MAX_ID),
+                contexts=[_switch_chain_context(MAX_ID)],
+                portfolio=_switch_chain_portfolio(MAX_ID),
+                now=NOW,
+            )
+            update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(CURRENT_ID),
+                contexts=[_switch_chain_context(CURRENT_ID)],
+                portfolio=_switch_chain_portfolio(CURRENT_ID),
+                now=NOW + timedelta(minutes=5),
+            )
+            update_recommendation_use_epochs(
+                store=store,
+                state=_switch_chain_state(CANDIDATE_ID),
+                contexts=[_switch_chain_context(CANDIDATE_ID)],
+                portfolio=_switch_chain_portfolio(CANDIDATE_ID),
+                now=NOW + timedelta(minutes=10),
+            )
+            refresh_recommendation_use_observations(
+                store=store,
+                now=NOW + timedelta(minutes=13),
+            )
+            usage_state = store.load_usage_state()
+            usage_state["observations"] = {
+                "late-xhigh": _observation(
+                    "late-xhigh",
+                    effort="xhigh",
+                    ended_at=NOW + timedelta(minutes=8),
+                )
+            }
+            store.save_usage_state(usage_state)
+
+            summary = refresh_recommendation_use_observations(
+                store=store,
+                now=NOW + timedelta(minutes=14),
+            )
+
+        closed_actual = next(
+            epoch
+            for epoch in summary["epochs"]
+            if epoch["segment_kind"] == "actual_switch"
+            and epoch["recommended_model_configuration_id"] == CURRENT_ID
+        )
+        self.assertEqual(closed_actual["lifecycle_status"], "closed")
+        self.assertEqual(closed_actual["observed_candidate_work_unit_count"], 1)
+
+    def test_completed_history_is_not_dropped_after_one_hundred_epochs(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            store = UsageStore(Path(temp_dir))
+            epochs = [
+                {
+                    "schema_version": 1,
+                    "use_epoch_id": f"actual-{index}",
+                    "segment_kind": "actual_switch",
+                    "lifecycle_status": "closed",
+                    "started_at": (NOW + timedelta(minutes=index)).isoformat(),
+                    "ended_at": (
+                        NOW + timedelta(minutes=index, seconds=30)
+                    ).isoformat(),
+                    "last_observed_at": (
+                        NOW + timedelta(minutes=index, seconds=20)
+                    ).isoformat(),
+                    "observed_candidate_work_unit_count": 1,
+                    "observed_candidate_reference_cost_usd": 0.1,
+                    "observed_candidate_response_wait_ms": 1_000,
+                    "estimated_reference_cost_delta_usd": -0.05,
+                    "estimated_model_wait_delta_ms": -500,
+                }
+                for index in range(105)
+            ]
+            store.save_recommendation_use_state(
+                {
+                    "schema_version": 1,
+                    "segment_contract_version": 2,
+                    "epochs": epochs,
+                    "observation_assignments": {},
+                }
+            )
+
+            summary = refresh_recommendation_use_observations(
+                store=store,
+                now=NOW + timedelta(days=1),
+            )
+
+        self.assertEqual(len(summary["epochs"]), 105)
+        self.assertEqual(summary["benefit_summary"]["observed_work_unit_count"], 105)
+        self.assertAlmostEqual(
+            summary["benefit_summary"]["reference_cost_delta_usd"],
+            -5.25,
+        )
 
     def test_failed_usage_is_counted_but_does_not_claim_realized_benefit(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -1628,11 +1628,15 @@ final class AppSessionStore: ObservableObject {
             isSnapshotReloadPending = true
             pendingSnapshotReloadAllowsReferenceRefresh = true
         }
+        let shouldObserveLocalState = !shouldPerformStartupMaintenance
+            && activeBridgeOperationID == nil
+            && snapshot?.runtime.isRunning != true
         let requestGeneration = snapshotGeneration
         Task(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             DebugLog.write("AppSessionStore.reloadSnapshotAsync begin")
             do {
+                var observationFailureDetail: String?
                 if shouldPerformStartupMaintenance && snapshot == nil {
                     do {
                         let cachedSnapshot = try await commandGateway.snapshot()
@@ -1651,12 +1655,30 @@ final class AppSessionStore: ObservableObject {
                         )
                     }
                 }
+                if shouldObserveLocalState {
+                    do {
+                        _ = try await commandGateway.observeState(
+                            includeCodexInsights: true
+                        )
+                    } catch {
+                        observationFailureDetail = error.localizedDescription
+                        DebugLog.write(
+                            "AppSessionStore.reloadSnapshotAsync observation error="
+                                + error.localizedDescription
+                        )
+                    }
+                }
                 let loadResult = try await commandGateway.loadSnapshot(
                     performStartupMaintenance: shouldPerformStartupMaintenance,
                     refreshReference: shouldRefreshReference
                 )
                 let newSnapshot = loadResult.snapshot
-                let maintenanceFailureDetail = loadResult.warningDetail
+                let maintenanceFailureDetail = [
+                    observationFailureDetail,
+                    loadResult.warningDetail,
+                ]
+                .compactMap { $0 }
+                .joined(separator: "\n")
                 if let refreshStatus = loadResult.referenceRefreshStatus {
                     referenceSnapshotRefreshPolicy.record(
                         status: refreshStatus,
@@ -1687,10 +1709,12 @@ final class AppSessionStore: ObservableObject {
                     newSnapshot,
                     autoResumeTrigger: autoResumeTrigger
                 )
-                if let maintenanceFailureDetail {
+                if !maintenanceFailureDetail.isEmpty {
                     snapshotRefreshIssue = SnapshotRefreshIssue(
                         message: shouldPerformStartupMaintenance
                             ? "启动维护未全部完成，当前仍显示已保存状态。"
+                            : observationFailureDetail != nil
+                            ? "本机使用记录暂未更新，当前仍显示已保存状态。"
                             : "远端参考结果暂未更新，当前仍显示已验证缓存。",
                         detail: maintenanceFailureDetail
                     )

@@ -459,16 +459,19 @@ private func verifyRealUsageProjection() {
         id: "current",
         displayName: "Current High",
         modelName: "gpt-current",
+        providerId: "openai",
         effort: "high"
     )
     let candidate = ComparisonPresenter.UsageCandidateInput(
         id: "candidate",
         displayName: "Candidate High",
         modelName: "gpt-candidate",
+        providerId: "openai",
         effort: "high"
     )
     let exact = ComparisonPresenter.UsageAggregateInput(
         modelConfigurationId: "current",
+        providerId: "unknown",
         rawModelId: "ignored-by-exact-id",
         reasoningEffort: "low",
         completedWorkUnits: 3,
@@ -481,6 +484,7 @@ private func verifyRealUsageProjection() {
     )
     let uniqueFallback = ComparisonPresenter.UsageAggregateInput(
         modelConfigurationId: "legacy-candidate-id",
+        providerId: "openai",
         rawModelId: "GPT-CANDIDATE",
         reasoningEffort: "HIGH",
         completedWorkUnits: 5,
@@ -491,13 +495,26 @@ private func verifyRealUsageProjection() {
         behaviorCoveragePercent: nil,
         oneShotRatePercent: nil
     )
+    let unknownFallback = ComparisonPresenter.UsageAggregateInput(
+        modelConfigurationId: "unknown-candidate-id",
+        providerId: "unknown",
+        rawModelId: "GPT-CANDIDATE",
+        reasoningEffort: "HIGH",
+        completedWorkUnits: 2,
+        failureCount: 0,
+        sampleDays: 1,
+        attributionConfidence: 0.7,
+        behaviorObservedWorkUnits: nil,
+        behaviorCoveragePercent: nil,
+        oneShotRatePercent: nil
+    )
     let presentation = ComparisonPresenter.realUsage(
         current: current,
         candidate: candidate,
         workload: ComparisonPresenter.UsageWorkloadInput(
             coverageStartedAtText: "2026-07-20 08:00",
             coverageComplete: true,
-            aggregates: [exact, uniqueFallback]
+            aggregates: [exact, uniqueFallback, unknownFallback]
         )
     )
     expect(presentation.emptyText == nil, "matched usage should not show an aggregate empty state")
@@ -508,7 +525,7 @@ private func verifyRealUsageProjection() {
         presentation.rows[0].behaviorText == "行为覆盖 67% · one-shot 50% · 仅看该配置自身",
         "behavior evidence should be presenter-owned"
     )
-    expect(presentation.rows[1].summaryText == "完成 5 · 失败 0 · 4 天样本", "unique model and effort fallback should match")
+    expect(presentation.rows[1].summaryText == "完成 5 · 失败 0 · 4 天样本", "provider should disambiguate model and effort fallback")
     expect(
         presentation.coverageText == "日志覆盖自 2026-07-20 08:00；它是行为信号，不证明任务成功。",
         "complete workload coverage should retain its boundary copy"

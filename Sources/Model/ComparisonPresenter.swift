@@ -109,11 +109,13 @@ enum ComparisonPresenter {
         let id: String
         let displayName: String
         let modelName: String
+        let providerId: String?
         let effort: String
     }
 
     struct UsageAggregateInput: Equatable {
         let modelConfigurationId: String
+        let providerId: String
         let rawModelId: String
         let reasoningEffort: String
         let completedWorkUnits: Int
@@ -904,6 +906,14 @@ enum ComparisonPresenter {
             $0.rawModelId.caseInsensitiveCompare(candidate.modelName) == .orderedSame
                 && $0.reasoningEffort.caseInsensitiveCompare(candidate.effort) == .orderedSame
         } ?? []
+        if let providerId = candidate.providerId {
+            let providerMatches = matches.filter {
+                $0.providerId.caseInsensitiveCompare(providerId) == .orderedSame
+            }
+            if providerMatches.count == 1 {
+                return providerMatches[0]
+            }
+        }
         return matches.count == 1 ? matches[0] : nil
     }
 

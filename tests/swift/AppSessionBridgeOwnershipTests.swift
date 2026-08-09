@@ -61,6 +61,7 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
     private let clearResult: BridgeDataOperationResponse?
     private let localImportResult: BridgeLocalImportResponse?
     private let connectionTestResult: BridgeConnectionTestResponse?
+    private let observationError: StubGatewayError?
     private var snapshotResults: [BridgeSnapshot]
     private var loadSnapshots: [BridgeSnapshot]
     private let manualReferenceRefreshStatus: String
@@ -95,7 +96,8 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
         snapshotResults: [BridgeSnapshot] = [],
         clearResult: BridgeDataOperationResponse? = nil,
         localImportResult: BridgeLocalImportResponse? = nil,
-        connectionTestResult: BridgeConnectionTestResponse? = nil
+        connectionTestResult: BridgeConnectionTestResponse? = nil,
+        observationError: StubGatewayError? = nil
     ) {
         self.defaultPatchResult = patchResult
         self.patchResults = patchResults
@@ -109,6 +111,7 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
         self.clearResult = clearResult
         self.localImportResult = localImportResult
         self.connectionTestResult = connectionTestResult
+        self.observationError = observationError
     }
 
     func loadSnapshot(
@@ -133,7 +136,10 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
 
     func observeState(includeCodexInsights: Bool) throws -> BridgeStateObservationResponse {
         observeStateCallCount += 1
-        throw StubGatewayError.unexpectedCall
+        if let observationError {
+            throw observationError
+        }
+        return try decodedObservation()
     }
 
     func recordedLoadSnapshotMaintenanceRequests() -> [Bool] {
@@ -443,6 +449,29 @@ private func decodedSnapshot(
     return try decoder.decode(
         BridgeSnapshot.self,
         from: JSONSerialization.data(withJSONObject: payload)
+    )
+}
+
+private func decodedObservation() throws -> BridgeStateObservationResponse {
+    let fixtureURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        .appendingPathComponent("tests/fixtures/architecture_refresh_snapshot_v1.json")
+    let state = try JSONSerialization.jsonObject(
+        with: Data(contentsOf: fixtureURL)
+    ) as! [String: Any]
+    let decoder = JSONDecoder()
+    decoder.keyDecodingStrategy = .convertFromSnakeCase
+    return try decoder.decode(
+        BridgeStateObservationResponse.self,
+        from: JSONSerialization.data(
+            withJSONObject: [
+                "schema_version": 1,
+                "ok": true,
+                "action": "observe_state",
+                "status": "observed",
+                "message": "observed",
+                "state": state,
+            ]
+        )
     )
 }
 
@@ -875,8 +904,8 @@ private func verifySettingsDraftFollowsAuthoritativeSnapshotsWithoutOwnGatewayQu
     let snapshotRequests = await gateway.recordedLoadSnapshotMaintenanceRequests()
     let observationRequests = await gateway.recordedObserveStateCallCount()
     expect(
-        snapshotRequests == [false] && observationRequests == 0,
-        "settings draft reload must not issue a bridge query beyond the AppSession refresh"
+        snapshotRequests == [false] && observationRequests == 1,
+        "settings draft reload should reuse the AppSession observation and snapshot refresh"
     )
 }
 
@@ -941,7 +970,7 @@ private func verifySettingsSaveProtectsDraftAndConsumesCommandSnapshot() async t
 }
 
 @MainActor
-private func verifyPeriodicRefreshLoadsAnAuthoritativeReadOnlySnapshot() async throws {
+private func verifyPeriodicRefreshObservesAndLoadsAnAuthoritativeSnapshot() async throws {
     let initial = try decodedSnapshot(historyCount: 0)
     let periodic = try decodedSnapshot(historyCount: 9)
     let immediateFollowUp = try decodedSnapshot(historyCount: 10)
@@ -961,8 +990,8 @@ private func verifyPeriodicRefreshLoadsAnAuthoritativeReadOnlySnapshot() async t
         "periodic refresh should request a complete snapshot without startup maintenance"
     )
     expect(
-        observeStateCallCount == 0,
-        "periodic refresh must not merge an observation DTO into the current snapshot"
+        observeStateCallCount == 1,
+        "periodic refresh should update local observations before reading the full snapshot"
     )
     expect(
         store.snapshot?.runtime.historyCount == periodic.runtime.historyCount,
@@ -972,9 +1001,38 @@ private func verifyPeriodicRefreshLoadsAnAuthoritativeReadOnlySnapshot() async t
     store.reloadPeriodicSnapshotAsync()
     try await waitForHistoryCount(10, in: store)
     let referenceRefreshRequests = await gateway.recordedLoadSnapshotReferenceRefreshRequests()
+    let finalObserveStateCallCount = await gateway.recordedObserveStateCallCount()
     expect(
         referenceRefreshRequests == [true, false],
         "periodic polling should refresh the remote feed once, then wait for the next UTC slot"
+    )
+    expect(
+        finalObserveStateCallCount == 2,
+        "each idle periodic refresh should advance local usage observations"
+    )
+}
+
+@MainActor
+private func verifyPeriodicObservationFailureStillPublishesSavedSnapshot() async throws {
+    let initial = try decodedSnapshot(historyCount: 0)
+    let saved = try decodedSnapshot(historyCount: 7)
+    let gateway = StubBridgeGateway(
+        patchResult: .failure(.unexpectedCall),
+        loadSnapshots: [saved],
+        observationError: .expectedFailure
+    )
+    let store = makeStore(gateway: gateway, initialSnapshot: initial)
+
+    store.reloadPeriodicSnapshotAsync()
+    try await waitForHistoryCount(7, in: store)
+
+    expect(
+        store.snapshot?.runtime.historyCount == 7,
+        "an observation failure should not block the saved authoritative snapshot"
+    )
+    expect(
+        store.snapshotRefreshIssue?.message.contains("本机使用记录暂未更新") == true,
+        "an observation failure should remain visible without discarding the snapshot"
     )
 }
 
@@ -2376,7 +2434,8 @@ private enum AppSessionBridgeOwnershipTestMain {
             try verifyEndpointIntentsContainNoCandidateProjection()
             try await verifySettingsDraftFollowsAuthoritativeSnapshotsWithoutOwnGatewayQuery()
             try await verifySettingsSaveProtectsDraftAndConsumesCommandSnapshot()
-            try await verifyPeriodicRefreshLoadsAnAuthoritativeReadOnlySnapshot()
+            try await verifyPeriodicRefreshObservesAndLoadsAnAuthoritativeSnapshot()
+            try await verifyPeriodicObservationFailureStillPublishesSavedSnapshot()
             try await verifyManualReferenceRefreshBypassesTheFixedSchedule()
             try await verifyManualReferenceRefreshAcknowledgesUnchangedResults()
             try await verifyWakeRefreshUsesTheRemoteRefreshGate()

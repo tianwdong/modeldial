@@ -4595,6 +4595,7 @@ private struct ComparisonPage: View {
                     aggregates: workload.aggregates.map { aggregate in
                         ComparisonPresenter.UsageAggregateInput(
                             modelConfigurationId: aggregate.modelConfigurationId,
+                            providerId: aggregate.providerId,
                             rawModelId: aggregate.rawModelId,
                             reasoningEffort: aggregate.reasoningEffort,
                             completedWorkUnits: aggregate.completedWorkUnits,
@@ -4618,6 +4619,7 @@ private struct ComparisonPage: View {
             id: item.id,
             displayName: item.displayName,
             modelName: item.modelName,
+            providerId: item.providerId,
             effort: item.effort
         )
     }

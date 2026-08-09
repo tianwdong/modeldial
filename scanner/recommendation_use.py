@@ -64,7 +64,10 @@ def _update_recommendation_use_epochs_unlocked(
     previous_effective_configuration_id = _text(
         persisted.get("effective_current_model_configuration_id")
     ) or _text(persisted.get("representative_current_model_configuration_id"))
-    detected_effective_configuration_id = _current_configuration_id(state)
+    previous_effective_observed_at = _timestamp(
+        persisted.get("effective_current_model_observed_at")
+    )
+    detected_effective_configuration_id = _effective_configuration_id(state)
     effective_configuration_id = (
         detected_effective_configuration_id
         or previous_effective_configuration_id
@@ -120,7 +123,11 @@ def _update_recommendation_use_epochs_unlocked(
             current_configuration_id=str(detected_effective_configuration_id),
             configurations=configurations,
             contexts=contexts,
+            observations=_mapping(
+                store.load_usage_state().get("observations")
+            ),
             preference=_text(portfolio.get("preference")) or "smart",
+            previous_effective_observed_at=previous_effective_observed_at,
             observed_at=observed_at,
         ) or segment_contract_ready
     elif not segment_contract_ready and detected_effective_configuration_id:
@@ -203,6 +210,11 @@ def _update_recommendation_use_epochs_unlocked(
             "representative_configuration_id"
         ),
         "effective_current_model_configuration_id": effective_configuration_id,
+        "effective_current_model_observed_at": (
+            _iso(observed_at)
+            if detected_effective_configuration_id
+            else persisted.get("effective_current_model_observed_at")
+        ),
     }
     if isinstance(previous_value_summary, Mapping):
         persisted["value_summary"] = dict(previous_value_summary)
@@ -253,6 +265,7 @@ def _refresh_recommendation_use_observations_unlocked(
         epoch
         for epoch in epochs
         if epoch.get("lifecycle_status") in {"open", "settling"}
+        or _segment_kind(epoch) == "actual_switch"
     ]
 
     candidates_by_identity: dict[tuple[str, str], list[dict[str, object]]] = {}
@@ -303,6 +316,9 @@ def _refresh_recommendation_use_observations_unlocked(
         ),
         "effective_current_model_configuration_id": persisted.get(
             "effective_current_model_configuration_id"
+        ),
+        "effective_current_model_observed_at": persisted.get(
+            "effective_current_model_observed_at"
         ),
     }
     previous_value_summary = store.load_recommendation_use_state().get(
@@ -440,9 +456,19 @@ def _record_actual_switch(
     current_configuration_id: str,
     configurations: Mapping[str, Mapping[str, object]],
     contexts: Sequence[Mapping[str, object]],
+    observations: Mapping[str, object],
     preference: str,
+    previous_effective_observed_at: datetime | None,
     observed_at: datetime,
 ) -> bool:
+    switch_started_at = _actual_switch_started_at(
+        configurations=configurations,
+        observations=observations,
+        previous_configuration_id=previous_configuration_id,
+        current_configuration_id=current_configuration_id,
+        previous_effective_observed_at=previous_effective_observed_at,
+        observed_at=observed_at,
+    )
     for epoch in epochs:
         if (
             epoch.get("lifecycle_status") == "open"
@@ -452,52 +478,37 @@ def _record_actual_switch(
         ):
             _begin_settling(
                 epoch,
-                at=observed_at,
+                at=switch_started_at,
                 reason="configuration_switched",
             )
 
-    adopted = next(
-        (
-            epoch
-            for epoch in reversed(epochs)
-            if epoch.get("lifecycle_status") == "open"
-            and epoch.get("current_model_configuration_id")
-            == previous_configuration_id
-            and epoch.get("recommended_model_configuration_id")
-            == current_configuration_id
-        ),
-        None,
+    current = configurations.get(previous_configuration_id)
+    candidate = configurations.get(current_configuration_id)
+    context = _comparison_context(
+        contexts,
+        current_configuration_id=previous_configuration_id,
+        candidate_configuration_id=current_configuration_id,
     )
-    if adopted is not None:
-        adopted["segment_kind"] = "actual_switch"
-    else:
-        current = configurations.get(previous_configuration_id)
-        candidate = configurations.get(current_configuration_id)
-        context = _comparison_context(
-            contexts,
-            current_configuration_id=previous_configuration_id,
-            candidate_configuration_id=current_configuration_id,
+    actual: dict[str, object] | None = None
+    if (
+        current is not None
+        and candidate is not None
+        and bool(candidate.get("enabled", False))
+    ):
+        actual = _epoch_template(
+            current=current,
+            candidate=candidate,
+            context=context or {},
+            preference=preference,
+            started_at=switch_started_at,
         )
-        if (
-            current is not None
-            and candidate is not None
-            and bool(candidate.get("enabled", False))
-            and context is not None
-        ):
-            adopted = _epoch_template(
-                current=current,
-                candidate=candidate,
-                context=context,
-                preference=preference,
-                started_at=observed_at,
-            )
-            adopted["segment_kind"] = "actual_switch"
-            epochs.append(adopted)
+        actual["segment_kind"] = "actual_switch"
+        epochs.append(actual)
 
     desired.pop(previous_configuration_id, None)
     for epoch in epochs:
         if (
-            epoch is not adopted
+            epoch is not actual
             and epoch.get("lifecycle_status") == "open"
             and _segment_kind(epoch) == "recommendation"
             and (
@@ -509,10 +520,52 @@ def _record_actual_switch(
         ):
             _begin_settling(
                 epoch,
-                at=observed_at,
+                at=switch_started_at,
                 reason="configuration_switched",
             )
-    return adopted is not None
+    return actual is not None
+
+
+def _actual_switch_started_at(
+    *,
+    configurations: Mapping[str, Mapping[str, object]],
+    observations: Mapping[str, object],
+    previous_configuration_id: str,
+    current_configuration_id: str,
+    previous_effective_observed_at: datetime | None,
+    observed_at: datetime,
+) -> datetime:
+    candidate_starts: list[datetime] = []
+    for raw in observations.values():
+        if not isinstance(raw, Mapping):
+            continue
+        configuration_id = _completed_observation_configuration_id(
+            raw,
+            configurations=configurations,
+        )
+        started_at = _timestamp(raw.get("started_at"))
+        if (
+            configuration_id != current_configuration_id
+            or started_at is None
+            or started_at > observed_at
+            or (
+                previous_effective_observed_at is not None
+                and started_at < previous_effective_observed_at
+            )
+        ):
+            continue
+        candidate_starts.append(started_at)
+    if candidate_starts:
+        return min(candidate_starts)
+    if previous_effective_observed_at is None:
+        boundary = _current_usage_tail_boundary(
+            configurations=configurations,
+            observations=observations,
+            current_configuration_id=current_configuration_id,
+        )
+        if boundary is not None and boundary[0] == previous_configuration_id:
+            return min(boundary[1], observed_at)
+    return observed_at
 
 
 def _migrate_current_usage_tail(
@@ -793,6 +846,8 @@ def _observation_matches_epoch(
     }
     if str(row.get("provider_id") or "").casefold() not in allowed_providers:
         return False
+    if _segment_kind(epoch) == "actual_switch":
+        return True
     return not _session_used_candidate_before_recommendation(
         row,
         epoch,
@@ -1365,9 +1420,15 @@ def _public_epoch(epoch: Mapping[str, object]) -> dict[str, object]:
 def _current_configuration_id(state: Mapping[str, object]) -> str | None:
     config = _mapping(state.get("config"))
     recommendation = _mapping(config.get("recommendation"))
-    return _text(recommendation.get("effective_current_candidate_id")) or _text(
+    return _effective_configuration_id(state) or _text(
         recommendation.get("current_default_candidate_id")
     )
+
+
+def _effective_configuration_id(state: Mapping[str, object]) -> str | None:
+    config = _mapping(state.get("config"))
+    recommendation = _mapping(config.get("recommendation"))
+    return _text(recommendation.get("effective_current_candidate_id"))
 
 
 def _portfolio_current_configuration_id(
@@ -1445,8 +1506,43 @@ def _retained_epochs(
     closed = [
         epoch for epoch in epochs if str(epoch.get("use_epoch_id")) not in active_ids
     ]
-    closed_limit = max(0, MAX_RETAINED_EPOCHS - len(active))
-    return [*closed[-closed_limit:], *active] if closed_limit else active
+    durable_closed = [
+        epoch
+        for epoch in closed
+        if _segment_kind(epoch) == "actual_switch"
+        or _epoch_has_observed_usage(epoch)
+    ]
+    durable_ids = {str(epoch.get("use_epoch_id")) for epoch in durable_closed}
+    prospective_closed = [
+        epoch
+        for epoch in closed
+        if str(epoch.get("use_epoch_id")) not in durable_ids
+    ]
+    prospective_limit = max(
+        0,
+        MAX_RETAINED_EPOCHS - len(active) - len(durable_closed),
+    )
+    retained_ids = active_ids | durable_ids
+    if prospective_limit:
+        retained_ids.update(
+            str(epoch.get("use_epoch_id"))
+            for epoch in prospective_closed[-prospective_limit:]
+        )
+    return [
+        epoch
+        for epoch in epochs
+        if str(epoch.get("use_epoch_id")) in retained_ids
+    ]
+
+
+def _epoch_has_observed_usage(epoch: Mapping[str, object]) -> bool:
+    return bool(
+        _text(epoch.get("last_observed_at"))
+        or _positive_integer(epoch.get("observed_candidate_session_count"))
+        or _positive_integer(epoch.get("observed_candidate_work_unit_count"))
+        or _positive_number(epoch.get("observed_candidate_reference_cost_usd"))
+        or _positive_integer(epoch.get("observed_candidate_response_wait_ms"))
+    )
 
 
 def _mapping(value: object) -> Mapping[str, object]:

@@ -40,6 +40,7 @@
 - Build 104／105 的 preview 更新身份、R2 版本化资产和 GitHub 镜像已发布；真实 UI 验收发现 `SURequireSignedFeed` 缺少 Sparkle 2.9.4 强制要求的 `SUVerifyUpdateBeforeExtraction`，因此将两版明确标记为需要手动升级的历史版本。
 - `preview.7`（Build 106）补齐签名 feed 与解压前验签的组合门禁；安装后设置页的更新服务正常启用。`preview.8`（Build 107）在干净提交 `537dfaaf6204557133689a8b45e6729a6cf66bd6` 上完成 fresh build、产物校验、GitHub／R2 发布和签名 appcast 更新。
 - `/Applications` 中的 Build 106 已通过 Sparkle 真实下载 15.4 MB Build 107 ZIP、验签、安装并重启；更新后的 App 回读精确 build／源码提交／feed／公钥和安全开关，深层签名有效，再次检查显示“当前已是最新版本”。稳定配置和历史文件保留，运行中只消费了 inbox 临时事件并更新实时状态。
+- 对比页“切换后的实际变化”按真实生效配置维护独立 `actual_switch` 时段，不再依赖当时是否存在推荐或对比上下文；轮询间已经完成的目标配置任务可回溯切换边界，复用会话、已关闭时段的迟到记录和超过 100 段的历史累计均可继续准确归因。App 空闲刷新会先由命令层观察本机使用记录，再发布完整只读快照；相同模型／档位的近期使用记录用 Provider 消歧，无法唯一确认时继续 fail closed。
 
 ## 源码公开门槛
 
@@ -92,6 +93,7 @@
 
 ## 最近验证
 
+- 2026-08-09：修复对比页“切换后的实际变化”漏算与长期不增长。新增回归覆盖轮询间切换回溯、复用会话、无对比上下文切换、未观测默认项不误判、已关闭时段迟到对账、105 段累计不回退、App 周期观察失败降级和同模型／档位 Provider 消歧；全量 Python／Swift 合同 `1429/1429`（`682.740s`）及 `git diff --check` 通过，完整 `./build.sh` 生成并验证 `build/modeldial-candidate.app`。隔离复制的本机数据经新逻辑从 79 次恢复到 128 次，第二次观察仍为 128；真实候选 App 启动后自动显示 128 次、等待时间约节省 4 小时 33 分、参考费用约节省 `$157.72`，下一自动刷新周期仍为 128。未覆盖 `/Applications`，未创建提交、tag、Release 或发布。
 - 2026-08-09：定位并修复 preview 更新器启动失败：Sparkle 2.9.4 在 `SURequireSignedFeed=true` 时要求同时启用 `SUVerifyUpdateBeforeExtraction=true`。修复后的 `preview.7`（Build 106）设置页“立即检查”可用；随后发布 `preview.8`（Build 107）、四项 GitHub prerelease 资产、R2 不可变镜像和 `https://updates.modeldial.com/macos/preview/appcast.xml`。在线 appcast 与 ZIP 的 Ed25519 验签通过，feed 精确指向 `15,418,953` bytes ZIP。
 - 2026-08-09：从 `/Applications` 中的 Build 106 在真实 SwiftUI 设置页发现 Build 107，完成 15.4 MB 下载、验签、“安装并重启应用”和重新启动；新 App 回读 Build 107、源码提交 `537dfaaf6204557133689a8b45e6729a6cf66bd6`、preview feed、公钥、签名 feed 与解压前验签开关，深层 ad-hoc 签名有效。再次点击“立即检查”显示“当前已是最新版本”。升级前 94 个已有文件中，75 个内容不变、6 个实时状态文件正常更新、13 个缺失项全部为已消费的 `session-events/inbox` 临时事件。
 - 2026-08-09：公开 `main` 推送至 `155f3f7`；`v0.1.0-preview.4` annotated tag object 为 `d6b96b9c558214388620bee3ace3db2e6bd4dded`，peeled commit 与 App 内 `ModelDialSourceCommit` 均精确为 `7237db3413a040f9ad912f7c21917aec392323f3`。GitHub prerelease 非 draft 且仅有四项预期资产；主代理和独立 Luna 审计确认四项大小／SHA-256、两份 bundle 身份和主程序一致。使用不带 GitHub API 认证的公开 URL 回下载时，首个 DMG 传输曾被 CDN 半途截断，有限传输重试后四项大小和哈希全部精确匹配；公开 DMG／ZIP 的容器、版本／build／源码提交／官方 Radar URL／空更新通道、thin arm64、60 个 Mach-O／65 个架构记录的 macOS 13 门禁、深层 ad-hoc 签名和 bundle SPDX 均通过。公开 ZIP 第一次真实官方刷新以 `unavailable` 回退，30 秒后第二次刷新成功并取得 `snapshot-2026-08-09T00-00-00Z` 的 15 条公开官方第一方结果，真实覆盖了本版快速重试路径。当前机器 Gatekeeper assessments disabled，未覆盖 `/Applications`，未核销人工放行验收。
