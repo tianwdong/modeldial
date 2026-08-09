@@ -1,6 +1,6 @@
 # ModelDial Roadmap
 
-最后更新：2026-08-08
+最后更新：2026-08-09
 
 ## 当前阶段
 
@@ -23,7 +23,7 @@
 - LiteLLM pricing 来源已固定完整 upstream commit 和原始文件 SHA-256；网络与离线刷新均先校验原始字节，再解析 JSON，来源身份进入 snapshot hash。
 - `build.sh` 使用内容锁定的 python.org Python 3.14.3 installer，在项目 `build/` 内校验、解包并冻结 runtime；构建会检查 CA store、TLS／SHA-256／zstd、Mach-O 最低系统版本和非系统绝对动态库依赖。
 - `build-dev.sh` 优先复用 `build/modeldial-candidate.app` 的冻结后端；仅在 candidate 不存在时兼容使用 `build/modeldial.app`，因此 fresh clone 完成一次正式构建后即可继续 Swift／资源迭代。
-- 双语 README 已重排为产品优先的公开首页：首屏展示定位、App 图标、官网／GitHub／`preview.2` DMG 入口、平台与本地优先标签和 Radar；随后说明使用价值、配置对比、扫描策略、下载、工作方式、核心能力与隐私。unsigned／unnotarized 限制收敛到下载区单一警告，并继续明确“隐私与安全性 → 仍要打开”、macOS 13+ Apple Silicon、Intel 不支持及禁止 `xattr`／`spctl` 绕过；构建供应链细节下沉到发布文档，README 只保留公开运行时身份与最小命令。
+- 双语 README 已重排为产品优先的公开首页：首屏展示定位、对应语言的 compact／Radar／Compare 动图、官网／GitHub／`preview.2` DMG 入口、平台与本地优先标签；正文按“无需配置浏览官方 Radar → 下载安装 → 产品价值 → 可选本地评测 → 隐私与源码构建”展开。unsigned／unnotarized 限制集中在下载区，并继续明确“隐私与安全性 → 仍要打开”、macOS 13+ Apple Silicon、Intel 不支持及禁止 `xattr`／`spctl` 绕过；构建供应链细节下沉到发布文档，README 只保留公开运行时身份与最小命令。
 - Radar 成为无需本地 Provider 的首要使用路径：首次打开始终保留官方榜单、刷新和空状态，本地模型接入只作为次要 CTA；中英文 README 同步说明可直接查看官网 Radar、本地评测完全可选，并指向已包含该修复的 `preview.2`。
 - Swift 官方参考快照增加与 Python 一致的三条件信任门禁：snapshot kind、provenance kind 均为 `first_party_snapshot` 且 `public_official_snapshot=true`；Radar、对比、证据、compact 和通知链路均 fail closed，开发 seed 不再可能被标成官网榜单。
 - `preview.2` 候选固定为 Build 101；打包门禁注入并回读官方快照 URL、禁用未发布的 Sparkle 通道、拒绝复用 `preview.1`，并要求包含未跟踪文件在内的工作树干净（忽略 `.gitignore` 内容）、HEAD 稳定及 App／ZIP 内 `ModelDialSourceCommit` 精确一致。
@@ -71,9 +71,13 @@
 
 1. 将公开 DMG 拖入 `Applications` 并完成真实 UI 验收；再在另一台 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成“仍要打开”人工验收。
 2. 继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名和干净机器门槛；Intel 仍按真实需求决定是否建立 universal2 里程碑。
+3. 下一版 unsigned preview 启用正式 Sparkle 更新前，固定并备份长期 EdDSA 私钥、发布永久 HTTPS appcast，并在发布候选上复跑升级验收；由于公开 `preview.2` 未配置更新源，现有用户仍需手动安装首个启用更新通道的版本，后续版本才能从设置页连续升级。
 
 ## 最近验证
 
+- 2026-08-09：下一候选构建号固定为 `0.1.0（Build 102）`，构建合同定向回归 `28/28`、全量 Python `1421/1421`（`645.560s`）和 `git diff --check` 通过。以源码提交 `ec2284d`、官方 `https://reference.modeldial.com/reference-snapshots`、空 Sparkle feed／公钥完成完整 `./build.sh`；candidate 回读版本、源码提交和 Radar URL 精确一致，60 个 Mach-O／65 个架构记录通过 macOS 13 门禁，thin arm64 与深层 ad-hoc 签名有效。随后在仅改变 bundle id／隔离 HOME 的临时副本中从零启动，没有点击刷新，约 19 秒后自动取得 `snapshot-2026-08-09T00-00-00Z`，本地缓存精确为 15 条并在 SwiftUI Radar 展示 08:00 新榜单；临时副本和隔离数据已删除，最终 Build 102 candidate 已按完整路径启动。本次未创建 `preview.3`、tag、Release 或正式 Sparkle 通道。
+- 2026-08-09：完成一次隔离的 Sparkle 设置页真实升级演练。以公开 `preview.2` 的 `0.1.0（Build 101）` 为基线，仅在临时副本注入一次性 EdDSA 公钥和临时 HTTPS appcast；当前交互修复提交 `b20cac0` 以 `0.1.0（Build 102）` 完整 Release 构建，60 个 Mach-O／65 个架构记录的 macOS 13 门禁、深层 ad-hoc 签名、appcast EdDSA 签名及 `sign_update --verify` 均通过。App 在“设置 → 软件更新”发现 Build 102，实际请求 appcast 与 `15,414,550` bytes ZIP，完成“安装并重启应用”后同一路径回读为 Build 102／源码提交 `b20cac0`；隔离数据哨兵保留，真实配置与历史文件的时间和大小未变化，随后再次检查显示“当前已是最新版本”。更新后的无障碍树只有一个“收起”按钮，确认新交互实现已落入升级包。本次未配置永久 feed／正式密钥，未修改 GitHub、tag、Release 或生产服务；公开 `preview.2` 仍不能自行发现后续更新。
+- 2026-08-09：基于当前 `main` 源码的一次性临时构建录制中英文真实 SwiftUI 状态，录制钩子未进入仓库；两条最终 GIF 均为 `840×406`、10 fps、86 帧、8.6 秒，分别为 `1,756,924` 与 `1,878,796` bytes，覆盖 compact → Radar → Compare → Radar → compact，且启动数据稳定为 15 个档位。双语 README 同步压缩重复说明，把官方 Radar、`modeldial.com`、DMG 安装、unsigned／unnotarized 手动放行、本地评测可选、会话观察、隐私和源码构建放回同一条阅读路径。两份 README 共检查 44 个本地 Markdown／HTML 引用且 `0` 缺失；README／构建合同回归 `18/18`、GIF 元数据检查和 `git diff --check` 通过。原始帧与 MP4 只保存在被忽略的 `artifacts/readme-recordings/`，未修改 App 源码、发布资产或远端 Release。
 - 2026-08-08：针对用户复测仍可感知的点击卡顿做主线程实采样，旧实现一次展开触发约 `1040ms` 的 SwiftUI `GraphHost.flushTransactions`，完整榜单树在点击路径内构建并因并发 snapshot 更新再次求值；现将展开内容以稳定输入常驻预热、用 `Equatable` 隔离无关根状态、固定单一路径标题布局并将榜单改为 `LazyVStack`，点击只切换外壳与已预热内容可见性。开发包热点击采样降为约 `26ms` 的 SwiftUI transaction，`openExpanded()` 约 `3ms`，展开时不再重建 `ExpandedSelectionView`；冷启动预热由约 `2007ms` 降至约 `818ms`。用户人工确认展开已顺滑；随后把收起命中区恢复为“箭头＋标题＋左侧剩余空白”整块单一按钮，自动化从按钮中心完成 expanded → compact → expanded 往返，且无障碍树始终只有一个“收起”。定向回归 `154/154`、全量 Python `1421/1421`（`677.085s`）、`git diff --check`、`./build-dev.sh` 和完整 `./build.sh` 通过；正式 `0.1.0（Build 101）` candidate 的冻结后端 smoke、60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名和 Designated Requirement 均通过。未创建 tag／Release，未 push。
 - 2026-08-08：针对窗口级录像确认的点击展开中段停顿，改为先提交轻量外壳的 `0.42s` 高阻尼 spring，再于 `220ms` 后隐藏挂载完整榜单树，并在下一次主线程调度中淡入；展开期间保留 compact 身份内容，避免首帧文字挤压，收起仍立即停止内容命中并连续缩回。定向展开／交互回归 `136/136`、架构基线 `11/11`、全量 Python `1421/1421`（`643.747s`，`ResourceWarning` 按错误处理）、`git diff --check` 和完整 `./build.sh` 通过；candidate 的 60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名和 Designated Requirement 均通过。对 `build/modeldial-candidate.app` 录制 180 帧、`2240×1080`、9 秒窗口级样片，展开动作帧持续变化，不再出现上一版的中间尺寸静止平台，完整榜单在壳层接近最终尺寸后渐入，收起段保持连续。候选 App 已按完整路径启动供人工体感验收；验证完成后形成本地 Git 提交，未 push。
 - 2026-08-08：参考 `codex-island` 的外壳／内容错峰与 `open-vibe-island` 的延迟卸载，调整胶囊点击展开／收起节奏：大尺寸外壳改为 `0.42s／0.30s` 高阻尼 spring，展开内容在 `110ms` 后渐入，收起内容立即停止命中并淡出，展开树在 `360ms` 后卸载；没有恢复 `Task.yield` 或 AppKit 窗口动画。定向交互合同 `36/36`、`git diff --check` 和完整 `./build.sh` 通过；新 Release candidate 的 60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名和 Designated Requirement 均通过，已启动 `modeldial-candidate-20260808-214603-48056.app` 供人工体感验收；该候选随后被上条的延后挂载版本替代。

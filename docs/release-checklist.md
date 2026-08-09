@@ -19,7 +19,7 @@
 - [x] `build-dev.sh` 优先复用 candidate 冻结后端，并在 candidate 不存在时兼容使用正式 App；fresh clone 完成一次 `build.sh` 后不要求预先存在正式 App。
 - [x] 删除根目录独立单题评测原型及其专用测试；正式执行能力只保留在 App scanner 链路，并由双仓边界检查阻止该原型重新进入公开仓。
 - [x] 补充脱敏的中英文产品截图：Radar、对比页、通用设置和扫描设置位于 [docs/screenshots](screenshots/)；截图中的指标是示例数据，不代表实时榜单。
-- [ ] 补充功能动图（可选，不阻塞首个源码发布）。
+- [x] 补充中英文功能动图；两条 README 素材均为 `840×406`、10 fps、8.6 秒，并覆盖 compact → Radar → Compare → Radar → compact。
 - [x] 在 [benchmark-and-data-policy.md](benchmark-and-data-policy.md) 明确题包、答案 fixture、价格快照的版权／再分发和 benchmark 可见性口径；具体外部来源仍需逐项复核。
 - [x] 2026-08-06 owner 书面确认 Q1–Q5 题包及答案 fixture 均为用户原创，ModelDial 图标、wordmark 和截图均为项目自有视觉资产；见 [open-source-content-audit.md](open-source-content-audit.md)。
 - [x] 核对 LiteLLM pricing 与 LobeHub icon 包的上游许可证和版本／来源边界；NOTICE 已包含 LiteLLM／Berri AI 和 LobeHub 的完整 MIT attribution，并保留 provider 无关联／不背书说明。LiteLLM policy 与当前 snapshot 已固定完整 upstream commit 和 raw SHA-256，网络与离线刷新均在 JSON 解析前 fail closed 校验原始字节。

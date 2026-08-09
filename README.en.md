@@ -1,8 +1,8 @@
 <div align="center">
   <img src="Resources/AppIcon.svg" alt="ModelDial App icon" width="96" height="96">
   <h1>ModelDial</h1>
-  <p><strong>Find a better-fit model configuration for each coding task through real evaluations.</strong></p>
-  <p>Compare complete <code>model + effort + route</code> combinations while retaining quality, elapsed time, token, and reference-cost evidence.</p>
+  <p><strong>Use real coding evaluations to choose a better-fit model configuration for each task.</strong></p>
+  <p>Compare complete <code>model + effort + route</code> combinations across quality, speed, tokens, and reference cost.</p>
   <p>
     <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.2/modeldial-0.1.0-preview.2-macos-arm64.dmg"><strong>Download the macOS preview</strong></a>
     · <a href="https://modeldial.com">Website</a>
@@ -13,26 +13,43 @@
   <p><code>macOS 13+</code> · <code>Apple Silicon</code> · <code>local-first</code> · <code>no built-in telemetry</code></p>
 </div>
 
-![ModelDial Radar view](docs/screenshots/modeldial-radar-en.jpg)
+<p align="center">
+  <img src="docs/media/modeldial-demo-en.gif" alt="ModelDial capsule, official Radar, and configuration comparison demo" width="840">
+</p>
 
-*Sample data; this is not a live leaderboard.*
+<p align="center"><em>Open official Radar and configuration comparison from the menu-bar capsule. Demo data is not a live leaderboard.</em></p>
 
-## Browse Official Radar First; Local Evaluation Is Optional
+## Browse Official Radar Without Setup
 
-ModelDial's primary path is browsing the public first-party Radar, not configuring a model or running a local test first. In `v0.1.0-preview.2`, click the ModelDial capsule in the menu bar to see configuration results from scheduled official evaluations; the [web Radar](https://modeldial.com/radar) is also available. Browsing official Radar requires no API key and uses none of your model quota.
+Open the app and click the ModelDial capsule in the menu bar to browse configuration results from scheduled first-party evaluations. It requires no API key and uses none of your model quota. You can also use the [web Radar](https://modeldial.com/radar) without installing the app.
 
-Connect a local Codex, Claude Code, or Grok Build provider—or a compatible endpoint—only when you want to compare your own provider, route, and effort combinations. Local results and the official leaderboard remain explicit, separately selectable data sources.
+Connect a local Codex, Claude Code, or Grok Build provider—or a compatible endpoint—only when you want to evaluate your own provider, route, and effort combinations. Official and local results remain explicit, separately selectable data sources.
 
-## Why ModelDial
+## Download & Install
 
-A model name is only part of a working configuration. The same model can behave differently with another effort, route, or provider. ModelDial puts those combinations through repeatable coding evaluations so you can choose from your own task evidence:
+**Current version: [`v0.1.0-preview.2`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.2)** · [Direct Apple Silicon DMG download](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.2/modeldial-0.1.0-preview.2-macos-arm64.dmg)
 
-- Compare real `model + effort + route` combinations instead of model names alone.
-- Keep the comparison scope stable with versioned question packs and evaluation profiles.
-- Preserve quality, elapsed time, tokens, reference cost, failure state, and per-question evidence.
-- Configure, run, and retain history locally; whether a remote model is called depends on the provider or endpoint you choose.
+Requirements: macOS 13 or later on Apple Silicon. Intel Macs are not currently supported.
 
-## Product Screenshots
+1. Open the DMG, drag `modeldial.app` to `Applications`, eject the DMG, and launch the copy from `Applications`.
+2. Click the ModelDial capsule in the menu bar and browse official Radar immediately; no model connection or scan is required.
+3. To produce evidence for your own configurations, open **Evaluation → Connections** and import a provider or add a compatible endpoint.
+
+> [!IMPORTANT]
+> `v0.1.0-preview.2` is an unsigned / unnotarized preview with no Developer ID signature or Apple notarization. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** for this app; do not disable Gatekeeper or use `xattr`, `spctl`, or other commands to bypass system security checks.
+
+> [!NOTE]
+> This preview includes the official Radar feed URL but does not enable automatic updates. Download future versions manually from this page or the matching GitHub Release. To verify the files, download `SHA256SUMS` as well and run `shasum -a 256 -c SHA256SUMS` in the asset directory.
+
+## What It Solves
+
+- **Compare configurations, not model names alone:** Preserve the complete model, effort, route, and provider identity for every result.
+- **Put the tradeoffs in one evidence set:** Review quality, elapsed time, tokens, reference cost, failure state, and per-question results together.
+- **Keep comparisons repeatable:** Use versioned question packs and evaluation profiles to control scope, timeout, parallelism, and retries.
+- **Relate results to active coding sessions:** Observe the current model state for local Codex, Claude Code, and Grok Build sessions, then compare it with Radar and local results.
+- **Keep data sources explicit:** Official Radar is a fast reference; local evaluation validates your own setup, and the two are never silently merged.
+
+## Product UI
 
 <table>
   <tr>
@@ -45,52 +62,29 @@ A model name is only part of a working configuration. The same model can behave 
   </tr>
 </table>
 
-## Download & First Run
+## How Local Evaluation Works
 
-**Current version: [`v0.1.0-preview.2`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.2)** · [Direct Apple Silicon DMG download](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.2/modeldial-0.1.0-preview.2-macos-arm64.dmg)
+1. **Connect models.** Import a local Codex, Claude Code, or Grok Build provider, or configure a compatible endpoint.
+2. **Choose the evaluation scope.** [`questions/catalog.json`](questions/catalog.json) is the authority for the versioned question pack and profiles.
+3. **Run and retain evidence.** The app follows your question-count, parallelism, timeout, and retry settings while preserving quality, elapsed time, tokens, reference cost, and failure reasons.
+4. **Choose a configuration.** Review Radar, comparison, and history, or export a leaderboard image.
 
-Requirements: macOS 13 or later on Apple Silicon. Intel Macs are not currently supported. To verify the download, get `SHA256SUMS` from the same release and run `shasum -a 256 -c SHA256SUMS` in the asset directory.
+The native macOS menu-bar app is the only product runtime entry point. Repository scanners, scripts, and the frozen backend are invoked by the app or build workflow.
 
-> [!IMPORTANT]
-> `v0.1.0-preview.2` is an unsigned / unnotarized preview with no Developer ID signature or Apple notarization. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** for this app; do not disable Gatekeeper or use `xattr`, `spctl`, or other commands to bypass system security checks.
-
-> [!NOTE]
-> `v0.1.0-preview.2` includes the official Radar feed URL and fixes the first-run path when no local provider is configured; local model connections and on-device evaluations remain optional. This preview does not enable automatic updates, so download future versions manually from this page or the matching GitHub Release.
-
-First run:
-
-1. Open the DMG, drag `modeldial.app` to `Applications`, eject the DMG, and launch the copy from `Applications`.
-2. Click the ModelDial capsule in the menu bar and browse official Radar immediately; no local model or scan is required.
-3. To produce evidence for your own configurations, open **Evaluation → Connections**, import a provider or add a compatible endpoint, then choose a profile and run a scan.
-
-## How It Works
-
-1. **Browse official Radar.** The app loads a public first-party snapshot without requiring a local model or API key.
-2. **Connect models when needed.** Import a local Codex, Claude Code, or Grok Build provider—or configure a compatible endpoint—only for your own evaluations.
-3. **Run a local evaluation.** [`questions/catalog.json`](questions/catalog.json) is the authority for the versioned question pack and profiles; question count, parallelism, timeout, and retry settings drive the run.
-4. **Review each evidence source.** Switch explicitly between official and local results across Radar, comparison, history, and exports.
-
-## Highlights
-
-- **Configuration-level comparisons:** Keep the model, effort, route, and provider identity with each result.
-- **Explainable results:** Show quality, elapsed time, tokens, reference cost, and failure state together for review.
-- **Local session observation:** Observe local Codex, Claude Code, and Grok Build session state alongside scan results.
-- **Native menu-bar experience:** The macOS native app is the only product runtime entry point; repository scripts and backend modules are called by the app or build scripts.
-
-## Privacy
+## Privacy Boundary
 
 - Configuration, scan history, runtime state, and limited session metadata stay on the machine.
 - API keys are stored in the macOS Keychain and are not written into scan history.
-- During an evaluation, synthetic questions and model responses pass through the local CLI or model service you select; those services retain their own terms and privacy policies.
-- The app has no built-in telemetry and uploads neither session transcripts nor local evaluation results. ModelDial-branded preview packages only read the public first-party Radar snapshot; source builds do not read a remote leaderboard unless you explicitly configure a compatible endpoint.
+- Evaluation questions and model responses pass only through the local CLI or model service you select; those services retain their own terms and privacy policies.
+- The app has no built-in telemetry and uploads neither session transcripts nor local evaluation results. ModelDial-branded previews only read the public first-party Radar snapshot; source builds access a remote leaderboard only when you explicitly configure a compatible snapshot URL.
 
-See [PRIVACY.md](PRIVACY.md) and the [open-source architecture boundary](docs/architecture.md) for more detail. The website, Cloudflare Worker, remote evaluation runner, and snapshot publisher are outside this repository and are not App runtime entry points.
+See [PRIVACY.md](PRIVACY.md) and the [open-source architecture boundary](docs/architecture.md) for more detail. The website, Cloudflare Worker, remote evaluation runner, and snapshot publisher are outside this repository and are not app runtime entry points.
 
 ## Build from Source
 
-Source builds target macOS 13+ on Apple Silicon and require Xcode 16.4. On the first `build.sh` run, the locked Python runtime is extracted under the ignored `build/` directory; no separate Python installation is required:
+Source builds target macOS 13+ on Apple Silicon and require Xcode 16.4. The first `build.sh` run extracts the locked Python runtime under the ignored `build/` directory; no separate Python installation is required.
 
-Build inputs are pinned to Python 3.14.3 by [`python-runtime.lock.json`](build-support/python-runtime.lock.json), while [`pyinstaller-requirements.txt`](build-support/pyinstaller-requirements.txt) locks PyInstaller 6.21.0 and its dependencies. See the [release checklist](docs/release-checklist.md) for the full supply-chain gates.
+Build inputs are pinned to Python 3.14.3 by [`python-runtime.lock.json`](build-support/python-runtime.lock.json), while [`pyinstaller-requirements.txt`](build-support/pyinstaller-requirements.txt) locks PyInstaller 6.21.0 and its dependencies.
 
 ```bash
 MODELDIAL_REFERENCE_SNAPSHOT_URL=https://reference.modeldial.com/reference-snapshots ./build.sh
@@ -99,13 +93,7 @@ open build/modeldial-candidate.app
 
 The command above enables official Radar. Run `./build.sh` without the environment variable for a fully local source build; the remote snapshot URL defaults to empty.
 
-`build.sh` builds the Swift app, freezes the Python backend, and runs the snapshot smoke check. For Swift or resource-only changes after one complete build, use:
-
-```bash
-./build-dev.sh
-```
-
-Changes to `scanner/`, `scripts/`, or `questions/` require a fresh `./build.sh`. The separate binary-preview constraints are documented in the [preview notes](docs/releases/v0.1.0-preview.2.md).
+`build.sh` builds the Swift app, freezes the Python backend, and runs the snapshot smoke check. After one complete build, use `./build-dev.sh` for Swift- or resource-only changes. Changes to `scanner/`, `scripts/`, or `questions/` require a fresh `./build.sh`. See the [release checklist](docs/release-checklist.md) for the complete supply-chain gates.
 
 <details>
 <summary>Remove session-observer hooks installed from source</summary>
@@ -120,32 +108,21 @@ python3 scripts/install_session_observer.py --uninstall
 
 ## Development & Testing
 
-Run the full Python regression suite:
-
 ```bash
 python3 -m unittest discover -s tests -v
-```
-
-For changes to versioned DTOs or architecture contracts, also run the focused contract suite:
-
-```bash
 python3 -m unittest tests.test_architecture_baseline -v
-```
-
-Before submitting a change, check diff formatting:
-
-```bash
 git diff --check
 ```
 
+The second command targets versioned DTO or architecture-contract changes. For other work, start with the smallest relevant tests and add the full suite in proportion to risk.
+
 ## Docs
 
-- [Open-source architecture boundary](docs/architecture.md): responsibilities between the App, scanner, and private services.
+- [Open-source architecture boundary](docs/architecture.md): responsibilities between the app, scanner, and private services.
 - [Benchmark and data distribution policy](docs/benchmark-and-data-policy.md): question packs, answer fixtures, pricing snapshots, and provider assets.
 - [Open-source content audit](docs/open-source-content-audit.md): source, attribution, and question-pack search records.
 - [Release checklist](docs/release-checklist.md): separate source-candidate and binary-release gates.
-- [Current preview notes](docs/releases/v0.1.0-preview.2.md): v0.1.0-preview.2 fixes, installation steps, verification, and limitations.
-- [Historical preview notes](docs/releases/v0.1.0-preview.1.md): v0.1.0-preview.1 installation steps and known limitations.
+- [Current preview notes](docs/releases/v0.1.0-preview.2.md): installation, verification, and limitations.
 - [Security policy](SECURITY.md): private vulnerability-reporting channel.
 
 ## Contributing & License
