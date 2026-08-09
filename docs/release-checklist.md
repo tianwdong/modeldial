@@ -78,6 +78,16 @@
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
 - [x] 经单独授权创建 `v0.1.0-preview.2` annotated tag／GitHub prerelease 并上传 4 个精确资产；tag 的 peeled commit 与二进制 `ModelDialSourceCommit` 均为 `a20d14e`，`preview.1` 未被修改或覆盖。随后从公开 URL 无认证下载，完成 SHA-256、DMG／ZIP、签名、macOS 13、SPDX 和冻结后端官方快照复验。
 
+## Gate 2C：`v0.1.0-preview.3` 交互修复候选
+
+- [x] marketing version 保持 `0.1.0`，build number 从 101 单调递增到 102；预览打包默认 label 改为 `preview.3`，并拒绝复用已公开的 `preview.1` 与 `preview.2`。
+- [x] 完成构建合同定向回归 `28/28`、全量 Python `1421/1421`、完整 Build 102 构建和真实 UI 交互验收；官方 Radar 自动刷新在隔离副本中从零取得 15 条结果。
+- [x] 在干净提交 `16e0dd2cafa82ef1b77b719edc0a3db90e5bf68f` 上生成独立目录中的 `preview.3` DMG／ZIP／SBOM／SHA256SUMS；没有覆盖 `preview.1`／`preview.2` 本地产物或清单。
+- [x] 三项 SHA-256、DMG 只读挂载、ZIP 解包、版本／build／源码提交、官方 Radar URL、空更新通道、深层 ad-hoc 签名、thin arm64、macOS 13 bundle 兼容性和两份 bundle SBOM 均通过独立复验。
+- [x] ZIP 内冻结后端在隔离 HOME 和全新数据目录真实刷新官方端点，delivery 为 `http/refreshed`，得到 15 条 provenance 合格的第一方结果。
+- [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收；当前机器 assessments disabled，不能据此核销。
+- [ ] 经单独授权创建 `v0.1.0-preview.3` annotated tag／GitHub prerelease，上传 4 个精确资产，并从无认证公开 URL 重新下载完成同等复验；公开前不修改 README 的 `preview.2` 下载链接。
+
 ## Gate 3：发行产物与渠道
 
 - [ ] 生成版本化 DMG、整包更新 ZIP、`SHA256SUMS`、SBOM 和发布说明。
