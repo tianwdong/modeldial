@@ -41,7 +41,7 @@
 - [x] 将官方品牌候选中的个人 Workers 域名迁移为 ModelDial 产品域名；`preview.2` 打包门禁固定注入并回读 `https://reference.modeldial.com/reference-snapshots`。最终发行包及远端刷新仍需在 Gate 3 复核。
 - [x] 接入 Sparkle、设置页“检查更新”、自动检查和默认关闭的自动下载；普通源码构建和 unsigned preview 默认不配置更新通道，只有同时显式提供 HTTPS appcast 与 EdDSA 公钥时才启用；update-enabled preview 只能使用独立的官方 preview feed。
 - [ ] 使用 HTTPS、Sparkle EdDSA 更新包签名，并验证签名 appcast 和私钥恢复边界。
-  - 开发态隔离演练已完成 Build 99 → 100 的 R2 下载、EdDSA 校验、安装和重启；长期私钥备份与正式发行包仍未完成。
+  - preview 通道已完成长期身份导出到仓库外 `0600` 文件、文件签名／验签、签名 appcast、R2 下载和 Build 106 → 107 安装重启；独立离线备份、恢复演练和正式 stable 发行包仍未完成。
 - [ ] 使用 Developer ID Application、Hardened Runtime 和 secure timestamp 完成签名。
 - [ ] 通过 Apple notarization，并对 App／DMG 完成 stapling 和票据验证。
 - [x] 更新隐私说明，披露更新检查／下载的 HTTPS 访问和常规 CDN 日志边界；`SUSendProfileInfo=false`，系统画像上传保持关闭。
@@ -65,7 +65,7 @@
 - [x] 记录 `codesign --verify`、`codesign -dv --verbose=4` 结果；App 为 ad-hoc 签名，无 `Authority`，未宣称 Developer ID、secure timestamp、Apple notarization 或 stapling。
 - [ ] 在至少一台可用的 macOS 13+ Apple Silicon 机器上完成 DMG 挂载、拖入 `Applications` 和首次启动手动放行；这只证明预览安装路径，不等于 Gatekeeper 干净机验收、Apple 公证或正式 Release 验收。
 - [x] Release 正文引导用户使用“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”；不要求关闭 Gatekeeper，不建议 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或同类绕过命令。
-- [x] 预览版不进入正式 stable `appcast.xml`，不创建 Homebrew Cask；已发布的 `preview.1` 虽残留尚未发布的 stable appcast 地址，但没有可用自动升级路径，`preview.2`～`preview.4` 的 feed 与公钥均为空。后续需要连续升级的预览版只能进入独立 preview appcast。
+- [x] 预览版不进入正式 stable `appcast.xml`，不创建 Homebrew Cask；已发布的 `preview.1` 虽残留尚未发布的 stable appcast 地址，但没有可用自动升级路径，`preview.2`～`preview.4` 的 feed 与公钥均为空。`preview.5`／`preview.6` 的更新器配置不完整，`preview.7` 起使用独立 preview appcast；正式 stable 通道保持未发布。
 - [x] 已创建公开 GitHub prerelease `v0.1.0-preview.1` 并上传 4 个资产；随后不带 GitHub API 认证从公开资产 URL 重新下载，SHA-256、DMG／ZIP、ad-hoc 签名、版本／arm64、SPDX 和冻结后端 smoke 全部通过。
 
 ## Gate 2B：`v0.1.0-preview.2` 修复候选
@@ -98,6 +98,17 @@
 - [x] 在独立目录生成并复验 `preview.4` DMG／ZIP／SBOM／SHA256SUMS；三项 SHA-256、DMG 只读挂载、ZIP 解包、两份 bundle 身份／签名／兼容性／SBOM 和主程序一致性均通过，没有覆盖历史预览产物或清单。
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
 - [x] 经单独授权创建 `v0.1.0-preview.4` annotated tag／GitHub prerelease 并上传 4 个精确资产；tag object 为 `d6b96b9`，peeled commit 与二进制 `ModelDialSourceCommit` 均为 `7237db3`。Release 非 draft 且仅包含四项预期资产；公开 URL 无认证回下载的大小／SHA-256、DMG／ZIP、bundle 身份、签名、macOS 13、SPDX 均通过，公开 ZIP 在首次官方 Radar `unavailable` 后按 30 秒 App 级退避重试成功并取得 15 条可信第一方结果；双语 README 已切换到 `preview.4`。
+
+## Gate 2E：`preview.5`～`preview.8` 软件更新通道
+
+- [x] 使用独立 `https://updates.modeldial.com/macos/preview/appcast.xml`，不覆盖或复用正式 stable feed；版本化资产使用不可变 R2 路径，appcast 使用 `max-age=60, must-revalidate`。
+- [x] Ed25519 私钥导出到仓库外、权限为 `0600`，公开包只包含对应公钥；ZIP、生成后的 appcast 和在线回下载 appcast 均通过 Sparkle `sign_update --verify`。
+- [x] `preview.5`（Build 104）和 `preview.6`（Build 105）已作为历史 prerelease 与 R2 镜像保留；真实 UI 验收发现两版缺少 `SUVerifyUpdateBeforeExtraction`，因此不能启动更新器，并在 README／发布文档中明确要求手动升级。
+- [x] `preview.7`（Build 106）同时启用 `SURequireSignedFeed` 与 `SUVerifyUpdateBeforeExtraction`；设置页回读版本正确，“立即检查”按钮可用。
+- [x] `preview.8`（Build 107）在干净提交 `537dfaaf6204557133689a8b45e6729a6cf66bd6` 上完成 fresh build；DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、深层 ad-hoc 签名和 bundle 身份复验通过。
+- [x] GitHub prerelease 与 R2 都包含 `preview.7`／`preview.8` 的四项精确资产；在线 appcast 精确指向 `15,418,953` bytes Build 107 ZIP，并保持签名有效。
+- [x] 从 `/Applications` 的 Build 106 真实检查到 Build 107，完成下载、验签、安装和重启；新 App 回读精确 build／源码提交／feed／公钥／安全开关，再次检查显示“当前已是最新版本”。已有稳定配置和历史保留，差异只来自实时状态更新与 inbox 临时事件消费。
+- [ ] 在 Gatekeeper 开启、无开发环境的另一台 macOS 13+ Apple Silicon 机器上完成 `preview.8` 首次安装人工放行；本机升级验收不替代该项。
 
 ## Gate 3：发行产物与渠道
 
