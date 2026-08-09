@@ -97,7 +97,7 @@
 - [x] ZIP 内冻结后端用超过旧 3 秒门限的 4.2 秒隔离慢响应完成 `http/refreshed`，并从真实官方端点在全新数据目录取得 15 条 provenance 合格的第一方结果。
 - [x] 在独立目录生成并复验 `preview.4` DMG／ZIP／SBOM／SHA256SUMS；三项 SHA-256、DMG 只读挂载、ZIP 解包、两份 bundle 身份／签名／兼容性／SBOM 和主程序一致性均通过，没有覆盖历史预览产物或清单。
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
-- [ ] 经单独授权后才可创建 `v0.1.0-preview.4` annotated tag／GitHub prerelease、上传资产并切换双语 README；未授权前保持本地候选。
+- [x] 经单独授权创建 `v0.1.0-preview.4` annotated tag／GitHub prerelease 并上传 4 个精确资产；tag object 为 `d6b96b9`，peeled commit 与二进制 `ModelDialSourceCommit` 均为 `7237db3`。Release 非 draft 且仅包含四项预期资产；公开 URL 无认证回下载的大小／SHA-256、DMG／ZIP、bundle 身份、签名、macOS 13、SPDX 均通过，公开 ZIP 在首次官方 Radar `unavailable` 后按 30 秒 App 级退避重试成功并取得 15 条可信第一方结果；双语 README 已切换到 `preview.4`。
 
 ## Gate 3：发行产物与渠道
 
