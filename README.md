@@ -4,7 +4,7 @@
   <p><strong>用真实 coding 评测，选出更适合当前任务的模型配置。</strong></p>
   <p>比较完整的 <code>model + effort + route</code>，直接看到质量、速度、Token 与参考费用。</p>
   <p>
-    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.10/modeldial-0.1.0-preview.10-macos-arm64.dmg"><strong>下载 macOS 预览版</strong></a>
+    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.11/modeldial-0.1.0-preview.11-macos-arm64.dmg"><strong>下载 macOS 预览版</strong></a>
     · <a href="https://modeldial.com">官网</a>
     · <a href="https://modeldial.com/radar">官方 Radar</a>
     · <a href="https://github.com/tianwdong/modeldial">GitHub</a>
@@ -27,7 +27,7 @@
 
 ## 下载并安装
 
-**当前版本：[`v0.1.0-preview.10`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.10)** · [直接下载 Apple Silicon DMG](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.10/modeldial-0.1.0-preview.10-macos-arm64.dmg)
+**当前版本：[`v0.1.0-preview.11`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.11)** · [直接下载 Apple Silicon DMG](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.11/modeldial-0.1.0-preview.11-macos-arm64.dmg)
 
 系统要求：macOS 13 或更高版本、Apple Silicon。Intel Mac 当前不支持。
 
@@ -37,7 +37,7 @@
 brew install --cask tianwdong/tap/modeldial
 ```
 
-这是由 ModelDial 维护的个人 Tap，不是官方 `homebrew/cask`。Cask 下载与 GitHub Release 完全相同的 `preview.10` DMG，并固定其 SHA-256；App 后续仍通过已签名的 Sparkle 预览通道更新。
+这是由 ModelDial 维护的个人 Tap，不是官方 `homebrew/cask`。Cask 下载与 GitHub Release 完全相同的 `preview.11` DMG，并固定其 SHA-256；App 后续仍通过已签名的 Sparkle 预览通道更新。
 
 当前预览包尚未经过 Apple 签名和公证。为了让 App 及其内嵌 Sparkle helper 正常启动，Cask 安装后会仅对安装目标中的 `modeldial.app`（默认 `/Applications/modeldial.app`）递归移除 `com.apple.quarantine`；该动作不使用 `sudo`，不会关闭 Gatekeeper，也不会修改系统级安全设置。执行安装命令即表示接受这一临时预览策略；Cask 源码可在 [`tianwdong/homebrew-tap`](https://github.com/tianwdong/homebrew-tap) 审查。
 
@@ -48,10 +48,10 @@ brew install --cask tianwdong/tap/modeldial
 3. 如需自己的对比证据，再进入「评测 → 模型接入」，导入 provider 或新增兼容 endpoint。
 
 > [!IMPORTANT]
-> `v0.1.0-preview.10` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。手动安装 DMG 时，若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；无需自行运行 `xattr`／`spctl`，也不要关闭 Gatekeeper。上方 Homebrew Cask 是透明披露的独立例外，只会自动移除已安装 `modeldial.app` 的 quarantine 属性。
+> `v0.1.0-preview.11` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。手动安装 DMG 时，若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；无需自行运行 `xattr`／`spctl`，也不要关闭 Gatekeeper。上方 Homebrew Cask 是透明披露的独立例外，只会自动移除已安装 `modeldial.app` 的 quarantine 属性。
 
 > [!NOTE]
-> `preview.7` 起已启用独立的 Sparkle 预览更新通道，可在“设置 → 软件更新”检查后续版本。`preview.6` 及更早版本的更新器不可用，需要手动安装 `preview.10` 一次。若要校验文件，请同时下载 `SHA256SUMS`，并在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
+> `preview.7` 起已启用独立的 Sparkle 预览更新通道，可在“设置 → 软件更新”检查后续版本。`preview.6` 及更早版本的更新器不可用，需要手动安装 `preview.11` 一次。若要校验文件，请同时下载 `SHA256SUMS`，并在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
 
 ## 它解决什么
 
@@ -134,7 +134,7 @@ git diff --check
 - [Benchmark 与数据发布策略](docs/benchmark-and-data-policy.md)：题包、答案 fixture、价格快照和 provider 资产。
 - [公开内容来源审计](docs/open-source-content-audit.md)：上游来源、attribution 和题包检索留痕。
 - [发布清单](docs/release-checklist.md)：源码候选和二进制发行的独立门槛。
-- [当前预览发布说明](docs/releases/v0.1.0-preview.10.md)：安装步骤、验证与限制。
+- [当前预览发布说明](docs/releases/v0.1.0-preview.11.md)：安装步骤、验证与限制。
 - [安全策略](SECURITY.md)：私密漏洞报告渠道。
 
 ## 参与贡献与许可证
