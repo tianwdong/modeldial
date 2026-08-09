@@ -71,7 +71,7 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn('-project "ModelDial.xcodeproj"', self.source)
         self.assertIn('-configuration "Release"', self.source)
         self.assertNotIn("swiftc", self.source)
-        self.assertIn("CURRENT_PROJECT_VERSION = 106;", self.project_source)
+        self.assertIn("CURRENT_PROJECT_VERSION = 107;", self.project_source)
         self.assertIn("MARKETING_VERSION = 0.1.0;", self.project_source)
         for resource in (
             "AppIcon.icns in Resources",
