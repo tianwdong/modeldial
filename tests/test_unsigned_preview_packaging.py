@@ -37,8 +37,8 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
             'REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"',
             self.source,
         )
-        self.assertIn("MODELDIAL_DISABLE_UPDATES=1", self.source)
-        self.assertIn("preview.1|preview.2|preview.3)", self.source)
+        self.assertIn("MODELDIAL_DISABLE_UPDATES=0", self.source)
+        self.assertIn("preview.1|preview.2|preview.3|preview.4)", self.source)
         self.assertIn(
             'fail "$PREVIEW_LABEL is already published and cannot be overwritten"',
             self.source,
@@ -52,9 +52,35 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
             self.source,
         )
         self.assertIn('preview_feed_url="$(plist_value SUFeedURL)"', self.source)
-        self.assertIn('[[ -z "$preview_feed_url" ]]', self.source)
+        self.assertIn('[[ "$preview_feed_url" == "$UPDATE_FEED_URL" ]]', self.source)
         self.assertIn('preview_public_key="$(plist_value SUPublicEDKey)"', self.source)
-        self.assertIn('[[ -z "$preview_public_key" ]]', self.source)
+        self.assertIn('[[ "$preview_public_key" == "$UPDATE_PUBLIC_ED_KEY" ]]', self.source)
+
+    def test_update_enabled_preview_requires_the_official_feed_and_valid_key_pair(self) -> None:
+        self.assertIn(
+            'OFFICIAL_PREVIEW_UPDATE_FEED_URL="https://updates.modeldial.com/macos/preview/appcast.xml"',
+            self.source,
+        )
+        self.assertIn(
+            'UPDATE_FEED_URL="${MODELDIAL_PREVIEW_UPDATE_FEED_URL:-}"',
+            self.source,
+        )
+        self.assertIn(
+            'UPDATE_PUBLIC_ED_KEY="${MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY:-}"',
+            self.source,
+        )
+        self.assertIn(
+            "MODELDIAL_PREVIEW_UPDATE_FEED_URL and MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY must be provided together",
+            self.source,
+        )
+        self.assertIn("base64.b64decode", self.source)
+        self.assertIn("validate=True", self.source)
+        self.assertIn("len(decoded) == 32", self.source)
+        self.assertIn('export MODELDIAL_UPDATE_FEED_URL="$UPDATE_FEED_URL"', self.source)
+        self.assertIn(
+            'export MODELDIAL_UPDATE_PUBLIC_ED_KEY="$UPDATE_PUBLIC_ED_KEY"',
+            self.source,
+        )
 
     def test_preview_records_and_rechecks_exact_source_commit_with_clean_tree_gate(self) -> None:
         self.assertIn('source_commit="$(git rev-parse --verify HEAD^{commit})"', self.source)
@@ -77,7 +103,7 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         self.assertIn("not Developer ID signed and not notarized", self.source)
 
     def test_artifacts_are_versioned_arm64_dmg_zip_and_checksums(self) -> None:
-        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.4}"', self.source)
+        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.5}"', self.source)
         self.assertIn('artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"', self.source)
         self.assertIn('dmg_name="${artifact_prefix}-macos-arm64.dmg"', self.source)
         self.assertIn(

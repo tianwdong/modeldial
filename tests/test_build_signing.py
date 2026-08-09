@@ -71,7 +71,7 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn('-project "ModelDial.xcodeproj"', self.source)
         self.assertIn('-configuration "Release"', self.source)
         self.assertNotIn("swiftc", self.source)
-        self.assertIn("CURRENT_PROJECT_VERSION = 103;", self.project_source)
+        self.assertIn("CURRENT_PROJECT_VERSION = 104;", self.project_source)
         self.assertIn("MARKETING_VERSION = 0.1.0;", self.project_source)
         for resource in (
             "AppIcon.icns in Resources",
@@ -209,7 +209,15 @@ class BuildSigningTest(unittest.TestCase):
             'REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"',
             preview_source,
         )
-        self.assertIn("MODELDIAL_DISABLE_UPDATES=1", preview_source)
+        self.assertIn("MODELDIAL_DISABLE_UPDATES=0", preview_source)
+        self.assertIn(
+            'MODELDIAL_UPDATE_FEED_URL="$UPDATE_FEED_URL"',
+            preview_source,
+        )
+        self.assertIn(
+            'MODELDIAL_UPDATE_PUBLIC_ED_KEY="$UPDATE_PUBLIC_ED_KEY"',
+            preview_source,
+        )
         self.assertIn(
             'MODELDIAL_DISABLE_UPDATES="${MODELDIAL_DISABLE_UPDATES:-0}"',
             self.source,

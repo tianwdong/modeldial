@@ -37,4 +37,4 @@ Private service, not in this repository
 
 远端内容进入“官网榜单”前必须同时满足 snapshot kind 与 provenance kind 均为 `first_party_snapshot`，且 `public_official_snapshot=true`。Python advisor projection 与 Swift `trustedLatest` 使用同一 fail-closed 规则；`development_seed`、缺失 provenance 或不一致 kind 只能用于开发降级，不得进入 Radar、对比、证据、compact 或通知中的官方展示。独立发布者签名仍是正式发行前的后续完整性门槛。
 
-Sparkle 更新地址与 EdDSA 公钥同样默认留空，只有正式构建同时显式提供 `MODELDIAL_UPDATE_FEED_URL` 与 `MODELDIAL_UPDATE_PUBLIC_ED_KEY` 时才启用；只提供其中一个会构建失败。unsigned preview 明确禁用更新通道，避免把尚未发布的 appcast 呈现为可用升级路径。
+Sparkle 更新地址与 EdDSA 公钥同样默认留空，只有构建同时显式提供 `MODELDIAL_UPDATE_FEED_URL` 与 `MODELDIAL_UPDATE_PUBLIC_ED_KEY` 时才启用；只提供其中一个会构建失败。普通源码构建和未指定更新身份的 unsigned preview 继续保持关闭。需要连续升级的预览版只能显式使用独立的 `https://updates.modeldial.com/macos/preview/appcast.xml` 与固定长期公钥，并在 candidate 和 ZIP 两处回读一致性；正式 stable feed 仍保持独立。

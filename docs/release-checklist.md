@@ -39,7 +39,7 @@
 - [x] 为正式构建依赖补充 artifact hashes／来源证明；Python installer 固定 SHA-256 和 signer，PyPI requirements 固定实际 wheel SHA-256，并已在 fresh build 中通过 `--require-hashes` 重建验证。
 - [x] 使用独立 marketing version 和单调递增 build number；首个候选固定为 `0.1.0（Build 100）`。
 - [x] 将官方品牌候选中的个人 Workers 域名迁移为 ModelDial 产品域名；`preview.2` 打包门禁固定注入并回读 `https://reference.modeldial.com/reference-snapshots`。最终发行包及远端刷新仍需在 Gate 3 复核。
-- [x] 接入 Sparkle、设置页“检查更新”、自动检查和默认关闭的自动下载；普通源码构建和 unsigned preview 默认不配置更新通道，正式构建只有同时显式提供 HTTPS appcast 与 EdDSA 公钥时才启用。
+- [x] 接入 Sparkle、设置页“检查更新”、自动检查和默认关闭的自动下载；普通源码构建和 unsigned preview 默认不配置更新通道，只有同时显式提供 HTTPS appcast 与 EdDSA 公钥时才启用；update-enabled preview 只能使用独立的官方 preview feed。
 - [ ] 使用 HTTPS、Sparkle EdDSA 更新包签名，并验证签名 appcast 和私钥恢复边界。
   - 开发态隔离演练已完成 Build 99 → 100 的 R2 下载、EdDSA 校验、安装和重启；长期私钥备份与正式发行包仍未完成。
 - [ ] 使用 Developer ID Application、Hardened Runtime 和 secure timestamp 完成签名。
@@ -65,7 +65,7 @@
 - [x] 记录 `codesign --verify`、`codesign -dv --verbose=4` 结果；App 为 ad-hoc 签名，无 `Authority`，未宣称 Developer ID、secure timestamp、Apple notarization 或 stapling。
 - [ ] 在至少一台可用的 macOS 13+ Apple Silicon 机器上完成 DMG 挂载、拖入 `Applications` 和首次启动手动放行；这只证明预览安装路径，不等于 Gatekeeper 干净机验收、Apple 公证或正式 Release 验收。
 - [x] Release 正文引导用户使用“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”；不要求关闭 Gatekeeper，不建议 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或同类绕过命令。
-- [x] 预览版不进入正式 Sparkle `appcast.xml`，不创建 Homebrew Cask；已发布的 `preview.1` 虽残留尚未发布的 stable appcast 地址，但没有可用自动升级路径，`preview.2` 打包门禁会清空 feed 与公钥。
+- [x] 预览版不进入正式 stable `appcast.xml`，不创建 Homebrew Cask；已发布的 `preview.1` 虽残留尚未发布的 stable appcast 地址，但没有可用自动升级路径，`preview.2`～`preview.4` 的 feed 与公钥均为空。后续需要连续升级的预览版只能进入独立 preview appcast。
 - [x] 已创建公开 GitHub prerelease `v0.1.0-preview.1` 并上传 4 个资产；随后不带 GitHub API 认证从公开资产 URL 重新下载，SHA-256、DMG／ZIP、ad-hoc 签名、版本／arm64、SPDX 和冻结后端 smoke 全部通过。
 
 ## Gate 2B：`v0.1.0-preview.2` 修复候选

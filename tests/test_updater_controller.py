@@ -144,6 +144,7 @@ struct UpdateConfigurationTests {
             "$(MODELDIAL_SU_FEED_URL)",
         )
         self.assertEqual(info["SUPublicEDKey"], "$(MODELDIAL_SU_PUBLIC_ED_KEY)")
+        self.assertIs(info["SURequireSignedFeed"], True)
         self.assertEqual(info["ModelDialSourceCommit"], "$(MODELDIAL_SOURCE_COMMIT)")
 
         build = (ROOT / "build.sh").read_text(encoding="utf-8")

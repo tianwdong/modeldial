@@ -8,6 +8,8 @@
 
 当前公开源码候选已通过全量验证，并以单一无父 `main` 根提交固化；源码树发布门槛已经完成。正式签名二进制和 GitHub Release 仍是独立门槛，tag、Release 或生产部署需要单独确认。
 
+当前正在建立独立的 unsigned preview Sparkle 通道：首个启用更新身份的 Build 104 仍需手动安装，随后将以 Build 105 完成真实 App 内升级验收。正式 stable 通道、Developer ID 与 Apple notarization 仍保持独立门槛。
+
 不付费 `v0.1.0-preview.1`、首次使用修复版 `v0.1.0-preview.2`、交互修复版 `v0.1.0-preview.3` 与 Radar 韧性修复版 `v0.1.0-preview.4` 均已作为 GitHub prerelease 公开；公开文档、供应链、fresh build、DMG／ZIP／SHA-256／SBOM 和公开 URL 回下载复测均已完成。Gatekeeper 开启机器上的“仍要打开”人工放行仍未完成。
 
 针对 `preview.1` 遗漏官方 Radar 地址、无 Provider 时被模型设置空状态阻断、开发 seed 可能进入官网展示以及未发布 appcast 仍显示为已配置的问题，`v0.1.0-preview.2` 已在源码提交 `a20d14e` 上完成修复与 Build 101 打包；tag、GitHub prerelease、4 个资产和公开下载复验均已完成。它仍是 unsigned／unnotarized 预览版，不等于正式 `v0.1.0`。

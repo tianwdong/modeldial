@@ -67,7 +67,7 @@ modeldial-0.1.0-sbom.spdx.json
 - 设置页增加“软件更新”，展示当前版本／build、立即检查、自动检查和自动下载；自动下载默认关闭。
 - 保留明确的自动检查授权；关闭 Sparkle 系统画像上传，不引入业务遥测。
 - App 只读取一个权威 appcast，不同时比较 R2 和 GitHub 哪个更新。
-- 正式更新至少要求 HTTPS、Developer ID、公证和 Sparkle EdDSA 更新包签名；签名 appcast 上线前必须完成私钥备份与恢复演练。
+- 正式 stable 更新至少要求 HTTPS、Developer ID、公证和 Sparkle EdDSA 更新包签名；签名 appcast 上线前必须完成私钥备份与恢复演练。明确标注为 unsigned／unnotarized 的预览渠道可以只依赖 Sparkle EdDSA 包与 feed 签名，但不得冒充正式发行。
 - 安装／重启更新必须覆盖活跃扫描和运行恢复验收，不能静默破坏历史。
 
 ### 5. 托管与安装渠道
@@ -76,6 +76,7 @@ R2 自定义域名是自动更新的唯一主源，路径按平台和渠道隔�
 
 ```text
 https://updates.modeldial.com/macos/stable/appcast.xml
+https://updates.modeldial.com/macos/preview/appcast.xml
 https://updates.modeldial.com/macos/releases/0.1.0/modeldial-0.1.0-build-100-macos-arm64.zip
 https://updates.modeldial.com/macos/releases/0.1.0/modeldial-0.1.0-macos-arm64.dmg
 ```
@@ -91,7 +92,7 @@ https://updates.modeldial.com/macos/releases/0.1.0/modeldial-0.1.0-macos-arm64.d
 
 - GitHub Release 标签固定为 `v0.1.0-preview.1`；App 的 marketing version／build 仍为 `0.1.0`／`100`，预览标签不能省略或改写为正式版本。
 - 资产固定为 `modeldial-0.1.0-preview.1-macos-arm64.dmg`、`modeldial-0.1.0-preview.1-build-100-macos-arm64.zip`、`SHA256SUMS` 和 `modeldial-0.1.0-preview.1-sbom.spdx.json`。DMG 内附 `UNSIGNED_PREVIEW.txt`，再次说明 unsigned／unnotarized 状态和人工放行步骤。
-- 发布正文必须醒目标出 unsigned／unnotarized、无 Developer ID、无 Apple notarization、无 Intel 支持，并附 SHA-256 校验方法。不能声称普通用户下载后直接双击即可打开，也不能把本预览版列入正式版本的 appcast 或 Homebrew Cask。
+- 发布正文必须醒目标出 unsigned／unnotarized、无 Developer ID、无 Apple notarization、无 Intel 支持，并附 SHA-256 校验方法。不能声称普通用户下载后直接双击即可打开，也不能把本预览版列入正式 stable appcast 或 Homebrew Cask。连续预览更新只能进入独立 preview appcast，并继续保留相同限制说明。
 - 预览安装仅验证候选包构建、签名类型记录、DMG 挂载／拖入 `Applications`、SHA-256 和“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”人工放行路径；这些证据不等于 Developer ID、secure timestamp、Apple notarization、stapling、Gatekeeper 干净机器验收或正式发行验收。
 - 文档不得要求关闭 Gatekeeper，也不得建议 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或其他绕过系统安全检查的命令。遇到来源无法确认时，用户应停止安装并重新核对 Release 资产。
 

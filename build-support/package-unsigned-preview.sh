@@ -22,16 +22,43 @@ fi
 
 BUILD_ROOT="$ROOT_DIR/build"
 OUTPUT_DIR="${MODELDIAL_UNSIGNED_PREVIEW_OUTPUT_DIR:-$BUILD_ROOT/unsigned-preview}"
-PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.4}"
+PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.5}"
 MODELDIAL_REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"
 REFERENCE_SNAPSHOT_URL="$MODELDIAL_REFERENCE_SNAPSHOT_URL"
+OFFICIAL_PREVIEW_UPDATE_FEED_URL="https://updates.modeldial.com/macos/preview/appcast.xml"
+UPDATE_FEED_URL="${MODELDIAL_PREVIEW_UPDATE_FEED_URL:-}"
+UPDATE_PUBLIC_ED_KEY="${MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY:-}"
 [[ "$PREVIEW_LABEL" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] \
   || fail "invalid preview label: $PREVIEW_LABEL"
 case "$PREVIEW_LABEL" in
-  preview.1|preview.2|preview.3)
+  preview.1|preview.2|preview.3|preview.4)
     fail "$PREVIEW_LABEL is already published and cannot be overwritten"
     ;;
 esac
+if [[ -n "$UPDATE_FEED_URL" && -z "$UPDATE_PUBLIC_ED_KEY" ]] \
+  || [[ -z "$UPDATE_FEED_URL" && -n "$UPDATE_PUBLIC_ED_KEY" ]]; then
+  fail "MODELDIAL_PREVIEW_UPDATE_FEED_URL and MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY must be provided together"
+fi
+if [[ -n "$UPDATE_FEED_URL" && "$UPDATE_FEED_URL" != "$OFFICIAL_PREVIEW_UPDATE_FEED_URL" ]]; then
+  fail "update-enabled previews must use the official preview appcast"
+fi
+if [[ -n "$UPDATE_PUBLIC_ED_KEY" ]]; then
+  MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY="$UPDATE_PUBLIC_ED_KEY" python3 - <<'PY' \
+    || fail "MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY must be a base64-encoded 32-byte Ed25519 public key"
+import base64
+import binascii
+import os
+
+try:
+    decoded = base64.b64decode(
+        os.environ["MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY"],
+        validate=True,
+    )
+except (binascii.Error, ValueError):
+    raise SystemExit(1)
+raise SystemExit(0 if len(decoded) == 32 else 1)
+PY
+fi
 
 if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
   fail "worktree must be clean before packaging an unsigned preview"
@@ -68,7 +95,9 @@ trap cleanup EXIT
 # fails. The successful build invocation reports the only candidate path that
 # this packaging run will accept.
 export MODELDIAL_REFERENCE_SNAPSHOT_URL="$REFERENCE_SNAPSHOT_URL"
-export MODELDIAL_DISABLE_UPDATES=1
+export MODELDIAL_UPDATE_FEED_URL="$UPDATE_FEED_URL"
+export MODELDIAL_UPDATE_PUBLIC_ED_KEY="$UPDATE_PUBLIC_ED_KEY"
+export MODELDIAL_DISABLE_UPDATES=0
 export MODELDIAL_SOURCE_COMMIT="$source_commit"
 if ! MODELDIAL_CODESIGN_IDENTITY=- ./build.sh 2>&1 | tee "$build_log"; then
   fail "./build.sh did not complete; no existing candidate was packaged"
@@ -115,12 +144,12 @@ reference_snapshot_url="$(plist_value ModelDialReferenceSnapshotURL)" \
   || fail "candidate reference snapshot URL is not the official HTTPS feed"
 preview_feed_url="$(plist_value SUFeedURL)" \
   || fail "candidate is missing SUFeedURL"
-[[ -z "$preview_feed_url" ]] \
-  || fail "unsigned preview must not expose the unavailable stable appcast"
+[[ "$preview_feed_url" == "$UPDATE_FEED_URL" ]] \
+  || fail "candidate update feed does not match the requested preview channel"
 preview_public_key="$(plist_value SUPublicEDKey)" \
   || fail "candidate is missing SUPublicEDKey"
-[[ -z "$preview_public_key" ]] \
-  || fail "unsigned preview must not configure Sparkle updates"
+[[ "$preview_public_key" == "$UPDATE_PUBLIC_ED_KEY" ]] \
+  || fail "candidate update public key does not match the requested preview channel"
 [[ "$app_name" == "modeldial" ]] || fail "unexpected app name in candidate: $app_name"
 [[ "$bundle_id" == "com.modeldial.app" ]] || fail "unexpected bundle identifier in candidate: $bundle_id"
 [[ "$version" =~ ^[0-9]+([.][0-9]+){1,2}$ ]] || fail "invalid marketing version: $version"
@@ -216,12 +245,12 @@ zip_reference_snapshot_url="$(/usr/bin/plutil -extract ModelDialReferenceSnapsho
   || fail "ZIP app reference snapshot URL does not match the official HTTPS feed"
 zip_preview_feed_url="$(/usr/bin/plutil -extract SUFeedURL raw -o - "$zip_plist")" \
   || fail "ZIP app is missing SUFeedURL"
-[[ -z "$zip_preview_feed_url" ]] \
-  || fail "ZIP app must not expose the unavailable stable appcast"
+[[ "$zip_preview_feed_url" == "$UPDATE_FEED_URL" ]] \
+  || fail "ZIP app update feed does not match the candidate"
 zip_preview_public_key="$(/usr/bin/plutil -extract SUPublicEDKey raw -o - "$zip_plist")" \
   || fail "ZIP app is missing SUPublicEDKey"
-[[ -z "$zip_preview_public_key" ]] \
-  || fail "ZIP app must not configure Sparkle updates"
+[[ "$zip_preview_public_key" == "$UPDATE_PUBLIC_ED_KEY" ]] \
+  || fail "ZIP app update public key does not match the candidate"
 [[ "$zip_version" == "$version" ]] || fail "ZIP app version does not match candidate"
 [[ "$zip_build_number" == "$build_number" ]] || fail "ZIP app build does not match candidate"
 zip_main_executable="$zip_app/Contents/MacOS/$zip_executable_name"
