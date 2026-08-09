@@ -118,7 +118,7 @@
 - [x] Cask 的 quarantine 移除只作用于安装后的 `modeldial.app`，不使用 `sudo`，不修改 Gatekeeper 或系统级安全设置；Cask caveats、Tap README、App README 与官网双语披露保持一致。
 - [x] 使用临时 App 目录完成 Cask 解析、下载、SHA-256、安装、quarantine 属性、bundle 版本／build／架构、ad-hoc 签名结构、Sparkle feed／Ed25519 key、卸载和重新安装验证，不覆盖 `/Applications` 中的正式 App；Homebrew 6 完整限定命令的单 Cask trust 行为也已本地模拟通过。
 - [x] 经单独授权创建并推送公开 `tianwdong/homebrew-tap`，随后用不依赖本地路径的完整限定命令在临时 App 目录重新安装，完成下载、SHA-256、单 Cask trust、quarantine、版本／架构、卸载和重装验证。
-- [ ] 只有远端命令真实可用后，才提交／发布 App README、当前 Release 说明和官网 Homebrew 入口；本地候选不算公开可用。
+- [x] 远端命令真实可用后，已提交并发布 App README、当前 Release 说明和官网中英文 Homebrew 入口；生产页面与公开 Tap 均已回读验证。
 
 ## Gate 3：发行产物与渠道
 
