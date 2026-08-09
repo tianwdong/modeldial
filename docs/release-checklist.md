@@ -99,7 +99,7 @@
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
 - [x] 经单独授权创建 `v0.1.0-preview.4` annotated tag／GitHub prerelease 并上传 4 个精确资产；tag object 为 `d6b96b9`，peeled commit 与二进制 `ModelDialSourceCommit` 均为 `7237db3`。Release 非 draft 且仅包含四项预期资产；公开 URL 无认证回下载的大小／SHA-256、DMG／ZIP、bundle 身份、签名、macOS 13、SPDX 均通过，公开 ZIP 在首次官方 Radar `unavailable` 后按 30 秒 App 级退避重试成功并取得 15 条可信第一方结果；双语 README 已切换到 `preview.4`。
 
-## Gate 2E：`preview.5`～`preview.9` 软件更新通道
+## Gate 2E：`preview.5`～`preview.10` 软件更新通道
 
 - [x] 使用独立 `https://updates.modeldial.com/macos/preview/appcast.xml`，不覆盖或复用正式 stable feed；版本化资产使用不可变 R2 路径，appcast 使用 `max-age=60, must-revalidate`。
 - [x] Ed25519 私钥导出到仓库外、权限为 `0600`，公开包只包含对应公钥；ZIP、生成后的 appcast 和在线回下载 appcast 均通过 Sparkle `sign_update --verify`。
@@ -107,9 +107,10 @@
 - [x] `preview.7`（Build 106）同时启用 `SURequireSignedFeed` 与 `SUVerifyUpdateBeforeExtraction`；设置页回读版本正确，“立即检查”按钮可用。
 - [x] `preview.8`（Build 107）在干净提交 `537dfaaf6204557133689a8b45e6729a6cf66bd6` 上完成 fresh build；DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、深层 ad-hoc 签名和 bundle 身份复验通过。
 - [x] `preview.9`（Build 108）在干净提交 `abf28096ccc30fb923213e257eb131a069b79633` 上完成 fresh build；DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、深层 ad-hoc 签名和 bundle 身份复验通过。
-- [x] GitHub prerelease 与 R2 都包含 `preview.7`～`preview.9` 的四项精确资产；在线 appcast 精确指向 `15,441,549` bytes Build 108 ZIP，并保持签名有效。
-- [x] 从 `/Applications` 的 Build 106 先真实升级到 Build 107，再由 Build 107 检查到 Build 108，完成下载、验签、安装和重启；新 App 回读精确 build／源码提交／feed／公钥／安全开关，再次检查显示“当前已是最新版本”。第二次升级前后的 81 个持久文件无缺失，仅 5 个实时状态文件按预期更新。
-- [ ] 在 Gatekeeper 开启、无开发环境的另一台 macOS 13+ Apple Silicon 机器上完成 `preview.9` 首次安装人工放行；本机升级验收不替代该项。
+- [x] `preview.10`（Build 109）在干净提交 `d60488b4d2d22ca35f44f552521ccb5354fc5640` 上完成 fresh build；DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名、bundle 身份和冻结后端官方刷新复验通过。
+- [x] GitHub prerelease 与 R2 都包含 `preview.7`～`preview.10` 的四项精确资产；在线 appcast 精确指向 `15,432,016` bytes Build 109 ZIP 的 `?v=109` URL，feed 与 enclosure 签名有效。
+- [x] 从 `/Applications` 的 Build 106 依次真实升级到 Build 107、108 和 109，均完成下载、验签、安装和重启；最新 App 回读精确 build／源码提交／feed／公钥／安全开关，再次检查显示“当前已是最新版本”。最后一次升级前后的 81 个持久文件无新增或缺失，仅 4 个实时使用观察文件按预期更新。
+- [ ] 在 Gatekeeper 开启、无开发环境的另一台 macOS 13+ Apple Silicon 机器上完成 `preview.10` 首次安装人工放行；本机升级验收不替代该项。
 
 ## Gate 3：发行产物与渠道
 

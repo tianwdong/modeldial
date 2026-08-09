@@ -4,7 +4,7 @@
   <p><strong>Use real coding evaluations to choose a better-fit model configuration for each task.</strong></p>
   <p>Compare complete <code>model + effort + route</code> combinations across quality, speed, tokens, and reference cost.</p>
   <p>
-    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.9/modeldial-0.1.0-preview.9-macos-arm64.dmg"><strong>Download the macOS preview</strong></a>
+    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.10/modeldial-0.1.0-preview.10-macos-arm64.dmg"><strong>Download the macOS preview</strong></a>
     · <a href="https://modeldial.com">Website</a>
     · <a href="https://modeldial.com/radar">Official Radar</a>
     · <a href="https://github.com/tianwdong/modeldial">GitHub</a>
@@ -27,7 +27,7 @@ Connect a local Codex, Claude Code, or Grok Build provider—or a compatible end
 
 ## Download & Install
 
-**Current version: [`v0.1.0-preview.9`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.9)** · [Direct Apple Silicon DMG download](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.9/modeldial-0.1.0-preview.9-macos-arm64.dmg)
+**Current version: [`v0.1.0-preview.10`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.10)** · [Direct Apple Silicon DMG download](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.10/modeldial-0.1.0-preview.10-macos-arm64.dmg)
 
 Requirements: macOS 13 or later on Apple Silicon. Intel Macs are not currently supported.
 
@@ -36,10 +36,10 @@ Requirements: macOS 13 or later on Apple Silicon. Intel Macs are not currently s
 3. To produce evidence for your own configurations, open **Evaluation → Connections** and import a provider or add a compatible endpoint.
 
 > [!IMPORTANT]
-> `v0.1.0-preview.9` is an unsigned / unnotarized preview with no Developer ID signature or Apple notarization. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** for this app; do not disable Gatekeeper or use `xattr`, `spctl`, or other commands to bypass system security checks.
+> `v0.1.0-preview.10` is an unsigned / unnotarized preview with no Developer ID signature or Apple notarization. If macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway** for this app; do not disable Gatekeeper or use `xattr`, `spctl`, or other commands to bypass system security checks.
 
 > [!NOTE]
-> An independent Sparkle preview channel is enabled from `preview.7`; use **Settings → Software Update** for later previews. The updater in `preview.6` and earlier does not work, so those versions require one manual installation of `preview.9`. To verify the files, download `SHA256SUMS` as well and run `shasum -a 256 -c SHA256SUMS` in the asset directory.
+> An independent Sparkle preview channel is enabled from `preview.7`; use **Settings → Software Update** for later previews. The updater in `preview.6` and earlier does not work, so those versions require one manual installation of `preview.10`. To verify the files, download `SHA256SUMS` as well and run `shasum -a 256 -c SHA256SUMS` in the asset directory.
 
 ## What It Solves
 
@@ -122,7 +122,7 @@ The second command targets versioned DTO or architecture-contract changes. For o
 - [Benchmark and data distribution policy](docs/benchmark-and-data-policy.md): question packs, answer fixtures, pricing snapshots, and provider assets.
 - [Open-source content audit](docs/open-source-content-audit.md): source, attribution, and question-pack search records.
 - [Release checklist](docs/release-checklist.md): separate source-candidate and binary-release gates.
-- [Current preview notes](docs/releases/v0.1.0-preview.9.md): installation, verification, and limitations.
+- [Current preview notes](docs/releases/v0.1.0-preview.10.md): installation, verification, and limitations.
 - [Security policy](SECURITY.md): private vulnerability-reporting channel.
 
 ## Contributing & License
