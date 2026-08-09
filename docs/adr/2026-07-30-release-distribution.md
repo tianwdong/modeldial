@@ -2,7 +2,7 @@
 
 - 日期：2026-07-30
 - 状态：已接受，实施中
-- 最近修订：2026-08-08（增加不付费 unsigned preview 先行渠道）
+- 最近修订：2026-08-09（增加 unsigned preview 个人 Homebrew Tap）
 
 ## 背景
 
@@ -13,6 +13,8 @@ ModelDial 的公开仓库只包含 macOS App、本地 scanner、题包、脚本�
 2026-07-30 已完成第一段实现：Xcode Project／SwiftPM 接管 Swift App 和 Sparkle 装配，版本固定为 `0.1.0（Build 100）`，`build.sh` 与 `build-dev.sh` 已迁移到 Xcode 构建，Sparkle 2.9.4 的完整许可证已进入 bundle，更新控制器、设置页、公开 feed URL 与公钥也已接通。临时私钥导出／离线签名与隔离的 Build 99 → 100 R2 更新演练已经通过；长期安全备份、正式 archive／export、Developer ID、公证和发行产物仍待实现。
 
 2026-08-08 决定在正式签名路径完成前保留一个不付费的人工预览渠道。预览版用于收集愿意手动放行的 macOS 用户反馈，不改变正式版本的签名、公证、自动更新和干净机器验收门槛；GitHub Release 的实际创建和上传仍需单独授权。
+
+2026-08-09 决定为当前 unsigned preview 增加由项目维护的个人 Homebrew Tap。该渠道复用同一 GitHub Release DMG 与精确 SHA-256，并透明披露 Cask 会仅对安装后的 App bundle 移除 quarantine；这是签名前的临时预览策略，不等于 Apple 信任、公证或官方 `homebrew/cask` 接纳。
 
 ## 决策
 
@@ -84,7 +86,8 @@ https://updates.modeldial.com/macos/releases/0.1.0/modeldial-0.1.0-macos-arm64.d
 - `appcast.xml` 使用不缓存或极短缓存；版本化 ZIP／DMG 使用长缓存和 `immutable`。
 - 已发布的版本化对象永不覆盖；更正内容必须提高 build number 并使用新路径。
 - GitHub Releases 保存相同版本的源码、DMG、ZIP、校验和、SBOM 和发布说明，作为公开镜像与人工兜底，不作为第二自动更新权威。
-- Homebrew Tap 的 Cask 下载同一正式 DMG，并固定版本与 SHA-256；不提供 `curl | sh` 安装器，也不指导用户删除 quarantine 绕过 Gatekeeper。
+- 正式 stable Homebrew Cask 下载同一正式 DMG，并固定版本与 SHA-256；完成 Developer ID 签名和公证后，不包含 quarantine 绕过逻辑。
+- 命令安装统一使用 Homebrew Cask，不提供 `curl | sh` 安装器。
 
 ### 5A. 不付费 `unsigned preview` 先行渠道
 
@@ -92,9 +95,18 @@ https://updates.modeldial.com/macos/releases/0.1.0/modeldial-0.1.0-macos-arm64.d
 
 - GitHub Release 标签固定为 `v0.1.0-preview.1`；App 的 marketing version／build 仍为 `0.1.0`／`100`，预览标签不能省略或改写为正式版本。
 - 资产固定为 `modeldial-0.1.0-preview.1-macos-arm64.dmg`、`modeldial-0.1.0-preview.1-build-100-macos-arm64.zip`、`SHA256SUMS` 和 `modeldial-0.1.0-preview.1-sbom.spdx.json`。DMG 内附 `UNSIGNED_PREVIEW.txt`，再次说明 unsigned／unnotarized 状态和人工放行步骤。
-- 发布正文必须醒目标出 unsigned／unnotarized、无 Developer ID、无 Apple notarization、无 Intel 支持，并附 SHA-256 校验方法。不能声称普通用户下载后直接双击即可打开，也不能把本预览版列入正式 stable appcast 或 Homebrew Cask。连续预览更新只能进入独立 preview appcast，并继续保留相同限制说明。
+- 发布正文必须醒目标出 unsigned／unnotarized、无 Developer ID、无 Apple notarization、无 Intel 支持，并附 SHA-256 校验方法。不能声称普通用户下载后直接双击即可打开，也不能把本预览版列入正式 stable appcast 或正式 Homebrew Cask。连续预览更新只能进入独立 preview appcast，并继续保留相同限制说明。
 - 预览安装仅验证候选包构建、签名类型记录、DMG 挂载／拖入 `Applications`、SHA-256 和“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”人工放行路径；这些证据不等于 Developer ID、secure timestamp、Apple notarization、stapling、Gatekeeper 干净机器验收或正式发行验收。
-- 文档不得要求关闭 Gatekeeper，也不得建议 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或其他绕过系统安全检查的命令。遇到来源无法确认时，用户应停止安装并重新核对 Release 资产。
+- DMG 手动安装文档不得要求关闭 Gatekeeper，也不得让用户自行运行 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或其他系统级绕过命令。遇到来源无法确认时，用户应停止安装并重新核对 Release 资产。
+
+### 5B. `unsigned preview` 个人 Homebrew Tap
+
+- Tap 使用独立公开仓库 `tianwdong/homebrew-tap`，Cask 下载当前 GitHub prerelease 的同一版本化 DMG，并固定其 SHA-256；Tap 不保存或重新打包 App 二进制。
+- 安装命令固定为 `brew install --cask tianwdong/tap/modeldial`。个人 Tap 与官方 `homebrew/cask` 明确区分，不宣称通过 Homebrew 官方审核。
+- Cask 声明 macOS 13+、Apple Silicon 和 App 自带 Sparkle 更新；不为预览版增加第二套更新器。
+- unsigned preview 及其内嵌 Sparkle helper 在 quarantine 保留时无法提供稳定的一行安装体验。个人 Cask 因此允许在 `postflight` 中对 `#{appdir}/modeldial.app` 执行递归 quarantine 移除；动作必须精确限定到该 App bundle，不使用 `sudo`，不修改 Gatekeeper、SIP 或其他系统级安全设置。
+- Cask 源码、README、官网和 App 主仓 README 必须在安装命令旁披露上述动作、unsigned／unnotarized 状态与风险。不能把 Sparkle Ed25519、Cask SHA-256 或开源源码表述为 Apple 签名／公证的替代品。
+- 发布顺序为：先发布并公开回下载验证 GitHub DMG／SHA-256，再更新 Tap，完成安装／卸载／重装和 App 内更新验证，最后才在官网与 README 发布可复制命令。Developer ID 路径完成后删除 `postflight` quarantine 逻辑。
 
 ### 6. 发布顺序与回滚
 

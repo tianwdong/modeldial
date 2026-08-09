@@ -64,8 +64,8 @@
 - [x] 由候选包生成 DMG／ZIP 和 SPDX SBOM；在同一目录生成 `SHA256SUMS`，逐项核对文件名、大小和 SHA-256。
 - [x] 记录 `codesign --verify`、`codesign -dv --verbose=4` 结果；App 为 ad-hoc 签名，无 `Authority`，未宣称 Developer ID、secure timestamp、Apple notarization 或 stapling。
 - [ ] 在至少一台可用的 macOS 13+ Apple Silicon 机器上完成 DMG 挂载、拖入 `Applications` 和首次启动手动放行；这只证明预览安装路径，不等于 Gatekeeper 干净机验收、Apple 公证或正式 Release 验收。
-- [x] Release 正文引导用户使用“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”；不要求关闭 Gatekeeper，不建议 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或同类绕过命令。
-- [x] 预览版不进入正式 stable `appcast.xml`，不创建 Homebrew Cask；已发布的 `preview.1` 虽残留尚未发布的 stable appcast 地址，但没有可用自动升级路径，`preview.2`～`preview.4` 的 feed 与公钥均为空。`preview.5`／`preview.6` 的更新器配置不完整，`preview.7` 起使用独立 preview appcast；正式 stable 通道保持未发布。
+- [x] Release 正文引导 DMG 用户使用“系统设置 → 隐私与安全性 → 仍要打开（Open Anyway）”；不要求关闭 Gatekeeper，不让用户自行运行 `xattr -dr com.apple.quarantine`、`spctl --master-disable` 或同类系统级绕过命令。
+- [x] 预览版不进入正式 stable `appcast.xml` 或正式 Homebrew Cask；已发布的 `preview.1` 虽残留尚未发布的 stable appcast 地址，但没有可用自动升级路径，`preview.2`～`preview.4` 的 feed 与公钥均为空。`preview.5`／`preview.6` 的更新器配置不完整，`preview.7` 起使用独立 preview appcast；正式 stable 通道保持未发布。
 - [x] 已创建公开 GitHub prerelease `v0.1.0-preview.1` 并上传 4 个资产；随后不带 GitHub API 认证从公开资产 URL 重新下载，SHA-256、DMG／ZIP、ad-hoc 签名、版本／arm64、SPDX 和冻结后端 smoke 全部通过。
 
 ## Gate 2B：`v0.1.0-preview.2` 修复候选
@@ -112,6 +112,14 @@
 - [x] 从 `/Applications` 的 Build 106 依次真实升级到 Build 107、108 和 109，均完成下载、验签、安装和重启；最新 App 回读精确 build／源码提交／feed／公钥／安全开关，再次检查显示“当前已是最新版本”。最后一次升级前后的 81 个持久文件无新增或缺失，仅 4 个实时使用观察文件按预期更新。
 - [ ] 在 Gatekeeper 开启、无开发环境的另一台 macOS 13+ Apple Silicon 机器上完成 `preview.10` 首次安装人工放行；本机升级验收不替代该项。
 
+## Gate 2F：`preview.10` 个人 Homebrew Tap
+
+- [x] 在独立 `homebrew-tap` 源码根建立 `Casks/modeldial.rb`，固定 `preview.10` GitHub DMG、SHA-256、macOS 13+、arm64 和 `auto_updates true`；Tap 不保存第二份 App 二进制。
+- [x] Cask 的 quarantine 移除只作用于安装后的 `modeldial.app`，不使用 `sudo`，不修改 Gatekeeper 或系统级安全设置；Cask caveats、Tap README、App README 与官网双语披露保持一致。
+- [x] 使用临时 App 目录完成 Cask 解析、下载、SHA-256、安装、quarantine 属性、bundle 版本／build／架构、ad-hoc 签名结构、Sparkle feed／Ed25519 key、卸载和重新安装验证，不覆盖 `/Applications` 中的正式 App；Homebrew 6 完整限定命令的单 Cask trust 行为也已本地模拟通过。
+- [x] 经单独授权创建并推送公开 `tianwdong/homebrew-tap`，随后用不依赖本地路径的完整限定命令在临时 App 目录重新安装，完成下载、SHA-256、单 Cask trust、quarantine、版本／架构、卸载和重装验证。
+- [ ] 只有远端命令真实可用后，才提交／发布 App README、当前 Release 说明和官网 Homebrew 入口；本地候选不算公开可用。
+
 ## Gate 3：发行产物与渠道
 
 - [ ] 生成版本化 DMG、整包更新 ZIP、`SHA256SUMS`、SBOM 和发布说明。
@@ -119,12 +127,12 @@
 - [ ] 将不可变版本包上传到 R2 暂存路径，验证长度、SHA-256、签名、公证和下载。
 - [ ] 创建 GitHub Release 镜像，并保证 tag、源码和二进制版本一致。
 - [ ] 最后发布短缓存或不缓存的签名 `appcast.xml`；不覆盖已经发布的版本化安装包。
-- [ ] 创建公开 Homebrew Tap；Cask 使用同一正式 DMG、精确版本和 SHA-256，并声明 App 自带更新能力。
+- [ ] 创建正式 stable Homebrew Cask；使用同一已签名／公证 DMG、精确版本和 SHA-256，声明 App 自带更新能力，并移除预览 Tap 的 quarantine 兼容逻辑。
 
 ## Gate 4：最终验收
 
 - [ ] 在 Gatekeeper 开启、无开发环境的 macOS 13／14 Apple Silicon 机器上完成 DMG 首次安装和真实 UI 验收。
-- [ ] 完成 Homebrew Cask 安装、卸载和重新安装验收。
+- [ ] 完成正式 Homebrew Cask 安装、卸载和重新安装验收。
 - [ ] 完成旧版本到新版本的 Sparkle 更新、错误签名拒绝、离线／404 和缓存刷新验收。
 - [ ] 验证 Keychain、CLI 探测、hook 安装／卸载、数据清理及升级后的配置／历史保留。
 - [ ] 验证活跃扫描期间更新不会损坏运行日志、历史或恢复状态。
