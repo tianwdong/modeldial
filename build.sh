@@ -394,6 +394,11 @@ xcrun xcstringstool compile \
   "Resources/Localizable.xcstrings" \
   --output-directory "$RES_DIR"
 
+# Source assets and cached dependencies can carry host-specific extended
+# attributes. They are not part of the release and must not be preserved in
+# the signed bundle or its DMG.
+/usr/bin/xattr -cr "$APP_DIR"
+
 "./build-support/verify-macos-bundle-compatibility.sh" \
   "$APP_DIR" \
   "$PYTHON_DEPLOYMENT_TARGET"

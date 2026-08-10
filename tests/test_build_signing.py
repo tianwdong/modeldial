@@ -67,6 +67,13 @@ class BuildSigningTest(unittest.TestCase):
             self.signing_source,
         )
 
+    def test_build_strips_host_extended_attributes_before_signing(self) -> None:
+        cleanup = '/usr/bin/xattr -cr "$APP_DIR"'
+        signing = 'sign_app_bundle "$APP_DIR" "$RESOLVED_CODESIGN_IDENTITY" "$BUNDLE_ID"'
+
+        self.assertIn(cleanup, self.source)
+        self.assertLess(self.source.index(cleanup), self.source.index(signing))
+
     def test_xcode_owns_the_app_binary_and_version(self) -> None:
         self.assertIn('-project "ModelDial.xcodeproj"', self.source)
         self.assertIn('-configuration "Release"', self.source)

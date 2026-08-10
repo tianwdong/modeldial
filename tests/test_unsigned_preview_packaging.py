@@ -109,6 +109,20 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
             self.source.count('verify-adhoc-signing-policy.sh"'),
         )
 
+    def test_preview_rejects_host_quarantine_metadata(self) -> None:
+        self.assertIn("bundle_has_quarantine_metadata()", self.source)
+        self.assertIn('/usr/bin/xattr -lr "$1"', self.source)
+        self.assertIn("com[.]apple[.]quarantine:", self.source)
+        self.assertIn(
+            'bundle_has_quarantine_metadata "$candidate_path"',
+            self.source,
+        )
+        self.assertIn(
+            'bundle_has_quarantine_metadata "$staging_dir/modeldial.app"',
+            self.source,
+        )
+        self.assertIn('bundle_has_quarantine_metadata "$zip_app"', self.source)
+
     def test_artifacts_are_versioned_arm64_dmg_zip_and_checksums(self) -> None:
         self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.13}"', self.source)
         self.assertIn('artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"', self.source)

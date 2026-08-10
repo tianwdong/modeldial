@@ -9,6 +9,13 @@ fail() {
   exit 1
 }
 
+bundle_has_quarantine_metadata() {
+  /usr/bin/xattr -lr "$1" 2>/dev/null | /usr/bin/awk '
+    /com[.]apple[.]quarantine:/ { found = 1 }
+    END { exit(found ? 0 : 1) }
+  '
+}
+
 if [[ "$(uname -s)" != "Darwin" ]]; then
   fail "macOS is required"
 fi
@@ -173,6 +180,9 @@ codesign --verify --deep --strict --verbose=2 "$candidate_path" >/dev/null \
   || fail "candidate deep signature verification failed"
 bash "$ROOT_DIR/build-support/verify-adhoc-signing-policy.sh" "$candidate_path" \
   || fail "candidate violates the ad-hoc signing policy"
+if bundle_has_quarantine_metadata "$candidate_path"; then
+  fail "candidate contains quarantine metadata inherited from the build host"
+fi
 
 artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"
 dmg_name="${artifact_prefix}-macos-arm64.dmg"
@@ -200,6 +210,9 @@ if ! python3 build-support/verify-sbom.py \
 fi
 
 ditto "$candidate_path" "$staging_dir/modeldial.app"
+if bundle_has_quarantine_metadata "$staging_dir/modeldial.app"; then
+  fail "DMG staging app contains quarantine metadata"
+fi
 ln -s /Applications "$staging_dir/Applications"
 cat > "$staging_dir/UNSIGNED_PREVIEW.txt" <<EOF
 ModelDial ${version} ${PREVIEW_LABEL} unsigned preview
@@ -263,6 +276,9 @@ zip_architectures="$(lipo -archs "$zip_main_executable" 2>/dev/null)" \
   || fail "ZIP app is not a thin arm64 build: $zip_architectures"
 bash "$ROOT_DIR/build-support/verify-adhoc-signing-policy.sh" "$zip_app" \
   || fail "ZIP app violates the ad-hoc signing policy"
+if bundle_has_quarantine_metadata "$zip_app"; then
+  fail "ZIP app contains quarantine metadata"
+fi
 (
   cd "$OUTPUT_DIR"
   shasum -a 256 "$dmg_name" "$zip_name" "$sbom_name" > "$sums_name"
