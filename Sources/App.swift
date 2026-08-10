@@ -107,7 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private static func hideInitialSettingsWindow() {
-        for window in NSApp.windows where window.styleMask.contains(.titled) {
+        for window in NSApp.windows where window.title == "modeldial Settings" {
             window.orderOut(nil)
         }
     }

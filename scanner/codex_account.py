@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 import json
 import math
+import os
 from pathlib import Path
 from queue import Empty, Queue
 import subprocess
@@ -230,11 +231,18 @@ class _CodexAppServerSession:
 def read_codex_account_snapshot(
     *,
     binary_candidates: Sequence[Path] | None = None,
+    codex_home: Path | None = None,
     timeout_seconds: float = DEFAULT_TIMEOUT_SECONDS,
     captured_at: str | None = None,
     session_factory: SessionFactory = _CodexAppServerSession,
 ) -> dict[str, object]:
-    candidates = tuple(binary_candidates or _default_binary_candidates())
+    if binary_candidates is None:
+        resolved_codex_home = codex_home or _default_codex_home()
+        if not resolved_codex_home.is_dir():
+            raise CodexAccountError("Codex 用户目录尚未初始化")
+        candidates = _default_binary_candidates()
+    else:
+        candidates = tuple(binary_candidates)
     if not candidates:
         raise CodexAccountError("未找到可用的 Codex CLI")
     failures: list[Exception] = []
@@ -393,6 +401,11 @@ def _account_usage(
 def _default_binary_candidates() -> tuple[Path, ...]:
     executable = resolve_codex_executable()
     return (Path(executable),) if executable else ()
+
+
+def _default_codex_home() -> Path:
+    configured = os.environ.get("CODEX_HOME", "").strip()
+    return Path(configured).expanduser() if configured else Path.home() / ".codex"
 
 
 def _account_type(value: object) -> str:

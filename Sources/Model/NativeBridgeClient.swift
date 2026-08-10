@@ -193,7 +193,11 @@ final class NativeBridgeClient {
         processTimeout = nil
         Self.prepareDataDirectory(
             dataDirectory,
-            legacyArtifactsDirectory: developmentRoot.appendingPathComponent("artifacts"),
+            legacyArtifactsDirectory: Self.legacyArtifactsDirectory(
+                selectedRepoRoot: repoRoot,
+                developmentRoot: developmentRoot,
+                fileManager: fileManager
+            ),
             fileManager: fileManager
         )
     }
@@ -1153,9 +1157,26 @@ final class NativeBridgeClient {
         return nil
     }
 
-    private static func prepareDataDirectory(
+    static func legacyArtifactsDirectory(
+        selectedRepoRoot: URL,
+        developmentRoot: URL,
+        fileManager: FileManager
+    ) -> URL? {
+        guard selectedRepoRoot.standardizedFileURL.path
+                == developmentRoot.standardizedFileURL.path,
+              fileManager.fileExists(
+                atPath: developmentRoot
+                    .appendingPathComponent("scripts/native_bridge.py")
+                    .path
+              ) else {
+            return nil
+        }
+        return developmentRoot.appendingPathComponent("artifacts")
+    }
+
+    static func prepareDataDirectory(
         _ directory: URL,
-        legacyArtifactsDirectory: URL,
+        legacyArtifactsDirectory: URL?,
         fileManager: FileManager
     ) {
         try? fileManager.createDirectory(
@@ -1163,6 +1184,7 @@ final class NativeBridgeClient {
             withIntermediateDirectories: true,
             attributes: [.posixPermissions: 0o700]
         )
+        guard let legacyArtifactsDirectory else { return }
         for name in [
             "config.json",
             "history.jsonl",

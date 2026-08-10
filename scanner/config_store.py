@@ -5,6 +5,7 @@ import os
 import threading
 from pathlib import Path
 from typing import Callable
+from uuid import uuid4
 
 from .models import AppConfig
 from .process_lock import exclusive_process_lock
@@ -17,10 +18,37 @@ class ConfigStore:
 
     def load(self) -> AppConfig:
         if not self.path.exists():
-            return AppConfig.first_run() if self.first_run_defaults else AppConfig.default()
-        with self.path.open("r", encoding="utf-8") as handle:
-            payload = json.load(handle)
-        return AppConfig.from_dict(payload)
+            return self._default_config()
+        try:
+            with self.path.open("r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+            if not isinstance(payload, dict):
+                raise ValueError("config payload must be an object")
+            return AppConfig.from_dict(payload)
+        except FileNotFoundError:
+            return self._default_config()
+        except (
+            json.JSONDecodeError,
+            UnicodeDecodeError,
+            AttributeError,
+            KeyError,
+            TypeError,
+            ValueError,
+        ):
+            self._quarantine_corrupt_state()
+            return self._default_config()
+
+    def _default_config(self) -> AppConfig:
+        return AppConfig.first_run() if self.first_run_defaults else AppConfig.default()
+
+    def _quarantine_corrupt_state(self) -> None:
+        quarantine = self.path.with_name(
+            f"{self.path.name}.corrupt-{uuid4().hex}"
+        )
+        try:
+            self.path.replace(quarantine)
+        except OSError:
+            pass
 
     def save(self, config: AppConfig) -> AppConfig:
         self.path.parent.mkdir(parents=True, exist_ok=True)

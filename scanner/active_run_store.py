@@ -43,9 +43,25 @@ class ActiveRunStore:
             return None
         try:
             with self.path.open("r", encoding="utf-8") as handle:
-                return json.load(handle)
+                payload = json.load(handle)
+            if not isinstance(payload, dict):
+                self._quarantine_corrupt_state()
+                return None
+            return payload
         except FileNotFoundError:
             return None
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            self._quarantine_corrupt_state()
+            return None
+
+    def _quarantine_corrupt_state(self) -> None:
+        quarantine = self.path.with_name(
+            f"{self.path.name}.corrupt-{uuid4().hex}"
+        )
+        try:
+            self.path.replace(quarantine)
+        except OSError:
+            pass
 
     def save(self, payload: dict[str, object]) -> dict[str, object]:
         with self._lock:

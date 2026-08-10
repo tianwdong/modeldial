@@ -1711,23 +1711,22 @@ final class AppSessionStore: ObservableObject {
             return
         }
         isSnapshotReloadInFlight = true
-        let shouldPerformStartupMaintenance = allowsStartupMaintenance
-            && startupLoadCoordinator.claimMaintenanceIfNeeded()
-        let shouldRefreshReference = !shouldPerformStartupMaintenance
-            && allowsReferenceRefresh
+        let shouldRefreshReference = allowsReferenceRefresh
             && referenceSnapshotRefreshPolicy.claimIfDue(
                 force: forceReferenceRefresh
             )
-        if shouldPerformStartupMaintenance
-            && allowsReferenceRefresh
-            && (forceReferenceRefresh || referenceSnapshotRefreshPolicy.isDue()) {
+        let shouldPerformStartupMaintenance = !shouldRefreshReference
+            && allowsStartupMaintenance
+            && startupLoadCoordinator.claimMaintenanceIfNeeded()
+        if shouldRefreshReference && allowsStartupMaintenance {
             isSnapshotReloadPending = true
-            pendingSnapshotReloadAllowsReferenceRefresh = true
-            pendingSnapshotReloadForcesReferenceRefresh =
-                pendingSnapshotReloadForcesReferenceRefresh
-                || forceReferenceRefresh
+            pendingSnapshotReloadAllowsStartupMaintenance = true
+        }
+        if shouldRefreshReference {
+            isReferenceSnapshotRefreshInFlight = true
         }
         let shouldObserveLocalState = !shouldPerformStartupMaintenance
+            && !shouldRefreshReference
             && activeBridgeOperationID == nil
             && snapshot?.runtime.isRunning != true
         let requestGeneration = snapshotGeneration
@@ -1736,7 +1735,8 @@ final class AppSessionStore: ObservableObject {
             DebugLog.write("AppSessionStore.reloadSnapshotAsync begin")
             do {
                 var observationFailureDetail: String?
-                if shouldPerformStartupMaintenance && snapshot == nil {
+                if snapshot == nil
+                    && (shouldPerformStartupMaintenance || shouldRefreshReference) {
                     do {
                         let cachedSnapshot = try await commandGateway.snapshot()
                         if requestGeneration == self.snapshotGeneration {
@@ -1795,7 +1795,7 @@ final class AppSessionStore: ObservableObject {
                     )
                 }
                 isSnapshotReloadInFlight = false
-                if forceReferenceRefresh {
+                if shouldRefreshReference {
                     isReferenceSnapshotRefreshInFlight = false
                 }
                 defer { startPendingSnapshotReloadIfNeeded() }
@@ -1834,7 +1834,7 @@ final class AppSessionStore: ObservableObject {
                     enqueueStartupMaintenanceRetryIfAvailable()
                 }
                 isSnapshotReloadInFlight = false
-                if forceReferenceRefresh {
+                if shouldRefreshReference {
                     isReferenceSnapshotRefreshInFlight = false
                 }
                 defer { startPendingSnapshotReloadIfNeeded() }

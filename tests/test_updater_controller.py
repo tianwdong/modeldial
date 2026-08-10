@@ -104,6 +104,15 @@ struct UpdateConfigurationTests {
         self.assertIn("@Published private(set) var updateCheckState", controller)
         self.assertIn("standardUpdaterController.checkForUpdates(nil)", controller)
 
+    def test_launch_hides_only_the_app_settings_window(self) -> None:
+        app = (ROOT / "Sources" / "App.swift").read_text(encoding="utf-8")
+        hide_window = app.split(
+            "private static func hideInitialSettingsWindow()", 1
+        )[1].split("\n    }", 1)[0]
+
+        self.assertIn('window.title == "modeldial Settings"', hide_window)
+        self.assertNotIn("styleMask.contains(.titled)", hide_window)
+
     def test_update_check_presentation_is_executable(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             executable = Path(temporary) / "update-check-presenter-tests"

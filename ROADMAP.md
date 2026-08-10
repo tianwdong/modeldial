@@ -6,7 +6,7 @@
 
 公开仓库能够独立测试和构建 App；unsigned preview 与完成 Developer ID／Apple notarization 的正式发行仍是两个分开的发布门槛。`preview.11` 已因第三方在正常受保护 Mac 上确认的冻结 Python 后端启动失败而停止分发；根因是 ad-hoc bundle 错误启用了 hardened runtime，Library Validation 因独立嵌套 Mach-O 的签名身份不一致而拒绝加载。当前公开安装候选已切换到修复后的 `preview.12`／Build 111。
 
-`preview.12` 的 unsigned ad-hoc 路径不再启用 hardened runtime，Developer ID 路径继续保留 hardened runtime／timestamp；新增门禁逐个验证 App 内全部 Mach-O 的 ad-hoc、无 runtime、无证书 Authority、无 Team ID 和严格签名。发行产物固定到源码提交 `5082523eb69f286d5e6397416f44e10adc9eaefb`；annotated tag、GitHub prerelease、GitHub／R2 四项文件、签名 preview appcast、Homebrew Cask、双语 README 和官网入口均已发布并完成公开回读。历史公开源码根仍保持单一无父 `main`；正式签名二进制、stable appcast、正式 stable Homebrew Cask 和干净机器 Gatekeeper 验收仍未完成。
+`preview.12` 的 unsigned ad-hoc 路径不再启用 hardened runtime，Developer ID 路径继续保留 hardened runtime／timestamp；新增门禁逐个验证 App 内全部 Mach-O 的 ad-hoc、无 runtime、无证书 Authority、无 Team ID 和严格签名。发行产物固定到源码提交 `5082523eb69f286d5e6397416f44e10adc9eaefb`；annotated tag、GitHub prerelease、GitHub／R2 四项文件、签名 preview appcast、Homebrew Cask、双语 README 和官网入口均已发布并完成公开回读。当前公开安装入口仍为 `preview.12`；针对第三方首次启动反馈的 `preview.13`／Build 112 源码候选已完成初始化加固和本地验证，但尚未生成或发布发行资产。历史公开源码根仍保持单一无父 `main`；正式签名二进制、stable appcast、正式 stable Homebrew Cask 和干净机器 Gatekeeper 验收仍未完成。
 
 独立的 unsigned preview Sparkle 通道已建立并曾完成 Build 106 → 110 的连续真实升级；当前 appcast 已发布 Build 111，feed 与 enclosure 的 Ed25519 验签通过，但真实设置页升级、重启和持久状态验收仍待用户执行。这组本机结果不能替代正常 Library Validation／App Translocation 环境下的干净受保护 Mac 验收。`preview.5`／`preview.6` 的解压前验签缺陷仍按历史记录保留；所有旧版的下一次有效升级目标已切换为 `preview.12`，不能继续推荐手动安装 `preview.11`。
 
@@ -49,6 +49,7 @@
 - `/Applications` 中的 Build 106 已依次通过 Sparkle 升级到 Build 107、108、109 和 110。最后一次真实下载 `15,469,502` bytes Build 110 ZIP，并完成验签、安装和重启；新 App 回读精确 build／源码提交／feed／公钥和安全开关，深层签名有效，再次检查显示“当前已是最新版本”。本机榜单、完成时间、配置、历史、官方快照和 Secrets 元数据保持；9 个 inbox 临时事件被正常消费，6 个实时观察文件按预期更新。
 - 对比页“切换后的实际变化”按真实生效配置维护独立 `actual_switch` 时段，不再依赖当时是否存在推荐或对比上下文；轮询间已经完成的目标配置任务可回溯切换边界，复用会话、已关闭时段的迟到记录和超过 100 段的历史累计均可继续准确归因。App 空闲刷新会先由命令层观察本机使用记录，再发布完整只读快照；相同模型／档位的近期使用记录用 Provider 消歧，无法唯一确认时继续 fail closed。
 - Radar 的榜单、题目语义和证据详情统一绑定当前显示来源：本机扫描或新配置未就绪时保留上一轮完整本机结果，官网行只打开对应官网批次证据；compact 对 `needs_test`／`stale`／`no_usage` 显式呈现等待或不可用状态，失败通知读取本次失败 dashboard，手动在线刷新即使与 runtime event 并发也会保留反馈，同时继续拒绝过期全量 snapshot。
+- `preview.13` 初始化加固已完成：打包 App 仅在确认为源码开发运行时迁移旧 `artifacts`，不会再从 `/artifacts` 或用户目录旁误导入配置；Sparkle 启动后只隐藏 ModelDial 自己的设置窗口；不存在 `~/.codex` 时不启动 Codex app-server；首次刷新先发布官方 Radar 并显示进行态，再执行本地维护；损坏的配置和活动运行文件会原样隔离为 `*.corrupt-*` 并恢复安全默认值，仍可解析但语义异常的活动运行继续按“恢复未完成”处理。
 
 ## 源码公开门槛
 
@@ -97,12 +98,14 @@
 
 ## 下一步
 
-1. 从当前保留的 Build 110 安装版通过真实设置页发现、下载、验签、安装并重启到 `preview.12`／Build 111；复核版本／源码／feed／公钥、再次检查结果及配置、历史、Radar 缓存、Secrets 元数据和运行状态是否保持。
-2. 在 Gatekeeper／SIP 开启、没有开发环境的 macOS 13+ Apple Silicon 机器上，完成 `preview.12` DMG 的 App Translocation、“仍要打开”、拖入 Applications、冻结后端、Radar 刷新、Keychain 和升级验收；本机代码与候选包验证不能替代这一步。
-3. 为 Ed25519 私钥增加独立离线备份和恢复演练；继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名、错误签名／404／离线升级矩阵和干净机器门槛。Intel 仍按真实需求决定是否建立 universal2 里程碑。
+1. 从干净源码提交生成 `preview.13`／Build 112 的 DMG、Sparkle ZIP、SBOM 和校验清单，完成本地产物验收后再单独批准 GitHub、R2、preview appcast、Homebrew 和官网发布。
+2. 从已安装的 `preview.12`／Build 111 通过真实设置页发现、下载、验签、安装并重启到 `preview.13`／Build 112；复核版本／源码／feed／公钥、再次检查结果及配置、历史、Radar 缓存、Secrets 元数据和运行状态是否保持。
+3. 在 Gatekeeper／SIP 开启、没有开发环境的 macOS 13+ Apple Silicon 机器上，完成 `preview.13` DMG 的 App Translocation、“仍要打开”、拖入 Applications、冻结后端、Radar 刷新、Keychain 和升级验收；本机代码与候选包验证不能替代这一步。
+4. 为 Ed25519 私钥增加独立离线备份和恢复演练；继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名、错误签名／404／离线升级矩阵和干净机器门槛。Intel 仍按真实需求决定是否建立 universal2 里程碑。
 
 ## 最近验证
 
+- 2026-08-10：完成 `preview.13`／Build 112 的首次启动针对性修复。新增回归覆盖打包 App 不迁移相邻无关 `artifacts`、Sparkle 权限窗口不被通用标题窗口过滤隐藏、缺少 Codex 用户目录时不启动 app-server、官方 Radar 优先于本地观察和启动维护、自动刷新进行态、维护重试不被手动刷新吞掉，以及损坏 `config.json`／`active_run.json` 的原样隔离与安全恢复。最终 Python／Swift 全量合同 `1446/1446`（`744.027s`）和 `git diff --check` 通过；完整 `./build.sh` 生成 Build 112 candidate，60 个 Mach-O／65 个架构记录、ad-hoc／无 hardened runtime、Sparkle 嵌套签名、整包严格签名和 Designated Requirement 均通过。冻结后端在隔离 HOME／数据目录得到 0 个启用模型、0 条历史和 18 行内置官方榜单，且未创建 `~/.codex`。发行资产、公开源码、公共核心锁和远端入口尚未更新。
 - 2026-08-10：第三方正常 Mac 复现 `preview.11` 冻结 Python 与 Sparkle 嵌套组件的 Library Validation／Team ID 不一致启动失败；修复版 `preview.12`／Build 111 在源码提交 `5082523eb69f286d5e6397416f44e10adc9eaefb` 上完成 fresh 打包。ad-hoc 路径移除 hardened runtime，Developer ID 分支保持原策略；新增逐 Mach-O 签名门禁、后端 loading／available／unavailable 状态、错误诊断分层、Radar／设置／模型接入失效态、非流式桥接双管道并发排空与 120／330 秒终止边界。DMG `17,769,588` bytes／`aee58b52...f8b22`、ZIP `15,532,390` bytes／`c43c640f...8ce64`、SPDX SBOM 和 `SHA256SUMS` 已发布到 GitHub prerelease 与 R2 并完成无认证回下载；tag、签名 preview appcast、Homebrew Cask、双语 README 和官网入口均已切换。DMG／ZIP、bundle 身份、官方 Radar、feed／公钥、60 个 Mach-O 的 ad-hoc／无 hardened runtime、Ed25519 enclosure、隔离 Homebrew 两轮安装和公开下载哈希通过；官网 production deployment `d629b5e0-3b94-4104-8c74-5be970c04ba2` 与 `modeldial.com` 返回 8 月 10 日第一方快照，回滚基线为 `51c42935-aebb-47ec-a74d-8c74421d6e73`。定向回归 `170/170`、全量合同 `1442/1442`、架构基线 `11/11`、私有 overlay `50/50` 和双仓边界通过。`/Applications` 中的 Build 110 未覆盖，真实 App 内升级和干净受保护 Mac 首次安装仍待验。
 - 2026-08-09：`v0.1.0-preview.11` 在干净提交 `8afa91e205053e10d9a4820277504bb53080ab60` 上完成 Build 110 fresh build；全量 Python／Swift 合同 `1438/1438`、DMG `17,788,444` bytes、ZIP `15,469,502` bytes、SPDX SBOM、SHA-256、thin arm64、60 个 Mach-O／65 个架构记录、macOS 13 门禁、深层 ad-hoc 签名和冻结后端官方刷新均通过。annotated tag、GitHub prerelease、四项 GitHub／R2 资产、Homebrew 6.0.15 Cask 和短缓存签名 appcast 已发布并从公开入口回读；官网最终由 Cloudflare Pages 生产部署 `51c42935-aebb-47ec-a74d-8c74421d6e73` 接管，回滚基线为 `6603a6e2-fb63-4f4d-bb35-7d1b6345e102`，自定义域与不可变部署首页 SHA-256 一致。随后 `/Applications` 的 Build 109 经真实 SwiftUI 设置页完成发现、下载、验签、安装和重启到 Build 110，再次检查显示“当前已是最新版本”；本机榜单、完成时间、配置、历史、官方快照和 Secrets 元数据保持。
 - 2026-08-09：继续排查并修复 Radar 来源切换与并发刷新中的同类状态漏洞。新增回归覆盖保留本机榜单对应的证据详情、官网榜单／题目／批次一致性、`needs_test`／`stale` compact 映射、当前失败摘要通知，以及手动官网刷新与 runtime event 并发时“反馈保留、旧 snapshot 不落地、后续权威 snapshot 生效”。视图／Presenter／通知回归 `110/110`、AppSessionStore ownership 包装回归 `2/2`、远端快照／runtime 投影／执行状态机等回归 `104/104` 通过；`./build-dev.sh` 成功生成并签名验证 `build/modeldial-dev.app`。随后在真实开发包 UI 中确认官网 15 行榜单及官网批次证据可打开；切换本机来源后，当前配置仍为待快测状态，但上一轮两条榜单、原完成时间和对应本机 Run 证据持续可见；主动官网刷新正确反馈“榜单更新源未配置”。首轮全量回归 `1438` 项只发现新增官网证据文案缺少双语 catalog 的两项失败；补齐 13 个中英文条目并把时长格式接入运行时本地化后，本地化合同 `24/24`、最终全量 Python／Swift 合同 `1438/1438`（`666.468s`，`ResourceWarning` 按错误处理）和 `git diff --check` 通过。完整 `./build.sh` 生成并验证 `build/modeldial-candidate.app`；冻结 Python 3.14.3 后端、60 个 Mach-O／65 个架构记录的 macOS 13 门槛、Sparkle 嵌套组件、深层 ad-hoc 签名和 Designated Requirement 均通过。验收后已恢复官网来源并退出开发包；未覆盖 `build/modeldial.app` 或 `/Applications/modeldial.app`，本次不等于已安装 preview 的升级或发布验收。

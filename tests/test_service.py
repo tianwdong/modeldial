@@ -2720,7 +2720,6 @@ class MonitorServiceTest(unittest.TestCase):
                 timespec="seconds"
             )
             malformed_payloads: list[object] = [
-                [],
                 {},
                 {
                     "run_id": "run-invalid-runtime",
@@ -2760,7 +2759,7 @@ class MonitorServiceTest(unittest.TestCase):
             ]
             malformed_json_payloads = [
                 json.dumps(payload) for payload in malformed_payloads
-            ] + ["{"]
+            ]
             for payload in malformed_json_payloads:
                 with self.subTest(payload=payload):
                     active_run_store.path.parent.mkdir(parents=True, exist_ok=True)
@@ -2777,6 +2776,29 @@ class MonitorServiceTest(unittest.TestCase):
                     self.assertEqual(result["status"], "incomplete")
                     self.assertFalse(result["recovered"])
                     self.assertEqual(active_run_store.path.read_bytes(), before)
+
+            for payload in ("[]", "{"):
+                with self.subTest(payload=payload):
+                    active_run_store.path.write_text(payload, encoding="utf-8")
+
+                    result = service.recover_orphaned_finalizing_run(
+                        exclusive_lock_held=True
+                    )
+
+                    self.assertEqual(result["status"], "no_active_run")
+                    self.assertFalse(result["recovered"])
+                    self.assertFalse(active_run_store.path.exists())
+                    quarantined = list(
+                        active_run_store.path.parent.glob(
+                            "active_run.json.corrupt-*"
+                        )
+                    )
+                    self.assertEqual(len(quarantined), 1)
+                    self.assertEqual(
+                        quarantined[0].read_text(encoding="utf-8"),
+                        payload,
+                    )
+                    quarantined[0].unlink()
 
             active_run_store.save(
                 {

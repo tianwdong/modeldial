@@ -70,6 +70,18 @@ def _concurrent_control_writer_after_claim(
 
 
 class ActiveRunStoreTest(unittest.TestCase):
+    def test_invalid_json_is_quarantined_and_recovers_without_an_active_run(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "active_run.json"
+            path.write_text("{not-json", encoding="utf-8")
+
+            self.assertIsNone(ActiveRunStore(path).load())
+
+            self.assertFalse(path.exists())
+            quarantined = list(path.parent.glob("active_run.json.corrupt-*"))
+            self.assertEqual(len(quarantined), 1)
+            self.assertEqual(quarantined[0].read_text(encoding="utf-8"), "{not-json")
+
     def test_read_only_queries_do_not_create_paths_in_an_empty_directory(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

@@ -18,6 +18,24 @@ from scanner.models import (
 
 
 class ConfigStoreTest(unittest.TestCase):
+    def test_invalid_json_is_quarantined_and_recovers_first_run_defaults(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            path = Path(temp_dir) / "config.json"
+            path.write_text("{not-json", encoding="utf-8")
+
+            config = ConfigStore(path, first_run_defaults=True).load()
+
+            self.assertFalse(path.exists())
+            quarantined = list(path.parent.glob("config.json.corrupt-*"))
+            self.assertEqual(len(quarantined), 1)
+            self.assertEqual(quarantined[0].read_text(encoding="utf-8"), "{not-json")
+            self.assertFalse(
+                any(
+                    connection.enabled
+                    for connection in config.model_ingress.connections
+                )
+            )
+
     def test_failed_save_preserves_the_previous_config_atomically(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             path = Path(temp_dir) / "config.json"

@@ -6,6 +6,7 @@ import tempfile
 from unittest.mock import patch
 
 from scanner.codex_account import (
+    CodexAccountError,
     CodexAccountOutputLimitError,
     _CodexAppServerSession,
     read_codex_account_snapshot,
@@ -32,6 +33,23 @@ class _FakeSession:
 
 
 class CodexAccountTest(unittest.TestCase):
+    def test_default_discovery_does_not_initialize_a_missing_codex_home(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="codex-account-home-") as temp_dir:
+            missing_codex_home = Path(temp_dir) / ".codex"
+
+            with patch(
+                "scanner.codex_account._default_binary_candidates"
+            ) as default_candidates:
+                with self.assertRaisesRegex(CodexAccountError, "尚未初始化"):
+                    read_codex_account_snapshot(
+                        codex_home=missing_codex_home,
+                        session_factory=lambda _binary, _timeout: self.fail(
+                            "missing Codex state must not start app-server"
+                        ),
+                    )
+
+            default_candidates.assert_not_called()
+
     def test_app_server_shared_output_budget_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory(prefix="codex-account-output-") as temp_dir:
             binary = Path(temp_dir) / "noisy-codex"

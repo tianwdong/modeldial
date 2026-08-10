@@ -914,6 +914,74 @@ private func makeStore(
     )
 }
 
+private func settledReferencePolicy() -> ReferenceSnapshotRefreshPolicy {
+    var policy = ReferenceSnapshotRefreshPolicy(persistence: nil)
+    let now = Date()
+    _ = policy.claimIfDue(now: now)
+    policy.record(status: "not_modified", latestPublishedAt: now, now: now)
+    return policy
+}
+
+private func verifyPackagedBridgeSkipsUnrelatedLegacyArtifacts() throws {
+    let fileManager = FileManager.default
+    let root = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("modeldial-legacy-artifacts-\(UUID().uuidString)")
+    defer { try? fileManager.removeItem(at: root) }
+    let developmentRoot = root.appendingPathComponent("unrelated-project")
+    let artifacts = developmentRoot.appendingPathComponent("artifacts")
+    let packagedRoot = root.appendingPathComponent("packaged-backend")
+    let dataDirectory = root.appendingPathComponent("app-data")
+    try fileManager.createDirectory(
+        at: artifacts,
+        withIntermediateDirectories: true
+    )
+    try fileManager.createDirectory(
+        at: packagedRoot,
+        withIntermediateDirectories: true
+    )
+    try Data("unrelated".utf8).write(
+        to: artifacts.appendingPathComponent("config.json")
+    )
+
+    let packagedLegacyDirectory = NativeBridgeClient.legacyArtifactsDirectory(
+        selectedRepoRoot: packagedRoot,
+        developmentRoot: developmentRoot,
+        fileManager: fileManager
+    )
+    expect(
+        packagedLegacyDirectory == nil,
+        "a packaged backend must not import artifacts beside the app bundle"
+    )
+    NativeBridgeClient.prepareDataDirectory(
+        dataDirectory,
+        legacyArtifactsDirectory: packagedLegacyDirectory,
+        fileManager: fileManager
+    )
+    expect(
+        !fileManager.fileExists(
+            atPath: dataDirectory.appendingPathComponent("config.json").path
+        ),
+        "unrelated legacy config must not enter a fresh packaged app data directory"
+    )
+
+    let script = developmentRoot.appendingPathComponent("scripts/native_bridge.py")
+    try fileManager.createDirectory(
+        at: script.deletingLastPathComponent(),
+        withIntermediateDirectories: true
+    )
+    try Data("# development bridge".utf8).write(to: script)
+    let developmentLegacyDirectory = NativeBridgeClient.legacyArtifactsDirectory(
+        selectedRepoRoot: developmentRoot,
+        developmentRoot: developmentRoot,
+        fileManager: fileManager
+    )
+    expect(
+        developmentLegacyDirectory?.standardizedFileURL.path
+            == artifacts.standardizedFileURL.path,
+        "an actual source checkout should retain the intentional development migration"
+    )
+}
+
 @MainActor
 private func verifySettingsDraftFollowsAuthoritativeSnapshotsWithoutOwnGatewayQuery() async throws {
     let initial = try configuredSnapshot(
@@ -930,7 +998,11 @@ private func verifySettingsDraftFollowsAuthoritativeSnapshotsWithoutOwnGatewayQu
         patchResult: .failure(.unexpectedCall),
         loadSnapshots: [updated]
     )
-    let sessionStore = makeStore(gateway: gateway, initialSnapshot: initial)
+    let sessionStore = makeStore(
+        gateway: gateway,
+        initialSnapshot: initial,
+        referenceSnapshotRefreshPolicy: settledReferencePolicy()
+    )
 
     let settingsStore = SelectionSettingsStore(sessionStore: sessionStore)
     expect(
@@ -1029,13 +1101,24 @@ private func verifyPeriodicRefreshObservesAndLoadsAnAuthoritativeSnapshot() asyn
     let initial = try decodedSnapshot(historyCount: 0)
     let periodic = try decodedSnapshot(historyCount: 9)
     let immediateFollowUp = try decodedSnapshot(historyCount: 10)
+    let loadGate = BlockingSnapshotGate()
+    defer { loadGate.release() }
     let gateway = StubBridgeGateway(
         patchResult: .failure(.unexpectedCall),
-        loadSnapshots: [periodic, immediateFollowUp]
+        loadSnapshots: [periodic, immediateFollowUp],
+        firstLoadGate: loadGate
     )
     let store = makeStore(gateway: gateway, initialSnapshot: initial)
 
     store.reloadPeriodicSnapshotAsync()
+    try await waitUntil("periodic remote refresh should reach the gateway") {
+        loadGate.hasStarted()
+    }
+    expect(
+        store.isReferenceSnapshotRefreshInFlight,
+        "an automatic remote refresh should expose its in-flight state immediately"
+    )
+    loadGate.release()
     try await waitForHistoryCount(9, in: store)
 
     let maintenanceRequests = await gateway.recordedLoadSnapshotMaintenanceRequests()
@@ -1045,8 +1128,8 @@ private func verifyPeriodicRefreshObservesAndLoadsAnAuthoritativeSnapshot() asyn
         "periodic refresh should request a complete snapshot without startup maintenance"
     )
     expect(
-        observeStateCallCount == 1,
-        "periodic refresh should update local observations before reading the full snapshot"
+        observeStateCallCount == 0,
+        "the due remote refresh should publish before local observations"
     )
     expect(
         store.snapshot?.runtime.historyCount == periodic.runtime.historyCount,
@@ -1062,8 +1145,8 @@ private func verifyPeriodicRefreshObservesAndLoadsAnAuthoritativeSnapshot() asyn
         "periodic polling should refresh the remote feed once, then wait for the next UTC slot"
     )
     expect(
-        finalObserveStateCallCount == 2,
-        "each idle periodic refresh should advance local usage observations"
+        finalObserveStateCallCount == 1,
+        "the next idle periodic refresh should advance local usage observations"
     )
 }
 
@@ -1076,7 +1159,11 @@ private func verifyPeriodicObservationFailureStillPublishesSavedSnapshot() async
         loadSnapshots: [saved],
         observationError: .expectedFailure
     )
-    let store = makeStore(gateway: gateway, initialSnapshot: initial)
+    let store = makeStore(
+        gateway: gateway,
+        initialSnapshot: initial,
+        referenceSnapshotRefreshPolicy: settledReferencePolicy()
+    )
 
     store.reloadPeriodicSnapshotAsync()
     try await waitForHistoryCount(7, in: store)
@@ -1309,15 +1396,15 @@ private func verifyReferenceRefreshPolicyTracksPublicationAndPersistsBackoff() {
 }
 
 @MainActor
-private func verifyStartupPublishesCacheBeforeMaintenanceAndRemoteRefresh() async throws {
+private func verifyStartupPublishesCacheBeforeRemoteRefreshAndMaintenance() async throws {
     let cached = try decodedSnapshot(historyCount: 1)
-    let maintained = try decodedSnapshot(historyCount: 2)
-    let refreshed = try decodedSnapshot(historyCount: 3)
+    let refreshed = try decodedSnapshot(historyCount: 2)
+    let maintained = try decodedSnapshot(historyCount: 3)
     let loadGate = BlockingSnapshotGate()
     defer { loadGate.release() }
     let gateway = StubBridgeGateway(
         patchResult: .failure(.unexpectedCall),
-        loadSnapshots: [maintained, refreshed],
+        loadSnapshots: [refreshed, maintained],
         firstLoadGate: loadGate,
         snapshotResults: [cached]
     )
@@ -1327,7 +1414,11 @@ private func verifyStartupPublishesCacheBeforeMaintenanceAndRemoteRefresh() asyn
     try await waitForHistoryCount(1, in: store)
     expect(
         loadGate.hasStarted(),
-        "startup maintenance should continue after the cached snapshot is published"
+        "remote refresh should continue after the cached snapshot is published"
+    )
+    expect(
+        store.isReferenceSnapshotRefreshInFlight,
+        "automatic startup refresh should expose progress while the remote feed is loading"
     )
     loadGate.release()
     try await waitForHistoryCount(3, in: store)
@@ -1335,8 +1426,8 @@ private func verifyStartupPublishesCacheBeforeMaintenanceAndRemoteRefresh() asyn
     let maintenanceRequests = await gateway.recordedLoadSnapshotMaintenanceRequests()
     let referenceRequests = await gateway.recordedLoadSnapshotReferenceRefreshRequests()
     expect(
-        maintenanceRequests == [true, false] && referenceRequests == [false, true],
-        "startup should publish cache, maintain local state, then refresh remote data"
+        maintenanceRequests == [false, true] && referenceRequests == [true, false],
+        "startup should publish cache, refresh remote data, then maintain local state"
     )
 }
 
@@ -1453,9 +1544,9 @@ private func verifyQueuedForcedReferenceRefreshSurvivesStartupRetry() async thro
     let maintenanceRequests = await gateway.recordedLoadSnapshotMaintenanceRequests()
     let referenceRequests = await gateway.recordedLoadSnapshotReferenceRefreshRequests()
     expect(
-        maintenanceRequests == [true, true, false]
-            && referenceRequests == [false, false, true],
-        "a forced refresh queued during startup retry should run after maintenance"
+        maintenanceRequests == [true, false, true]
+            && referenceRequests == [false, true, false],
+        "a forced refresh queued during startup retry should preserve the maintenance retry"
     )
     expect(
         !store.isReferenceSnapshotRefreshInFlight
@@ -1467,11 +1558,11 @@ private func verifyQueuedForcedReferenceRefreshSurvivesStartupRetry() async thro
 @MainActor
 private func verifyInitialFixtureDoesNotSuppressNormalInitialLoad() async throws {
     let initial = try decodedSnapshot(historyCount: 0)
-    let loaded = try decodedSnapshot(historyCount: 14)
-    let refreshed = try decodedSnapshot(historyCount: 15)
+    let refreshed = try decodedSnapshot(historyCount: 14)
+    let maintained = try decodedSnapshot(historyCount: 15)
     let gateway = StubBridgeGateway(
         patchResult: .failure(.unexpectedCall),
-        loadSnapshots: [loaded, refreshed]
+        loadSnapshots: [refreshed, maintained]
     )
     let store = makeStore(gateway: gateway, initialSnapshot: initial)
 
@@ -1485,8 +1576,8 @@ private func verifyInitialFixtureDoesNotSuppressNormalInitialLoad() async throws
     let maintenanceRequests = await gateway.recordedLoadSnapshotMaintenanceRequests()
     let referenceRequests = await gateway.recordedLoadSnapshotReferenceRefreshRequests()
     expect(
-        maintenanceRequests == [true, false] && referenceRequests == [false, true],
-        "an initial fixture must not suppress startup maintenance or remote refresh"
+        maintenanceRequests == [false, true] && referenceRequests == [true, false],
+        "an initial fixture must not delay remote refresh behind startup maintenance"
     )
 }
 
@@ -2876,6 +2967,7 @@ private func verifyManualReferenceRefreshKeepsFeedbackAcrossRuntimeEvents() asyn
 private enum AppSessionBridgeOwnershipTestMain {
     static func main() async {
         do {
+            try verifyPackagedBridgeSkipsUnrelatedLegacyArtifacts()
             try verifyEndpointIntentsContainNoCandidateProjection()
             try await verifySettingsDraftFollowsAuthoritativeSnapshotsWithoutOwnGatewayQuery()
             try await verifySettingsSaveProtectsDraftAndConsumesCommandSnapshot()
@@ -2885,7 +2977,7 @@ private enum AppSessionBridgeOwnershipTestMain {
             try await verifyManualReferenceRefreshAcknowledgesUnchangedResults()
             try await verifyWakeRefreshUsesTheRemoteRefreshGate()
             verifyReferenceRefreshPolicyTracksPublicationAndPersistsBackoff()
-            try await verifyStartupPublishesCacheBeforeMaintenanceAndRemoteRefresh()
+            try await verifyStartupPublishesCacheBeforeRemoteRefreshAndMaintenance()
             try await verifyStartupMaintenanceWarningSchedulesBoundedRetry()
             try await verifyStartupMaintenanceLoadErrorSchedulesRetry()
             try await verifyQueuedForcedReferenceRefreshSurvivesStartupRetry()
