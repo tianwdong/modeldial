@@ -71,7 +71,7 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn('-project "ModelDial.xcodeproj"', self.source)
         self.assertIn('-configuration "Release"', self.source)
         self.assertNotIn("swiftc", self.source)
-        self.assertIn("CURRENT_PROJECT_VERSION = 110;", self.project_source)
+        self.assertIn("CURRENT_PROJECT_VERSION = 111;", self.project_source)
         self.assertIn("MARKETING_VERSION = 0.1.0;", self.project_source)
         for resource in (
             "AppIcon.icns in Resources",
@@ -110,10 +110,116 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn("$2 == requested", self.source)
         self.assertIn('index($0, "\\\"" requested "\\\"")', self.source)
 
-    def test_open_source_build_defaults_to_explicit_adhoc_signing(self) -> None:
+    def test_open_source_build_uses_adhoc_without_requesting_hardened_runtime(self) -> None:
         self.assertIn('if [[ "$CODESIGN_IDENTITY" == "-" ]]', self.source)
         self.assertIn('RESOLVED_CODESIGN_IDENTITY="-"', self.source)
+        self.assertIn("PYINSTALLER_CODESIGN_ARGS=()", self.source)
+        self.assertIn(
+            'if [[ "$RESOLVED_CODESIGN_IDENTITY" != "-" ]]',
+            self.source,
+        )
+        self.assertIn(
+            'PYINSTALLER_CODESIGN_ARGS=(--codesign-identity "$RESOLVED_CODESIGN_IDENTITY")',
+            self.source,
+        )
+        self.assertIn(
+            '${PYINSTALLER_CODESIGN_ARGS[@]+"${PYINSTALLER_CODESIGN_ARGS[@]}"}',
+            self.source,
+        )
+        self.assertIn("signing_policy=(--timestamp=none)", self.signing_source)
+        self.assertIn(
+            "signing_policy=(--options runtime --timestamp)",
+            self.signing_source,
+        )
         self.assertIn("No matching modeldial code-signing identity found", self.source)
+
+    def test_adhoc_app_signature_does_not_enable_hardened_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            app = root / "Test.app"
+            executable = app / "Contents" / "MacOS" / "Test"
+            executable.parent.mkdir(parents=True)
+            plist_path = app / "Contents" / "Info.plist"
+            plist_path.write_bytes(
+                plistlib.dumps(
+                    {
+                        "CFBundleExecutable": "Test",
+                        "CFBundleIdentifier": "com.modeldial.tests.adhoc",
+                        "CFBundlePackageType": "APPL",
+                    }
+                )
+            )
+            source = root / "main.c"
+            source.write_text("int main(void) { return 0; }\n", encoding="utf-8")
+            subprocess.run(
+                ["xcrun", "clang", str(source), "-o", str(executable)],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            signing = subprocess.run(
+                [
+                    "bash",
+                    "-c",
+                    'set -euo pipefail; source "$1"; sign_app_bundle "$2" - com.modeldial.tests.adhoc',
+                    "bash",
+                    str(self.root / "build-support" / "sign-app-bundle.sh"),
+                    str(app),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, signing.returncode, signing.stderr)
+            signature = subprocess.run(
+                ["codesign", "-dv", "--verbose=4", str(executable)],
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stderr
+            self.assertIn("Signature=adhoc", signature)
+            self.assertNotIn("runtime", signature)
+
+            policy_script = (
+                self.root / "build-support" / "verify-adhoc-signing-policy.sh"
+            )
+            self.assertTrue(policy_script.is_file())
+            valid = subprocess.run(
+                ["bash", str(policy_script), str(app)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, valid.returncode, valid.stderr)
+
+            subprocess.run(
+                [
+                    "codesign",
+                    "--force",
+                    "--sign",
+                    "-",
+                    "--options",
+                    "runtime",
+                    "--timestamp=none",
+                    str(executable),
+                ],
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            invalid = subprocess.run(
+                ["bash", str(policy_script), str(app)],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(0, invalid.returncode)
+            self.assertIn("hardened runtime", invalid.stderr)
+
+        self.assertIn(
+            'verify-adhoc-signing-policy.sh" "$APP_DIR"',
+            self.source,
+        )
 
     def test_app_bundle_contains_the_python_backend_and_question_pack(self) -> None:
         self.assertIn('BACKEND_DIR="$RES_DIR/Backend"', self.source)
@@ -252,7 +358,7 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn('"$PYINSTALLER_PYTHON" -m pip check', self.source)
         self.assertIn('-m PyInstaller', self.source)
         self.assertIn('--onedir', self.source)
-        self.assertIn('--codesign-identity "$RESOLVED_CODESIGN_IDENTITY"', self.source)
+        self.assertIn('"${PYINSTALLER_CODESIGN_ARGS[@]}"', self.source)
         self.assertIn('--target-arch "$PYTHON_TARGET_ARCH"', self.source)
         for runtime_library in (
             "libcrypto.3.dylib",

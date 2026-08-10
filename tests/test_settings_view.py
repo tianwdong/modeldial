@@ -78,6 +78,42 @@ class SettingsViewSourceTest(unittest.TestCase):
         self.assertNotIn("readSettingsConfig", self.selection_store_source)
         self.assertNotIn("func readConfig()", self.session_gateway_source)
 
+    def test_backend_unavailability_replaces_false_empty_settings_states(self) -> None:
+        self.assertIn("enum BackendAvailability: Equatable", self.selection_store_source)
+        self.assertIn(
+            "@Published private(set) var backendAvailability: BackendAvailability = .loading",
+            self.selection_store_source,
+        )
+        self.assertIn("backendAvailability = .available", self.selection_store_source)
+        self.assertIn("backendAvailability = .unavailable(", self.selection_store_source)
+
+        scan = self.section_source("scanContent")
+        targets = self.section_source("targetsContent")
+        for section in (scan, targets):
+            self.assertIn("selectionStore.isBackendAvailable", section)
+            self.assertIn("backendAvailabilitySection", section)
+        self.assertIn(
+            "selectionStore.backendAvailability.unavailableMessage",
+            self.section_source("settingsPageErrorMessage"),
+        )
+        self.assertIn("copyBackendFailureDiagnostic", self.settings_view_source)
+        self.assertIn(
+            ".disabled(!selectionStore.isBackendAvailable)",
+            self.section_source("endpointConnectionSheet"),
+        )
+        self.assertIn(
+            "if store.isBackendAvailable",
+            self.expanded_source,
+        )
+        self.assertIn(
+            "expandedBackendAvailabilityState",
+            self.expanded_source,
+        )
+        self.assertIn(
+            "panelFooter.disabled(!store.isBackendAvailable)",
+            self.expanded_source,
+        )
+
     def test_transient_ingress_projection_comes_from_authoritative_app_snapshot(self) -> None:
         provider_catalog = self.section_source("providerCatalog")
         detected_local_providers = self.section_source("detectedLocalProviders")

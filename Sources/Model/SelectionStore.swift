@@ -15,6 +15,26 @@ struct SnapshotRefreshIssue {
     let detail: String
 }
 
+enum BackendAvailability: Equatable {
+    case loading
+    case available
+    case unavailable(message: String, diagnosticDetail: String)
+
+    var isAvailable: Bool {
+        self == .available
+    }
+
+    var unavailableMessage: String? {
+        guard case .unavailable(let message, _) = self else { return nil }
+        return message
+    }
+
+    var diagnosticDetail: String? {
+        guard case .unavailable(_, let diagnosticDetail) = self else { return nil }
+        return diagnosticDetail
+    }
+}
+
 enum ScanConflictPresentation {
     case expanded
     case settings
@@ -36,6 +56,7 @@ final class AppSessionStore: ObservableObject {
         "preferred_manual_evaluation_profile_id"
 
     @Published private(set) var snapshot: BridgeSnapshot?
+    @Published private(set) var backendAvailability: BackendAvailability = .loading
     @Published var isExpanded = false
     @Published var transientMessage: String?
     @Published private(set) var scanConflictMessage: String?
@@ -128,6 +149,10 @@ final class AppSessionStore: ObservableObject {
             return "扫描中"
         }
         return snapshot?.dashboard.bestCombination?.label ?? "暂无推荐"
+    }
+
+    var isBackendAvailable: Bool {
+        backendAvailability.isAvailable
     }
 
     var recommendationReason: String {
@@ -1932,7 +1957,16 @@ final class AppSessionStore: ObservableObject {
         consecutiveSnapshotRefreshFailures += 1
 
         if snapshot == nil {
-            transientMessage = error.localizedDescription
+            let failure = BridgeFailurePresentation(error: error)
+            backendAvailability = .unavailable(
+                message: failure.message,
+                diagnosticDetail: failure.diagnosticDetail
+            )
+            transientMessage = failure.message
+            snapshotRefreshIssue = SnapshotRefreshIssue(
+                message: failure.message,
+                detail: "正在自动重试"
+            )
             resolveGlance()
             return
         }
@@ -2065,6 +2099,7 @@ final class AppSessionStore: ObservableObject {
             newSnapshot.config.recommendation.activeModelSessions
         )
         snapshot = newSnapshot
+        backendAvailability = .available
         reconcilePendingScanControl(using: newSnapshot)
         reconcilePreferredEvaluationProfile(using: newSnapshot)
         armCurrentModelRefreshTimer()

@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 
 enum BridgeAutoResumeTrigger: String {
@@ -10,24 +11,55 @@ enum BridgeClientError: LocalizedError {
     case missingPythonRuntime
     case invalidOutput
     case processFailed(String)
+    case processTimedOut(TimeInterval)
     case snapshotDecodeFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .missingRepoRoot:
-            return "无法找到本地数据桥接脚本。"
+            return "ModelDial 本地运行组件不完整，请重新安装最新版本。"
         case .missingPythonRuntime:
-            return "无法找到应用内数据运行时或开发用 Python 3。"
+            return "ModelDial 本地运行组件不完整，请重新安装最新版本。"
         case .invalidOutput:
-            return "本地数据返回了无法识别的内容。"
+            return "ModelDial 本地数据返回异常，请重试。"
         case .processFailed(let detail):
-            guard !detail.isEmpty else {
-                return "本地数据进程执行失败。"
+            if detail.contains("Failed to load Python shared library")
+                || detail.contains("different Team IDs")
+                || detail.contains("Library Validation") {
+                return "ModelDial 本地运行组件无法启动，请重新安装最新版本。"
             }
-            let summary = detail.split(whereSeparator: { $0.isNewline }).last.map(String.init) ?? detail
-            return "本地数据进程执行失败：\(summary)"
-        case .snapshotDecodeFailed(let detail):
-            return "本地数据与当前版本不兼容：\(detail)"
+            return "ModelDial 本地数据服务暂时不可用，正在自动重试。"
+        case .processTimedOut:
+            return "ModelDial 本地数据操作超时，请重试。"
+        case .snapshotDecodeFailed:
+            return "ModelDial 本地数据与当前版本不兼容，请更新或重新安装。"
+        }
+    }
+
+    var diagnosticDescription: String {
+        switch self {
+        case .processFailed(let detail), .snapshotDecodeFailed(let detail):
+            return detail
+        case .processTimedOut(let timeout):
+            return "Native bridge process timed out after \(timeout) seconds"
+        case .missingRepoRoot, .missingPythonRuntime, .invalidOutput:
+            return errorDescription ?? String(describing: self)
+        }
+    }
+}
+
+struct BridgeFailurePresentation: Equatable {
+    let message: String
+    let diagnosticDetail: String
+
+    init(error: Error) {
+        if let bridgeError = error as? BridgeClientError {
+            message = bridgeError.errorDescription
+                ?? "ModelDial 本地数据服务暂时不可用，正在自动重试。"
+            diagnosticDetail = bridgeError.diagnosticDescription
+        } else {
+            message = "ModelDial 本地数据服务暂时不可用，正在自动重试。"
+            diagnosticDetail = error.localizedDescription
         }
     }
 }
@@ -134,6 +166,7 @@ struct BridgeEndpointModelsIntent: Encodable {
 final class NativeBridgeClient {
     private let repoRoot: URL
     private let dataDirectory: URL
+    private let processTimeout: TimeInterval?
     private let secretStore = AppSecretStore()
     private var activeScanProcess: Process?
     private var activeScanWatchdog: DispatchWorkItem?
@@ -157,6 +190,7 @@ final class NativeBridgeClient {
             .appendingPathComponent("Library", isDirectory: true)
             .appendingPathComponent("Application Support", isDirectory: true)
             .appendingPathComponent("modeldial", isDirectory: true)
+        processTimeout = nil
         Self.prepareDataDirectory(
             dataDirectory,
             legacyArtifactsDirectory: developmentRoot.appendingPathComponent("artifacts"),
@@ -164,9 +198,14 @@ final class NativeBridgeClient {
         )
     }
 
-    init(repoRoot: URL, dataDirectory: URL) {
+    init(
+        repoRoot: URL,
+        dataDirectory: URL,
+        processTimeout: TimeInterval? = nil
+    ) {
         self.repoRoot = repoRoot
         self.dataDirectory = dataDirectory
+        self.processTimeout = processTimeout
     }
 
     func snapshot() throws -> BridgeSnapshot {
@@ -770,14 +809,51 @@ final class NativeBridgeClient {
         if secretInput != nil {
             process.standardInput = inputPipe
         }
+        let terminationSemaphore = DispatchSemaphore(value: 0)
+        process.terminationHandler = { _ in
+            terminationSemaphore.signal()
+        }
         try process.run()
+
+        let outputCollector = BridgeProcessOutputCollector()
+        let readerGroup = DispatchGroup()
+        readerGroup.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            outputCollector.captureOutput(from: outputPipe.fileHandleForReading)
+            readerGroup.leave()
+        }
+        readerGroup.enter()
+        DispatchQueue.global(qos: .userInitiated).async {
+            outputCollector.captureError(from: errorPipe.fileHandleForReading)
+            readerGroup.leave()
+        }
+
         if let secretInput {
             try inputPipe.fileHandleForWriting.write(contentsOf: secretInput)
             try inputPipe.fileHandleForWriting.close()
         }
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
+
+        let timeout = processTimeout(for: arguments)
+        if terminationSemaphore.wait(timeout: .now() + timeout) == .timedOut {
+            DebugLog.write(
+                "NativeBridgeClient.run timed out pid=\(process.processIdentifier) timeout=\(timeout)"
+            )
+            process.terminate()
+            if terminationSemaphore.wait(timeout: .now() + 2) == .timedOut {
+                Darwin.kill(process.processIdentifier, SIGKILL)
+                _ = terminationSemaphore.wait(timeout: .now() + 2)
+            }
+            try? outputPipe.fileHandleForReading.close()
+            try? errorPipe.fileHandleForReading.close()
+            _ = readerGroup.wait(timeout: .now() + 2)
+            throw BridgeClientError.processTimedOut(timeout)
+        }
+        if readerGroup.wait(timeout: .now() + 5) == .timedOut {
+            try? outputPipe.fileHandleForReading.close()
+            try? errorPipe.fileHandleForReading.close()
+            throw BridgeClientError.invalidOutput
+        }
+        let (outputData, errorData) = outputCollector.collectedData()
         DebugLog.write("NativeBridgeClient.run exit status=\(process.terminationStatus)")
         guard let outputText = String(data: outputData, encoding: .utf8),
               let rawErrorText = String(data: errorData, encoding: .utf8) else {
@@ -789,6 +865,18 @@ final class NativeBridgeClient {
             throw BridgeClientError.processFailed(errorText)
         }
         return outputText
+    }
+
+    private func processTimeout(for arguments: [String]) -> TimeInterval {
+        if let processTimeout {
+            return max(0.05, processTimeout)
+        }
+        switch arguments.first {
+        case "test-connection", "probe-endpoint":
+            return 330
+        default:
+            return 120
+        }
     }
 
     private static func decodingErrorDetail(_ error: DecodingError) -> String {
@@ -1090,6 +1178,32 @@ final class NativeBridgeClient {
             }
             try? fileManager.copyItem(at: source, to: destination)
         }
+    }
+}
+
+private final class BridgeProcessOutputCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private var outputData = Data()
+    private var errorData = Data()
+
+    func captureOutput(from handle: FileHandle) {
+        let data = handle.readDataToEndOfFile()
+        lock.lock()
+        outputData = data
+        lock.unlock()
+    }
+
+    func captureError(from handle: FileHandle) {
+        let data = handle.readDataToEndOfFile()
+        lock.lock()
+        errorData = data
+        lock.unlock()
+    }
+
+    func collectedData() -> (Data, Data) {
+        lock.lock()
+        defer { lock.unlock() }
+        return (outputData, errorData)
     }
 }
 

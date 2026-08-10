@@ -39,7 +39,7 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         )
         self.assertIn("MODELDIAL_DISABLE_UPDATES=0", self.source)
         self.assertIn(
-            "preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10)",
+            "preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10|preview.11)",
             self.source,
         )
         self.assertIn(
@@ -104,9 +104,13 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         self.assertIn("Signature=adhoc", self.source)
         self.assertIn("Authority=|Developer ID|Apple (Development|Distribution)", self.source)
         self.assertIn("not Developer ID signed and not notarized", self.source)
+        self.assertEqual(
+            2,
+            self.source.count('verify-adhoc-signing-policy.sh"'),
+        )
 
     def test_artifacts_are_versioned_arm64_dmg_zip_and_checksums(self) -> None:
-        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.11}"', self.source)
+        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.12}"', self.source)
         self.assertIn('artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"', self.source)
         self.assertIn('dmg_name="${artifact_prefix}-macos-arm64.dmg"', self.source)
         self.assertIn(

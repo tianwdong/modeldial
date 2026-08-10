@@ -289,6 +289,9 @@ struct SettingsView: View {
     }
 
     private var settingsPageErrorMessage: String? {
+        if let message = selectionStore.backendAvailability.unavailableMessage {
+            return message
+        }
         if let message = settings.errorMessage,
            !message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return message
@@ -675,7 +678,11 @@ struct SettingsView: View {
                     Spacer(minLength: 0)
                     VStack(alignment: .leading, spacing: Layout.sectionSpacing) {
                         Color.clear.frame(height: 0).id(settingsScrollTopID)
-                        regularScanScopeSection
+                        if selectionStore.isBackendAvailable {
+                            regularScanScopeSection
+                        } else {
+                            backendAvailabilitySection
+                        }
                     }
                     .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
                     Spacer(minLength: 0)
@@ -690,17 +697,96 @@ struct SettingsView: View {
         }
     }
 
+    @ViewBuilder
     private var targetsContent: some View {
-        ingressWorkspaceSection
+        if selectionStore.isBackendAvailable {
+            ingressWorkspaceSection
+                .padding(.horizontal, Layout.contentPadding)
+                .padding(.top, LayoutRhythm.section)
+                .padding(.bottom, 14)
+                .frame(maxHeight: .infinity, alignment: .topLeading)
+                .frame(
+                    maxWidth: Layout.ingressContentMaxWidth,
+                    maxHeight: .infinity,
+                    alignment: .topLeading
+                )
+        } else {
+            HStack(spacing: 0) {
+                Spacer(minLength: 0)
+                backendAvailabilitySection
+                    .frame(maxWidth: Layout.contentMaxWidth, alignment: .leading)
+                Spacer(minLength: 0)
+            }
             .padding(.horizontal, Layout.contentPadding)
-            .padding(.top, LayoutRhythm.section)
-            .padding(.bottom, 14)
-            .frame(maxHeight: .infinity, alignment: .topLeading)
-        .frame(
-            maxWidth: Layout.ingressContentMaxWidth,
-            maxHeight: .infinity,
-            alignment: .topLeading
-        )
+            .padding(.vertical, LayoutRhythm.section)
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+    }
+
+    @ViewBuilder
+    private var backendAvailabilitySection: some View {
+        switch selectionStore.backendAvailability {
+        case .loading:
+            settingsSection(title: "本地组件", footer: nil) {
+                HStack(spacing: LayoutRhythm.standard) {
+                    ProgressView()
+                        .controlSize(.small)
+                    VStack(alignment: .leading, spacing: LayoutRhythm.micro) {
+                        Text("正在启动本地组件…")
+                            .font(Typography.settingsCardTitle)
+                            .foregroundStyle(IslandVisual.primaryText)
+                        Text("首次启动可能需要几秒钟。")
+                            .font(Typography.settingsCardBody)
+                            .foregroundStyle(IslandVisual.secondaryText)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(LayoutRhythm.standard)
+            }
+        case .unavailable(let message, let diagnosticDetail):
+            settingsSection(title: "本地组件", footer: nil) {
+                VStack(alignment: .leading, spacing: LayoutRhythm.standard) {
+                    HStack(alignment: .top, spacing: LayoutRhythm.compact) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(IslandColor.alertRed)
+                        VStack(alignment: .leading, spacing: LayoutRhythm.micro) {
+                            Text("本地组件不可用")
+                                .font(Typography.settingsCardTitle)
+                                .foregroundStyle(IslandVisual.primaryText)
+                            Text(L10n.tr(message))
+                                .font(Typography.settingsCardBody)
+                                .foregroundStyle(IslandVisual.secondaryText)
+                            Text("当前不会显示空白模型、虚假计数或可执行的扫描设置。")
+                                .font(Typography.micro)
+                                .foregroundStyle(IslandVisual.tertiaryText)
+                        }
+                    }
+                    HStack(spacing: LayoutRhythm.compact) {
+                        Button("立即重试") {
+                            selectionStore.refresh()
+                        }
+                        .buttonStyle(IslandActionButtonStyle(.primary))
+                        Button(diagnosticCopyFeedback ? "已复制" : "复制诊断信息") {
+                            copyBackendFailureDiagnostic(diagnosticDetail)
+                        }
+                        .buttonStyle(IslandActionButtonStyle(.secondary))
+                    }
+                }
+                .padding(LayoutRhythm.standard)
+            }
+        case .available:
+            EmptyView()
+        }
+    }
+
+    private func copyBackendFailureDiagnostic(_ detail: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(detail, forType: .string)
+        diagnosticCopyFeedback = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            diagnosticCopyFeedback = false
+        }
     }
 
     private var automationContent: some View {
@@ -2797,6 +2883,7 @@ struct SettingsView: View {
                     }
                 }
             }
+            .disabled(!selectionStore.isBackendAvailable)
 
             HStack {
                 Spacer()
@@ -2821,7 +2908,12 @@ struct SettingsView: View {
                         }
                     }
                     .buttonStyle(IslandActionButtonStyle(.primary))
-                    .disabled(!endpointCanSubmit || settings.endpoint.isRunning || settings.isSaving)
+                    .disabled(
+                        !selectionStore.isBackendAvailable
+                            || !endpointCanSubmit
+                            || settings.endpoint.isRunning
+                            || settings.isSaving
+                    )
                 } else {
                     Button("保存") {
                         guard settings.saveEndpointConnection(
@@ -2838,7 +2930,12 @@ struct SettingsView: View {
                         dismissEndpointEditorAfterSave = true
                     }
                     .buttonStyle(IslandActionButtonStyle(.primary))
-                    .disabled(!endpointCanSubmit || settings.endpoint.isRunning || settings.isSaving)
+                    .disabled(
+                        !selectionStore.isBackendAvailable
+                            || !endpointCanSubmit
+                            || settings.endpoint.isRunning
+                            || settings.isSaving
+                    )
                 }
             }
         }

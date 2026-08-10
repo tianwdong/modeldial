@@ -545,6 +545,52 @@ private func makeStreamingBridge(
     )
 }
 
+private func makeNonStreamingProcessBridge(
+    mode: String,
+    processTimeout: TimeInterval
+) throws -> (client: NativeBridgeClient, root: URL) {
+    let root = URL(fileURLWithPath: NSTemporaryDirectory())
+        .appendingPathComponent("modeldial-process-contract-\(UUID().uuidString)")
+    let scripts = root.appendingPathComponent("scripts", isDirectory: true)
+    try FileManager.default.createDirectory(
+        at: scripts,
+        withIntermediateDirectories: true
+    )
+    try Data(mode.utf8).write(to: root.appendingPathComponent("mode.txt"))
+    let script = """
+    import pathlib
+    import sys
+    import time
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    mode = (root / "mode.txt").read_text()
+    if sys.argv[1] != "export-personal-observations":
+        raise SystemExit(2)
+    if mode == "dual-pipe":
+        sys.stderr.write("x" * (1024 * 1024))
+        sys.stderr.flush()
+        sys.stdout.write("{}")
+        sys.stdout.flush()
+        raise SystemExit(0)
+    if mode == "timeout":
+        time.sleep(3)
+        sys.stdout.write("{}")
+        raise SystemExit(0)
+    raise SystemExit(3)
+    """
+    try Data(script.utf8).write(
+        to: scripts.appendingPathComponent("native_bridge.py")
+    )
+    return (
+        NativeBridgeClient(
+            repoRoot: root,
+            dataDirectory: root,
+            processTimeout: processTimeout
+        ),
+        root
+    )
+}
+
 private func configuredSnapshot(
     historyCount: Int,
     historyLimit: Int,
@@ -2617,6 +2663,101 @@ private func verifyBridgeFailureWithoutSnapshotPreservesCurrentState() async thr
     )
 }
 
+private func verifyBridgeFailurePresentationSeparatesMessageFromDiagnostics() {
+    let rawDetail = "[PYI-17019:ERROR] Failed to load Python shared library /private/tmp/modeldial/Python: mapping process and mapped file have different Team IDs"
+    let error = BridgeClientError.processFailed(rawDetail)
+    let presentation = BridgeFailurePresentation(error: error)
+
+    expect(
+        error.localizedDescription == "ModelDial 本地运行组件无法启动，请重新安装最新版本。",
+        "bundled runtime failures should use a concise recovery message"
+    )
+    expect(
+        !error.localizedDescription.contains("/private/tmp"),
+        "user-facing bridge errors must not expose raw loader paths"
+    )
+    expect(
+        presentation.diagnosticDetail == rawDetail,
+        "raw bridge failure details should remain available for diagnostics"
+    )
+}
+
+private func verifyNonStreamingBridgeDrainsBothPipesAndTimesOut() throws {
+    let dualPipe = try makeNonStreamingProcessBridge(
+        mode: "dual-pipe",
+        processTimeout: 2
+    )
+    defer { try? FileManager.default.removeItem(at: dualPipe.root) }
+    let startedAt = Date()
+    let payload = try dualPipe.client.exportPersonalObservations()
+    expect(
+        Date().timeIntervalSince(startedAt) < 1.5,
+        "a full stderr pipe must not deadlock stdout collection"
+    )
+    expect(
+        String(data: payload, encoding: .utf8) == "{}",
+        "concurrent pipe draining should preserve stdout"
+    )
+
+    let timeout = try makeNonStreamingProcessBridge(
+        mode: "timeout",
+        processTimeout: 0.2
+    )
+    defer { try? FileManager.default.removeItem(at: timeout.root) }
+    let timeoutStartedAt = Date()
+    do {
+        _ = try timeout.client.exportPersonalObservations()
+        expect(false, "a non-streaming bridge command must respect its deadline")
+    } catch BridgeClientError.processTimedOut {
+        expect(
+            Date().timeIntervalSince(timeoutStartedAt) < 1.5,
+            "timed-out bridge commands should be terminated promptly"
+        )
+    }
+}
+
+@MainActor
+private func verifyInitialLoadFailurePublishesUnavailableStateAndRecovers() async throws {
+    let recovered = try configuredSnapshot(
+        historyCount: 6,
+        historyLimit: 66,
+        schedulerEnabled: false
+    )
+    let gateway = StubBridgeGateway(
+        patchResult: .failure(.unexpectedCall),
+        loadSnapshots: [recovered],
+        loadErrors: [.expectedFailure]
+    )
+    let store = makeStore(gateway: gateway)
+
+    expect(
+        store.backendAvailability == .loading,
+        "a session without an initial snapshot should begin in loading state"
+    )
+    store.reloadPeriodicSnapshotAsync()
+    try await waitUntil("initial load failure did not publish backend unavailability") {
+        if case .unavailable = store.backendAvailability { return true }
+        return false
+    }
+    if case .unavailable(let message, let diagnosticDetail) = store.backendAvailability {
+        expect(
+            message == "ModelDial 本地数据服务暂时不可用，正在自动重试。",
+            "generic startup failures should use a concise unavailable message"
+        )
+        expect(
+            diagnosticDetail.contains("expected gateway failure"),
+            "startup failure diagnostics should preserve the underlying detail"
+        )
+    }
+
+    store.reloadPeriodicSnapshotAsync()
+    try await waitForHistoryCount(6, in: store)
+    expect(
+        store.backendAvailability == .available,
+        "a later authoritative snapshot should restore backend availability"
+    )
+}
+
 @MainActor
 private func verifyStaleRefreshCannotReplaceNewerRuntimeEvent() async throws {
     let initial = try configuredSnapshot(
@@ -2768,6 +2909,9 @@ private enum AppSessionBridgeOwnershipTestMain {
             try await verifySettingsCommandsRefreshOnlyThroughAppSessionStore()
             try await verifyRuntimeDeltaAndTerminalSnapshotOwnDistinctStoreUpdates()
             try await verifyBridgeFailureWithoutSnapshotPreservesCurrentState()
+            verifyBridgeFailurePresentationSeparatesMessageFromDiagnostics()
+            try verifyNonStreamingBridgeDrainsBothPipesAndTimesOut()
+            try await verifyInitialLoadFailurePublishesUnavailableStateAndRecovers()
             try await verifyStaleRefreshCannotReplaceNewerRuntimeEvent()
             try await verifyManualReferenceRefreshKeepsFeedbackAcrossRuntimeEvents()
         } catch {

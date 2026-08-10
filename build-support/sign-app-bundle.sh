@@ -6,10 +6,14 @@ sign_app_bundle() {
   local bundle_id="$3"
   local sparkle_framework="$app_dir/Contents/Frameworks/Sparkle.framework"
   local sparkle_version="$sparkle_framework/Versions/Current"
-  local timestamp_option="--timestamp"
+  local signing_policy=(--timestamp)
+  local preserved_metadata="identifier,entitlements"
 
   if [[ "$identity" == "-" ]]; then
-    timestamp_option="--timestamp=none"
+    signing_policy=(--timestamp=none)
+  else
+    signing_policy=(--options runtime --timestamp)
+    preserved_metadata="identifier,entitlements,flags,runtime"
   fi
 
   if [[ -d "$sparkle_framework" ]]; then
@@ -21,24 +25,21 @@ sign_app_bundle() {
       "$sparkle_version/Autoupdate"; do
       if [[ -e "$nested_code" ]]; then
         codesign --force --sign "$identity" \
-          --options runtime \
-          "$timestamp_option" \
-          --preserve-metadata=identifier,entitlements,flags,runtime \
+          "${signing_policy[@]}" \
+          --preserve-metadata="$preserved_metadata" \
           "$nested_code"
       fi
     done
 
     codesign --force --sign "$identity" \
-      --options runtime \
-      "$timestamp_option" \
-      --preserve-metadata=identifier,entitlements,flags,runtime \
+      "${signing_policy[@]}" \
+      --preserve-metadata="$preserved_metadata" \
       "$sparkle_framework"
   fi
 
   codesign --force --sign "$identity" \
     --identifier "$bundle_id" \
-    --options runtime \
-    "$timestamp_option" \
+    "${signing_policy[@]}" \
     "$app_dir"
   codesign --verify --deep --strict --verbose=2 "$app_dir"
 }

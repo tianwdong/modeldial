@@ -276,6 +276,11 @@ else
   fi
 fi
 
+PYINSTALLER_CODESIGN_ARGS=()
+if [[ "$RESOLVED_CODESIGN_IDENTITY" != "-" ]]; then
+  PYINSTALLER_CODESIGN_ARGS=(--codesign-identity "$RESOLVED_CODESIGN_IDENTITY")
+fi
+
 mkdir -p "$BUILD_DIR"
 rm -rf "$STAGING_DIR" "$PYTHON_RUNTIME_EXTRACT_DIR"
 trap 'rm -rf "$STAGING_DIR" "$PYTHON_RUNTIME_EXTRACT_DIR"; rm -f "$PYTHON_INSTALLER_TEMP"' EXIT
@@ -366,7 +371,7 @@ python_runtime_env "$PYINSTALLER_PYTHON" -m PyInstaller \
   --distpath "$PYINSTALLER_DIST_DIR" \
   --workpath "$PYINSTALLER_WORK_DIR" \
   --specpath "$PYINSTALLER_SPEC_DIR" \
-  --codesign-identity "$RESOLVED_CODESIGN_IDENTITY" \
+  ${PYINSTALLER_CODESIGN_ARGS[@]+"${PYINSTALLER_CODESIGN_ARGS[@]}"} \
   --osx-bundle-identifier "$BUNDLE_ID.backend" \
   "scripts/native_bridge.py"
 cp -R "$PYINSTALLER_DIST_DIR/modeldial-backend/." "$BACKEND_RUNTIME_DIR/"
@@ -394,6 +399,9 @@ xcrun xcstringstool compile \
   "$PYTHON_DEPLOYMENT_TARGET"
 
 sign_app_bundle "$APP_DIR" "$RESOLVED_CODESIGN_IDENTITY" "$BUNDLE_ID"
+if [[ "$RESOLVED_CODESIGN_IDENTITY" == "-" ]]; then
+  bash "./build-support/verify-adhoc-signing-policy.sh" "$APP_DIR"
+fi
 
 CANDIDATE_EXECUTABLE="$(pwd)/${CANDIDATE_APP_DIR#./}/Contents/MacOS/$APP_NAME"
 

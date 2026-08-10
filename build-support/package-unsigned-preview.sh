@@ -22,7 +22,7 @@ fi
 
 BUILD_ROOT="$ROOT_DIR/build"
 OUTPUT_DIR="${MODELDIAL_UNSIGNED_PREVIEW_OUTPUT_DIR:-$BUILD_ROOT/unsigned-preview}"
-PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.11}"
+PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.12}"
 MODELDIAL_REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"
 REFERENCE_SNAPSHOT_URL="$MODELDIAL_REFERENCE_SNAPSHOT_URL"
 OFFICIAL_PREVIEW_UPDATE_FEED_URL="https://updates.modeldial.com/macos/preview/appcast.xml"
@@ -31,7 +31,7 @@ UPDATE_PUBLIC_ED_KEY="${MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY:-}"
 [[ "$PREVIEW_LABEL" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] \
   || fail "invalid preview label: $PREVIEW_LABEL"
 case "$PREVIEW_LABEL" in
-  preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10)
+  preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10|preview.11)
     fail "$PREVIEW_LABEL is already published and cannot be overwritten"
     ;;
 esac
@@ -171,6 +171,8 @@ grep -Fq 'Signature=adhoc' <<<"$signature_details" \
   || fail "candidate is not ad-hoc signed; unsigned preview requires the formal build's '-' identity"
 codesign --verify --deep --strict --verbose=2 "$candidate_path" >/dev/null \
   || fail "candidate deep signature verification failed"
+bash "$ROOT_DIR/build-support/verify-adhoc-signing-policy.sh" "$candidate_path" \
+  || fail "candidate violates the ad-hoc signing policy"
 
 artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"
 dmg_name="${artifact_prefix}-macos-arm64.dmg"
@@ -259,6 +261,8 @@ zip_architectures="$(lipo -archs "$zip_main_executable" 2>/dev/null)" \
   || fail "could not inspect ZIP app architecture"
 [[ "$zip_architectures" == "arm64" ]] \
   || fail "ZIP app is not a thin arm64 build: $zip_architectures"
+bash "$ROOT_DIR/build-support/verify-adhoc-signing-policy.sh" "$zip_app" \
+  || fail "ZIP app violates the ad-hoc signing policy"
 (
   cd "$OUTPUT_DIR"
   shasum -a 256 "$dmg_name" "$zip_name" "$sbom_name" > "$sums_name"

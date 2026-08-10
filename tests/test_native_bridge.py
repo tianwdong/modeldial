@@ -3321,6 +3321,29 @@ with exclusive_process_lock(
         self.assertIn("process.standardError = errorPipe", source)
         self.assertNotIn("process.standardError = pipe", source)
 
+    def test_swift_non_stream_bridge_drains_both_pipes_and_has_a_deadline(self) -> None:
+        source = (
+            Path(__file__).resolve().parent.parent
+            / "Sources"
+            / "Model"
+            / "NativeBridgeClient.swift"
+        ).read_text(encoding="utf-8")
+
+        run_source = source.split(
+            "private func run(arguments: [String], secretInput: Data? = nil) throws -> String {",
+            1,
+        )[1].split("private static func decodingErrorDetail", 1)[0]
+        self.assertIn("BridgeProcessOutputCollector", run_source)
+        self.assertIn("DispatchGroup", run_source)
+        self.assertIn("DispatchQueue.global", run_source)
+        self.assertIn("terminationSemaphore.wait(timeout:", run_source)
+        self.assertIn("BridgeClientError.processTimedOut", run_source)
+        self.assertNotIn(
+            "let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()\n"
+            "        let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()",
+            run_source,
+        )
+
     def test_swift_bridge_passes_targeted_scan_selection_to_python(self) -> None:
         source = (
             Path(__file__).resolve().parent.parent

@@ -99,7 +99,7 @@
 - [ ] 在 Gatekeeper 开启的 macOS 13+ Apple Silicon 机器上完成首次安装和真实 UI 验收。
 - [x] 经单独授权创建 `v0.1.0-preview.4` annotated tag／GitHub prerelease 并上传 4 个精确资产；tag object 为 `d6b96b9`，peeled commit 与二进制 `ModelDialSourceCommit` 均为 `7237db3`。Release 非 draft 且仅包含四项预期资产；公开 URL 无认证回下载的大小／SHA-256、DMG／ZIP、bundle 身份、签名、macOS 13、SPDX 均通过，公开 ZIP 在首次官方 Radar `unavailable` 后按 30 秒 App 级退避重试成功并取得 15 条可信第一方结果；双语 README 已切换到 `preview.4`。
 
-## Gate 2E：`preview.5`～`preview.11` 软件更新通道
+## Gate 2E：`preview.5`～`preview.12` 软件更新通道
 
 - [x] 使用独立 `https://updates.modeldial.com/macos/preview/appcast.xml`，不覆盖或复用正式 stable feed；版本化资产使用不可变 R2 路径，appcast 使用 `max-age=60, must-revalidate`。
 - [x] Ed25519 私钥导出到仓库外、权限为 `0600`，公开包只包含对应公钥；ZIP、生成后的 appcast 和在线回下载 appcast 均通过 Sparkle `sign_update --verify`。
@@ -108,16 +108,17 @@
 - [x] `preview.8`（Build 107）在干净提交 `537dfaaf6204557133689a8b45e6729a6cf66bd6` 上完成 fresh build；DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、深层 ad-hoc 签名和 bundle 身份复验通过。
 - [x] `preview.9`（Build 108）在干净提交 `abf28096ccc30fb923213e257eb131a069b79633` 上完成 fresh build；DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、深层 ad-hoc 签名和 bundle 身份复验通过。
 - [x] `preview.10`（Build 109）在干净提交 `d60488b4d2d22ca35f44f552521ccb5354fc5640` 上完成 fresh build；DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名、bundle 身份和冻结后端官方刷新复验通过。
-- [x] `preview.11`（Build 110）在干净提交 `8afa91e205053e10d9a4820277504bb53080ab60` 上完成 fresh build；`1,438/1,438` 全量合同、DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名、bundle 身份和冻结后端官方刷新复验通过。
+- [x] `preview.11`（Build 110）在干净提交 `8afa91e205053e10d9a4820277504bb53080ab60` 上完成 fresh build；`1,438/1,438` 全量合同、DMG／ZIP／SBOM／SHA256SUMS、macOS 13 兼容性、thin arm64、60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名、bundle 身份和冻结后端官方刷新复验通过。后续第三方正常 Mac 验证证明这些门禁遗漏了 hardened runtime 下的 Library Validation 身份不兼容，本版不再是有效安装候选。
 - [x] GitHub prerelease 与 R2 都包含 `preview.7`～`preview.11` 的四项精确资产；在线 appcast 精确指向无查询参数的 `15,469,502` bytes Build 110 ZIP，feed 与 enclosure 签名有效。
 - [x] 从 `/Applications` 的 Build 106 依次真实升级到 Build 107、108、109 和 110，均完成下载、验签、安装和重启；最新 App 回读精确 build／源码提交／feed／公钥／安全开关，再次检查显示“当前已是最新版本”。Build 109 → 110 前后的本机榜单、完成时间、配置、历史、官方快照和 Secrets 元数据保持；9 个 `session-events/inbox` 临时事件被正常消费，6 个实时观察文件按预期更新。
-- [ ] 在 Gatekeeper 开启、无开发环境的另一台 macOS 13+ Apple Silicon 机器上完成 `preview.11` 首次安装人工放行；本机升级验收不替代该项。
+- [ ] `preview.11` 已由第三方正常 Mac 证实存在 Library Validation 启动阻断，不能再核销为安装候选；从干净提交发布 `preview.12` 后，重新完成 DMG、App Translocation、冻结后端、Radar、Sparkle 和持久数据验收。
 
-## Gate 2F：`preview.11` 个人 Homebrew Tap
+## Gate 2F：`preview.12` 个人 Homebrew Tap
 
 - [x] 在独立 `homebrew-tap` 源码根维护 `Casks/modeldial.rb`，当前固定 `preview.11` GitHub DMG、SHA-256、macOS 13+、arm64 和 `auto_updates true`；Tap 不保存第二份 App 二进制。
+- [ ] 当前 `preview.11` Cask 同样受嵌套运行时签名阻断影响；只有 `preview.12` GitHub DMG 与 SHA-256 已公开且回下载通过后，才能更新 Cask、Tap README 和安装文案。
 - [x] Cask 的 quarantine 移除只作用于安装后的 `modeldial.app`，不使用 `sudo`，不修改 Gatekeeper 或系统级安全设置；Cask caveats、Tap README、App README 与官网双语披露保持一致。
-- [x] 使用临时 App 目录完成 Cask 解析、下载、SHA-256、安装、quarantine 属性、bundle 版本／build／架构、ad-hoc 签名结构、Sparkle feed／Ed25519 key、卸载和重新安装验证，不覆盖 `/Applications` 中的正式 App；`preview.11` 已在 Homebrew 6.0.15 下通过 `brew style`、`brew audit --cask --strict` 和完整安装验收。
+- [x] 使用临时 App 目录完成 Cask 解析、下载、SHA-256、安装、quarantine 属性、bundle 版本／build／架构、ad-hoc 签名结构、Sparkle feed／Ed25519 key、卸载和重新安装验证，不覆盖 `/Applications` 中的正式 App；`preview.11` 已在 Homebrew 6.0.15 下通过 `brew style` 和 `brew audit --cask --strict`。这组历史检查没有启动冻结后端，不能再称为完整安装验收。
 - [x] 经单独授权创建并推送公开 `tianwdong/homebrew-tap`，随后用不依赖本地路径的完整限定命令在临时 App 目录重新安装，完成下载、SHA-256、单 Cask trust、quarantine、版本／架构、卸载和重装验证。
 - [x] 远端命令真实可用后，已提交并发布 App README、当前 Release 说明和官网中英文 Homebrew 入口；生产页面与公开 Tap 均已回读验证。
 

@@ -72,8 +72,12 @@ struct ExpandedSelectionView: View, Equatable {
         ZStack {
             VStack(spacing: 0) {
                 panelHeader
-                pagedContent
-                panelFooter
+                if store.isBackendAvailable {
+                    pagedContent
+                } else {
+                    expandedBackendAvailabilityState
+                }
+                panelFooter.disabled(!store.isBackendAvailable)
             }
 
             if let selectedEvidence {
@@ -209,6 +213,46 @@ struct ExpandedSelectionView: View, Equatable {
         lhs.expandedSize == rhs.expandedSize
             && lhs.notchHeight == rhs.notchHeight
             && lhs.entryDestination == rhs.entryDestination
+    }
+
+    @ViewBuilder
+    private var expandedBackendAvailabilityState: some View {
+        switch store.backendAvailability {
+        case .loading:
+            VStack(spacing: 10) {
+                ProgressView()
+                    .controlSize(.small)
+                Text("正在启动本地组件…")
+                    .font(Typography.sectionTitle)
+                    .foregroundStyle(IslandVisual.primaryText)
+                Text("首次启动可能需要几秒钟。")
+                    .font(Typography.settingsCardBody)
+                    .foregroundStyle(IslandVisual.secondaryText)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        case .unavailable(let message, _):
+            VStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(Typography.pageTitle)
+                    .foregroundStyle(IslandColor.alertRed)
+                Text("本地组件不可用")
+                    .font(Typography.sectionTitle)
+                    .foregroundStyle(IslandVisual.primaryText)
+                Text(L10n.tr(message))
+                    .font(Typography.settingsCardBody)
+                    .foregroundStyle(IslandVisual.secondaryText)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 420)
+                Button("立即重试") {
+                    store.refresh()
+                }
+                .buttonStyle(IslandActionButtonStyle(.primary))
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(24)
+        case .available:
+            EmptyView()
+        }
     }
 
     private var scanConflictAlertIsPresented: Binding<Bool> {

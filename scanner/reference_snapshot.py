@@ -156,7 +156,7 @@ def load_reference_snapshot_feed_for_app(
             "index.json",
         )
         cached = _load_reference_snapshot_cache_for_url(cache_root, index_url)
-        downloaded = _download_reference_snapshot_feed(
+        downloaded = _download_reference_snapshot_feed_with_retry(
             configured_url,
             cached_feed=cached,
             index_etag=_read_reference_snapshot_index_etag(
@@ -1044,6 +1044,31 @@ def _download_reference_snapshot_feed(
         latest=latest,
         snapshots=tuple(snapshots),
         index_etag=index_response.etag,
+    )
+
+
+def _download_reference_snapshot_feed_with_retry(
+    base_url: str,
+    *,
+    cached_feed: Mapping[str, object],
+    index_etag: str | None,
+    timeout_seconds: float,
+) -> _DownloadedReferenceSnapshotFeed:
+    try:
+        return _download_reference_snapshot_feed(
+            base_url,
+            cached_feed=cached_feed,
+            index_etag=index_etag,
+            timeout_seconds=timeout_seconds,
+        )
+    except ReferenceSnapshotDownloadError as error:
+        if error.code != "unavailable":
+            raise
+    return _download_reference_snapshot_feed(
+        base_url,
+        cached_feed=cached_feed,
+        index_etag=index_etag,
+        timeout_seconds=timeout_seconds,
     )
 
 

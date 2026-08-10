@@ -1,18 +1,18 @@
 # ModelDial Roadmap
 
-最后更新：2026-08-09
+最后更新：2026-08-10
 
 ## 当前阶段
 
-公开源码和不付费 macOS 预览通道已经可用。公开仓库能够独立测试和构建 App；unsigned preview 与完成 Developer ID／Apple notarization 的正式发行仍是两个分开的发布门槛。
+公开仓库能够独立测试和构建 App；unsigned preview 与完成 Developer ID／Apple notarization 的正式发行仍是两个分开的发布门槛。当前公开的 `preview.11` 不能再视为可用安装候选：第三方在正常受保护 Mac 上确认其冻结 Python 后端无法启动，根因是 ad-hoc bundle 错误启用了 hardened runtime，Library Validation 因独立嵌套 Mach-O 的签名身份不一致而拒绝加载。
 
-当前公开源码候选已通过全量验证，并以单一无父 `main` 根提交固化；源码树发布门槛已经完成。正式签名二进制、stable appcast、正式 stable Homebrew Cask 和干净机器 Gatekeeper 验收仍未完成。
+本地修复候选已提升为 `preview.12`／Build 111：unsigned ad-hoc 路径不再启用 hardened runtime，Developer ID 路径继续保留 hardened runtime／timestamp；新增门禁逐个验证 App 内全部 Mach-O 的 ad-hoc、无 runtime、无证书 Authority、无 Team ID 和严格签名。该候选已通过源码、构建和冻结后端验证，但尚未提交、推送、打包或发布。历史公开源码根仍保持单一无父 `main`；正式签名二进制、stable appcast、正式 stable Homebrew Cask 和干净机器 Gatekeeper 验收仍未完成。
 
-独立的 unsigned preview Sparkle 通道已建立并完成连续真实升级验收。`preview.5`／`preview.6` 因缺少 Sparkle 必需的解压前验签配置而无法启动更新器；`preview.7`（Build 106）修复后，已依次升级到 `preview.8`（Build 107）、`preview.9`（Build 108）、`preview.10`（Build 109）和 `preview.11`（Build 110），每次均完成下载、验签、安装、重启和最新版本复查。`preview.6` 及更早版本需要手动安装 `preview.11` 一次。
+独立的 unsigned preview Sparkle 通道已建立并曾完成 Build 106 → 110 的连续真实升级；这组历史结果只证明当时机器上的 Sparkle 链路，未覆盖正常 Library Validation／App Translocation 环境，不能替代干净受保护 Mac 验收。`preview.5`／`preview.6` 的解压前验签缺陷仍按历史记录保留；所有旧版的下一次有效升级目标应改为尚未发布的 `preview.12`，不能继续推荐手动安装 `preview.11`。
 
-不付费 `v0.1.0-preview.1`～`v0.1.0-preview.11` 均已作为 GitHub prerelease 公开；当前 README 和安装入口指向 `preview.11`。版本化 DMG／ZIP／SHA-256／SBOM 同步保存在 GitHub 与 R2，preview appcast 单独发布。Gatekeeper 开启的独立机器“仍要打开”人工放行仍未完成。
+不付费 `v0.1.0-preview.1`～`v0.1.0-preview.11` 均已作为 GitHub prerelease 公开；当前 README、官网、appcast 和安装入口仍指向有启动阻断的 `preview.11`，因此公开分发尚未恢复到可下载状态。版本化 DMG／ZIP／SHA-256／SBOM 仍保存在 GitHub 与 R2；只有在 `preview.12` 经单独授权发布并完成公开回下载后，才能原子替换这些入口。Gatekeeper 开启的独立机器“仍要打开”人工放行仍未完成。
 
-签名前个人 Homebrew Tap 已发布到 `tianwdong/homebrew-tap`，复用同一 `preview.11` GitHub DMG 和 SHA-256；在 Homebrew 6.0.15 下从公开远端完成严格审计、临时目录安装、单 Cask trust、quarantine、版本／架构、签名结构和 Sparkle 配置验证。App README、当前 GitHub Release 正文和 `modeldial.com` 中英文下载入口均已发布，完整限定命令已可公开使用。
+签名前个人 Homebrew Tap 已发布到 `tianwdong/homebrew-tap`，当前 Cask 仍复用同一受影响的 `preview.11` GitHub DMG 和 SHA-256；此前的 Homebrew 审计、版本／架构、quarantine 和深层签名检查没有覆盖 Library Validation 的运行时加载失败。Tap README 的本地漂移已校正到 `preview.11`，但 Cask、README、GitHub Release 和 `modeldial.com` 都必须等 `preview.12` 资产真实存在后再统一切换。
 
 针对 `preview.1` 遗漏官方 Radar 地址、无 Provider 时被模型设置空状态阻断、开发 seed 可能进入官网展示以及未发布 appcast 仍显示为已配置的问题，`v0.1.0-preview.2` 已在源码提交 `a20d14e` 上完成修复与 Build 101 打包；tag、GitHub prerelease、4 个资产和公开下载复验均已完成。它仍是 unsigned／unnotarized 预览版，不等于正式 `v0.1.0`。
 
@@ -30,6 +30,9 @@
 - 自定义 endpoint 继续兼容 HTTP 与 HTTPS。默认网络客户端在跨源重定向时移除 `Authorization` 和 `x-api-key`，同源重定向保留认证头。
 - LiteLLM pricing 来源已固定完整 upstream commit 和原始文件 SHA-256；网络与离线刷新均先校验原始字节，再解析 JSON，来源身份进入 snapshot hash。
 - `build.sh` 使用内容锁定的 python.org Python 3.14.3 installer，在项目 `build/` 内校验、解包并冻结 runtime；构建会检查 CA store、TLS／SHA-256／zstd、Mach-O 最低系统版本和非系统绝对动态库依赖。
+- unsigned preview 的签名策略已修正：PyInstaller 在 ad-hoc 构建时不接收证书身份，最终整包 ad-hoc 重签不启用 hardened runtime；Developer ID 分支继续启用 hardened runtime 和 secure timestamp。构建与打包门禁会枚举并严格验证全部 60 个 Mach-O，拒绝任何 runtime flag、证书 Authority 或 Team ID，避免再次只验证最外层 App。
+- App 增加显式的后端可用状态：初始加载、可用和不可用不再与业务快照混淆；后端启动失败时，Radar、扫描设置和模型接入不会展示伪造的 `0`、空 picker 或可点击操作，只呈现简洁错误、重试和复制诊断。原始 dyld／PyInstaller 路径只进入显式复制诊断，不再直接铺满界面；权威快照到达后可恢复为可用状态。
+- Swift 非流式 Native Bridge 同时排空 stdout／stderr，普通命令和 endpoint 探测分别受 120／330 秒总时限约束；超时会 TERM 后升级 KILL，避免大 stderr 管道互锁或冻结子进程永久占住 UI。官方 Radar 下载仅对 `unavailable` 做一次整包重试，HTTPS、同源、大小、哈希和 payload 校验失败仍立即 fail closed。
 - `build-dev.sh` 优先复用 `build/modeldial-candidate.app` 的冻结后端；仅在 candidate 不存在时兼容使用 `build/modeldial.app`，因此 fresh clone 完成一次正式构建后即可继续 Swift／资源迭代。
 - 双语 README 已重排为产品优先的公开首页：首屏展示定位、对应语言的 compact／Radar／Compare 动图、官网／GitHub／`preview.11` DMG 入口、平台与本地优先标签；正文按“无需配置浏览官方 Radar → 下载安装 → 产品价值 → 可选本地评测 → 隐私与源码构建”展开。unsigned／unnotarized 限制集中在下载区，并继续明确“隐私与安全性 → 仍要打开”、macOS 13+ Apple Silicon、Intel 不支持及禁止 `xattr`／`spctl` 绕过；同时写明 `preview.7` 起可应用内更新，旧版需手动过渡。
 - unsigned preview 个人 Homebrew Tap 已公开：Cask 固定 `preview.11` DMG／SHA-256、macOS 13+、arm64 和 App 自带更新，仅对安装目标中的 `modeldial.app` 移除 quarantine，不使用 `sudo` 或修改 Gatekeeper；双语 README、ADR、发布清单、当前预览说明和官网中英文入口保持一致。
@@ -81,6 +84,7 @@
 - [x] 经单独授权发布 `v0.1.0-preview.4` annotated tag／GitHub prerelease，并从公开 URL 无认证回下载复测；公开 ZIP 在第一次官方刷新瞬时失败后按 30 秒 App 级退避重试成功，双语 README 已切换到 `preview.4`。
 - [x] `preview.5`／`preview.6` 的历史资产已镜像至 GitHub 与 R2，并明确记录更新器配置缺陷；它们不再作为安装入口。
 - [x] `preview.7`～`preview.11` 已使用长期 Ed25519 身份、独立 preview appcast 和不可变 R2 版本路径发布；Build 106 → 107 → 108 → 109 → 110 的真实 App 内升级、重启和最新版本复查通过，双语 README 已切换到 `preview.11`。
+- [ ] 从干净提交生成并发布 `preview.12`／Build 111，完成公开回下载、Sparkle 升级和正常受保护 Mac 的 App Translocation／Library Validation 验收，再统一切换 README、Homebrew 和官网入口。
 
 ## 兼容性边界
 
@@ -91,12 +95,13 @@
 
 ## 下一步
 
-1. 在另一台 Gatekeeper 开启、没有开发环境的 macOS 13+ Apple Silicon 机器上，完成 `preview.11` DMG 的“仍要打开”首次安装验收。
-2. 为 Ed25519 私钥增加独立离线备份和恢复演练；正式 stable 通道继续使用独立 URL，不复用 preview appcast。
-3. 继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名、错误签名／404／离线升级矩阵和干净机器门槛；Intel 仍按真实需求决定是否建立 universal2 里程碑。
+1. 经单独授权提交并推送本轮修复，从干净源码生成 `preview.12` DMG／ZIP／SHA-256／SBOM，发布 GitHub／R2／preview appcast 后做无认证回下载与 Sparkle 真实升级；随后原子更新双语 README、Homebrew Cask／Tap README 和官网中英文下载入口。
+2. 在 Gatekeeper／SIP 开启、没有开发环境的 macOS 13+ Apple Silicon 机器上，完成 `preview.12` DMG 的 App Translocation、“仍要打开”、拖入 Applications、冻结后端、Radar 刷新、Keychain 和升级验收；本机代码与候选包验证不能替代这一步。
+3. 为 Ed25519 私钥增加独立离线备份和恢复演练；继续处理正式 `v0.1.0` 的 Developer ID、notarization、独立快照签名、错误签名／404／离线升级矩阵和干净机器门槛。Intel 仍按真实需求决定是否建立 universal2 里程碑。
 
 ## 最近验证
 
+- 2026-08-10：第三方正常 Mac 复现 `preview.11` 冻结 Python 与 Sparkle 嵌套组件的 Library Validation／Team ID 不一致启动失败；源码修复候选提升到 `preview.12`／Build 111。ad-hoc 路径移除 hardened runtime，Developer ID 分支保持原策略；新增逐 Mach-O 签名门禁、后端 loading／available／unavailable 状态、错误诊断分层、Radar／设置／模型接入失效态、非流式桥接双管道并发排空与 120／330 秒终止边界。实际构建先抓到并修复系统 Bash 3.2 空数组展开问题，最终 `build/modeldial-candidate.app` 回读 `0.1.0（Build 111）` 和官方 Radar URL，60 个 Mach-O 均为 ad-hoc、无 hardened runtime、无 Authority／Team ID 且严格签名有效。冻结后端在全新隔离缓存从官方源取得 `http/refreshed`／`fresh`、8 份快照、最新 `snapshot-2026-08-10T06-00-00Z` 和 15 行榜单；一次真实 TLS 瞬时失败促成仅对 `unavailable` 的单次整包重试。定向回归 `156/156`、最终全量 Python／Swift 合同 `1442/1442`（`857.252s`）、架构基线 `11/11`、完整 `./build.sh` 和 `git diff --check` 通过。Tap README 的本地版本／hash 漂移已校正；未 commit、push、tag、package、Release、上传、appcast／官网／Cask 远端变更或 `/Applications` 覆盖。
 - 2026-08-09：`v0.1.0-preview.11` 在干净提交 `8afa91e205053e10d9a4820277504bb53080ab60` 上完成 Build 110 fresh build；全量 Python／Swift 合同 `1438/1438`、DMG `17,788,444` bytes、ZIP `15,469,502` bytes、SPDX SBOM、SHA-256、thin arm64、60 个 Mach-O／65 个架构记录、macOS 13 门禁、深层 ad-hoc 签名和冻结后端官方刷新均通过。annotated tag、GitHub prerelease、四项 GitHub／R2 资产、Homebrew 6.0.15 Cask 和短缓存签名 appcast 已发布并从公开入口回读；官网最终由 Cloudflare Pages 生产部署 `51c42935-aebb-47ec-a74d-8c74421d6e73` 接管，回滚基线为 `6603a6e2-fb63-4f4d-bb35-7d1b6345e102`，自定义域与不可变部署首页 SHA-256 一致。随后 `/Applications` 的 Build 109 经真实 SwiftUI 设置页完成发现、下载、验签、安装和重启到 Build 110，再次检查显示“当前已是最新版本”；本机榜单、完成时间、配置、历史、官方快照和 Secrets 元数据保持。
 - 2026-08-09：继续排查并修复 Radar 来源切换与并发刷新中的同类状态漏洞。新增回归覆盖保留本机榜单对应的证据详情、官网榜单／题目／批次一致性、`needs_test`／`stale` compact 映射、当前失败摘要通知，以及手动官网刷新与 runtime event 并发时“反馈保留、旧 snapshot 不落地、后续权威 snapshot 生效”。视图／Presenter／通知回归 `110/110`、AppSessionStore ownership 包装回归 `2/2`、远端快照／runtime 投影／执行状态机等回归 `104/104` 通过；`./build-dev.sh` 成功生成并签名验证 `build/modeldial-dev.app`。随后在真实开发包 UI 中确认官网 15 行榜单及官网批次证据可打开；切换本机来源后，当前配置仍为待快测状态，但上一轮两条榜单、原完成时间和对应本机 Run 证据持续可见；主动官网刷新正确反馈“榜单更新源未配置”。首轮全量回归 `1438` 项只发现新增官网证据文案缺少双语 catalog 的两项失败；补齐 13 个中英文条目并把时长格式接入运行时本地化后，本地化合同 `24/24`、最终全量 Python／Swift 合同 `1438/1438`（`666.468s`，`ResourceWarning` 按错误处理）和 `git diff --check` 通过。完整 `./build.sh` 生成并验证 `build/modeldial-candidate.app`；冻结 Python 3.14.3 后端、60 个 Mach-O／65 个架构记录的 macOS 13 门槛、Sparkle 嵌套组件、深层 ad-hoc 签名和 Designated Requirement 均通过。验收后已恢复官网来源并退出开发包；未覆盖 `build/modeldial.app` 或 `/Applications/modeldial.app`，本次不等于已安装 preview 的升级或发布验收。
 - 2026-08-09：完成个人 Homebrew Tap 的公开安装入口闭环。App 双语 README 已由公开 `main` 提交 `57c86b0` 发布，`v0.1.0-preview.10` GitHub prerelease 正文已同步完整限定命令、同一 DMG／SHA-256 和 scoped quarantine 边界；`modeldial.com` 中英文入口经 Cloudflare Pages 生产部署 `32bf53f7-aa8d-4cef-90f5-7ebfdef3df57` 发布，回滚基线为 `44b4507a-2b18-45ba-bf06-dcbd1c300262`。不可变部署地址与主域首页 SHA-256 一致；中英文首页、Radar、数据许可路由和 `www` 跳转均返回 `200`，生产 HTML 实际包含 Homebrew 命令、Tap、DMG、unsigned 与 `com.apple.quarantine` 披露，内置最新官方快照为 `2026-08-09T12:00:00Z`。本轮未改 stable Cask／appcast、DNS、Worker、Container、R2、Secret 或评测计划。

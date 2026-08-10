@@ -16,6 +16,7 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+import scanner.reference_snapshot as reference_snapshot_module
 from devtools.reference_snapshots.build_development_seed import (
     build_seed_snapshots,
     _seed_reference_cost_summary,
@@ -31,6 +32,7 @@ from scanner.reference_snapshot import (
     DEFAULT_REFERENCE_SNAPSHOT_TIMEOUT_SECONDS,
     MAX_REFERENCE_ELAPSED_MS,
     _HttpJsonResponse,
+    ReferenceSnapshotDownloadError,
     build_reference_snapshot_leaderboard_projection,
     build_reference_snapshot_pairwise_comparisons,
     load_reference_snapshot_feed,
@@ -966,6 +968,36 @@ class ReferenceSnapshotTests(unittest.TestCase):
             [timeout for _, timeout in timeout_calls],
             [DEFAULT_REFERENCE_SNAPSHOT_TIMEOUT_SECONDS] * len(timeout_calls),
         )
+
+    def test_http_feed_retries_one_transient_download_failure(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            remote_root = root / "remote"
+            cache_root = root / "cache"
+            shutil.copytree(SNAPSHOT_ROOT, remote_root)
+            original_read = reference_snapshot_module._read_http_json
+            call_count = 0
+
+            def flaky_read(*args: object, **kwargs: object) -> _HttpJsonResponse:
+                nonlocal call_count
+                call_count += 1
+                if call_count == 1:
+                    raise ReferenceSnapshotDownloadError("unavailable")
+                return original_read(*args, **kwargs)
+
+            with _serve_directory(remote_root) as base_url:
+                with patch(
+                    "scanner.reference_snapshot._read_http_json",
+                    side_effect=flaky_read,
+                ):
+                    feed = load_reference_snapshot_feed_for_app(
+                        cache_root=cache_root,
+                        base_url=base_url,
+                    )
+
+        self.assertGreater(call_count, 1)
+        self.assertEqual(feed["delivery"]["source"], "http")
+        self.assertEqual(feed["delivery"]["refresh_status"], "refreshed")
 
     def test_http_feed_accepts_a_full_index_url(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

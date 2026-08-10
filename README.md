@@ -4,7 +4,7 @@
   <p><strong>用真实 coding 评测，选出更适合当前任务的模型配置。</strong></p>
   <p>比较完整的 <code>model + effort + route</code>，直接看到质量、速度、Token 与参考费用。</p>
   <p>
-    <a href="https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.11/modeldial-0.1.0-preview.11-macos-arm64.dmg"><strong>下载 macOS 预览版</strong></a>
+    <strong>macOS 预览下载暂缓</strong>
     · <a href="https://modeldial.com">官网</a>
     · <a href="https://modeldial.com/radar">官方 Radar</a>
     · <a href="https://github.com/tianwdong/modeldial">GitHub</a>
@@ -12,6 +12,9 @@
   </p>
   <p><code>macOS 13+</code> · <code>Apple Silicon</code> · <code>本地优先</code> · <code>无内置遥测</code></p>
 </div>
+
+> [!CAUTION]
+> 当前公开的 `preview.11` 在正常受保护 Mac 上存在嵌套运行时签名不兼容，可能导致本地组件无法启动，现已暂停推荐下载和 Homebrew 安装。`preview.12` 修复候选已经完成本地构建验证，但尚未发布；等待新资产期间可直接使用 [网页版 Radar](https://modeldial.com/radar)。
 
 <p align="center">
   <img src="docs/media/modeldial-demo-zh.gif" alt="ModelDial 胶囊展开、官方 Radar 与配置对比演示" width="840">
@@ -27,11 +30,13 @@
 
 ## 下载并安装
 
-**当前版本：[`v0.1.0-preview.11`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.11)** · [直接下载 Apple Silicon DMG](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.11/modeldial-0.1.0-preview.11-macos-arm64.dmg)
+**最近公开版本（已暂停安装）：[`v0.1.0-preview.11`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.11)**
 
 系统要求：macOS 13 或更高版本、Apple Silicon。Intel Mac 当前不支持。
 
-### Homebrew
+### Homebrew（暂停）
+
+以下是一行安装入口，但在 `preview.12` 发布并完成公开回下载前请勿执行：
 
 ```bash
 brew install --cask tianwdong/tap/modeldial
@@ -41,7 +46,7 @@ brew install --cask tianwdong/tap/modeldial
 
 当前预览包尚未经过 Apple 签名和公证。为了让 App 及其内嵌 Sparkle helper 正常启动，Cask 安装后会仅对安装目标中的 `modeldial.app`（默认 `/Applications/modeldial.app`）递归移除 `com.apple.quarantine`；该动作不使用 `sudo`，不会关闭 Gatekeeper，也不会修改系统级安全设置。执行安装命令即表示接受这一临时预览策略；Cask 源码可在 [`tianwdong/homebrew-tap`](https://github.com/tianwdong/homebrew-tap) 审查。
 
-### DMG
+### DMG（暂停）
 
 1. 打开 DMG，把 `modeldial.app` 拖到 `Applications`，推出 DMG 后从 `Applications` 启动。
 2. 点击菜单栏顶部的 ModelDial 胶囊，直接浏览官方 Radar；无需先接入模型或运行扫描。
@@ -51,7 +56,7 @@ brew install --cask tianwdong/tap/modeldial
 > `v0.1.0-preview.11` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。手动安装 DMG 时，若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；无需自行运行 `xattr`／`spctl`，也不要关闭 Gatekeeper。上方 Homebrew Cask 是透明披露的独立例外，只会自动移除已安装 `modeldial.app` 的 quarantine 属性。
 
 > [!NOTE]
-> `preview.7` 起已启用独立的 Sparkle 预览更新通道，可在“设置 → 软件更新”检查后续版本。`preview.6` 及更早版本的更新器不可用，需要手动安装 `preview.11` 一次。若要校验文件，请同时下载 `SHA256SUMS`，并在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
+> `preview.7` 起已启用独立的 Sparkle 预览更新通道，可在“设置 → 软件更新”检查后续版本。`preview.6` 及更早版本的更新器不可用；不要再手动安装 `preview.11`，请等待 `preview.12` 发布。若要校验后续文件，请同时下载 `SHA256SUMS`，并在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
 
 ## 它解决什么
 
