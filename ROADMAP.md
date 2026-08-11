@@ -6,6 +6,8 @@
 
 公开仓库能够独立测试和构建 App；unsigned preview 与完成 Developer ID／Apple notarization 的正式发行仍是两个分开的发布门槛。当前公开安装入口为 `v0.1.0-preview.13`／Build 112，二进制精确对应源码提交 `b9d4c92f2e9b74df16a30ec9bf1c60d8f2605545`。annotated tag、GitHub prerelease、GitHub／R2 四项资产、签名 preview appcast、Homebrew Cask、双语 README 和官网入口均已发布并完成公开回读。历史公开源码根仍保持单一无父 `main`；正式签名二进制、stable appcast、正式 stable Homebrew Cask 和干净机器 Gatekeeper 验收仍未完成。
 
+`preview.13` 发布后的不可覆盖门禁已补齐：默认打包标签现在会在任何构建或产物写入前直接拒绝重复打包已发布版本，定向合同 `12/12` 与真实 fail-closed 调用通过。最终分发校验重新覆盖 GitHub、R2、appcast、Homebrew、官网和不可变 Pages 地址，线上内容错误为 `0`。
+
 `preview.13` 延续 unsigned ad-hoc 无 hardened runtime、无证书 Authority 和无 Team ID 的签名策略，并新增首次启动、损坏状态恢复、官方 Radar 优先刷新、无 `~/.codex` 探测和 quarantine 打包门禁。完整回归 `1448/1448` 通过；Build 112 的 60 个 Mach-O、DMG、Sparkle ZIP、SBOM、冻结后端和仿 App Translocation 空环境均已验证。GitHub 与 R2 三项发行文件逐字节一致，preview appcast 与 enclosure 的 Ed25519 验签通过，stable appcast 保持未发布。
 
 真实设置页升级已从 Build 110 开始完成：Sparkle 先安装本机已缓存的 Build 111，再由 Build 111 从当前 appcast 发现、下载、验签、安装并重启到 Build 112；再次检查显示“当前已是最新版本”。安装后的主程序 SHA-256 与发布 ZIP 一致，49 个稳定配置／历史／Secrets／运行证据文件及选定偏好保持不变，实时推荐区间文件按当前会话正常更新。这组本机结果仍不能替代正常 Library Validation／App Translocation 环境下的干净受保护 Mac 验收。
