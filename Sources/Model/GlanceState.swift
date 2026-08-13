@@ -16,6 +16,7 @@ enum GlanceState: Equatable {
     case freshRecommendation
     case staleRecommendation
     case expiredRecommendation
+    case remoteOnlyRecommendation
     case neverScanned
 }
 
@@ -208,6 +209,7 @@ struct GlanceStateResolver {
         recommendation: RecommendationSnapshot?,
         recommendationStatus: String? = nil,
         hasOfficialReferenceResults: Bool = false,
+        remoteOnlyRecommendation: RecommendationSnapshot? = nil,
         now: Date
     ) -> GlancePresentation {
         let recommendationFreshness: Freshness? = recommendation.map {
@@ -318,6 +320,10 @@ struct GlanceStateResolver {
                 ),
                 destination: .rescan
             )
+        }
+
+        if let remoteOnlyRecommendation {
+            return remoteOnlyRecommendationPresentation(remoteOnlyRecommendation)
         }
 
         if recommendationStatus == "no_usage" {
@@ -793,6 +799,41 @@ struct GlanceStateResolver {
                     recommendation.effortLabel,
                     evidence
                 ),
+            destination: .overview
+        )
+    }
+
+    private static func remoteOnlyRecommendationPresentation(
+        _ recommendation: RecommendationSnapshot
+    ) -> GlancePresentation {
+        let evidence = L10n.format(
+            "glance.evidence_score",
+            fallback: "综合总分 %@",
+            recommendation.scoreText
+        )
+        let detail = L10n.tr("暂无本地对比")
+        return presentation(
+            state: .remoteOnlyRecommendation,
+            compactLeft: compactIdentity(recommendation),
+            compactRight: recommendation.effortLabel,
+            compactLeftTextRole: .identityPrimary,
+            compactRightTextRole: .identitySecondary,
+            compactLeadingSymbol: nil,
+            compactLeadingSymbolTone: nil,
+            peekLeftPrimary: recommendation.fullDisplayName,
+            peekLeftSecondary: detail,
+            peekRightLabel: L10n.tr("官方综合推荐"),
+            peekRightValue: evidence,
+            tone: .neutral,
+            activity: .none,
+            accessibilityLabel: joined(
+                L10n.format(
+                    "glance.accessibility.remote_only_recommendation",
+                    fallback: "官网综合推荐模型 %@，暂无本地对比",
+                    recommendation.fullDisplayName
+                ),
+                evidence
+            ),
             destination: .overview
         )
     }

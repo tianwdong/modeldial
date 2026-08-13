@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import hashlib
+from functools import lru_cache
 from http.client import HTTPException
 import json
+import os
 import socket
 import subprocess
 import sys
@@ -21,7 +23,7 @@ from .bounded_subprocess import (
     BoundedSubprocessOutputError,
     run_bounded_process,
 )
-from .frozen_runtime import module_worker_command
+from .frozen_runtime import is_frozen_runtime, module_worker_command
 from .models import ANTHROPIC_MESSAGES_REASONING_EFFORTS
 from .process_environment import build_child_environment
 from .provider_catalog import (
@@ -88,12 +90,14 @@ class _EndpointRedirectHandler(HTTPRedirectHandler):
         return redirected
 
 
-_DEFAULT_ENDPOINT_OPENER = build_opener(_EndpointRedirectHandler())
+@lru_cache(maxsize=1)
+def _default_endpoint_opener():
+    return build_opener(_EndpointRedirectHandler())
 
 
 def _open_endpoint_url(request: Request, timeout_seconds: float, urlopen) -> object:
     if urlopen is default_urlopen:
-        return _DEFAULT_ENDPOINT_OPENER.open(request, timeout=timeout_seconds)
+        return _default_endpoint_opener().open(request, timeout=timeout_seconds)
     return urlopen(request, timeout=timeout_seconds)
 
 
@@ -398,13 +402,23 @@ def run_endpoint_request_isolated(
         },
         ensure_ascii=False,
     )
+    if is_frozen_runtime():
+        configured_backend_root = os.environ.get("MODELDIAL_BACKEND_ROOT", "").strip()
+        if configured_backend_root:
+            child_environment = build_child_environment(
+                overrides={"MODELDIAL_BACKEND_ROOT": configured_backend_root}
+            )
+        else:
+            child_environment = build_child_environment()
+    else:
+        child_environment = build_child_environment()
     try:
         completed = run_bounded_process(
             module_worker_command("scanner.endpoint_client", "--execute-request"),
             input=worker_input,
             text=True,
             timeout=max(1.0, float(timeout_seconds)) + 5.0,
-            env=build_child_environment(),
+            env=child_environment,
             output_limit_bytes=MAX_ISOLATED_WORKER_OUTPUT_BYTES,
             runner=subprocess.run,
         )
@@ -512,7 +526,15 @@ def discover_model_catalog(
     except URLError as exc:
         if isinstance(exc.reason, (TimeoutError, socket.timeout)):
             raise EndpointError("timeout") from None
-        raise EndpointError("network_error") from None
+        raise EndpointError(
+            "network_error",
+            diagnostics={"exception_type": type(exc.reason).__name__},
+        ) from None
+    except (HTTPException, ConnectionError, OSError) as exc:
+        raise EndpointError(
+            "network_error",
+            diagnostics={"exception_type": type(exc).__name__},
+        ) from None
     except (UnicodeDecodeError, json.JSONDecodeError, AttributeError, TypeError):
         raise EndpointError("invalid_response") from None
     if not isinstance(payload, dict) or not isinstance(payload.get("data"), list):

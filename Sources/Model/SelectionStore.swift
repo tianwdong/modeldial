@@ -70,6 +70,7 @@ final class AppSessionStore: ObservableObject {
     private var expandedDestination: GlanceDestination?
     @Published private(set) var isGlanceActuallyVisible = true
     @Published private(set) var preferredManualEvaluationProfileID: String?
+    @Published private(set) var radarBrowseSourceModeOverride: String?
 
     private let bridge: NativeBridgeClient
     private let commandGateway: any AppSessionBridgeGatewayProtocol
@@ -264,7 +265,9 @@ final class AppSessionStore: ObservableObject {
 
     var radarSelectedSourceMode: String {
         guard let configurationID = radarRepresentativeConfigurationID else {
-            let sourceMode = radarPortfolio?.sourceMode ?? "auto"
+            let sourceMode = radarBrowseSourceModeOverride
+                ?? radarPortfolio?.sourceMode
+                ?? "auto"
             return sourceMode == "official_snapshot" && referenceSnapshotLeaderboardItems.isEmpty
                 ? "auto"
                 : sourceMode
@@ -276,6 +279,14 @@ final class AppSessionStore: ObservableObject {
         return sourceMode == "official_snapshot" && referenceSnapshotLeaderboardItems.isEmpty
             ? "auto"
             : sourceMode
+    }
+
+    func setRadarBrowseSourceMode(_ sourceMode: String) {
+        guard radarRepresentativeConfigurationID == nil,
+              ["auto", "official_snapshot", "local_evaluation"].contains(sourceMode) else {
+            return
+        }
+        radarBrowseSourceModeOverride = sourceMode
     }
 
     private var radarAuthoritativeDataSource: String? {
@@ -411,7 +422,8 @@ final class AppSessionStore: ObservableObject {
             portfolio: radarPortfolio,
             displaySource: radarDisplaySource,
             displayFreshness: radarDisplayFreshness,
-            leaderboardItems: radarLeaderboardItems
+            leaderboardItems: radarLeaderboardItems,
+            remoteOnlyDisplayName: remoteOnlyRecommendationSnapshot()?.shortDisplayName
         )
     }
 
@@ -455,6 +467,10 @@ final class AppSessionStore: ObservableObject {
             latest.entries.map { ($0.modelConfigurationId, $0) },
             uniquingKeysWith: { first, _ in first }
         )
+        let projectionRowsByID = Dictionary(
+            (latest.leaderboardProjection?.rows ?? []).map { ($0.modelConfigurationId, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
         var seenIDs = Set<String>()
         var entries: [BridgeReferenceSnapshotEntry] = (
             latest.leaderboardProjection?.rows ?? []
@@ -470,7 +486,10 @@ final class AppSessionStore: ObservableObject {
         let currentID = radarRepresentativeConfigurationID
         let recommendedID = radarRepresentativeDecision?.candidateModelConfigurationId
         return entries.map { entry in
-            RadarLeaderboardItem(
+            let hasOfficialRecommendedTag = projectionRowsByID[entry.modelConfigurationId]?
+                .decisionTags
+                .contains(where: { $0.kind == "recommended" }) == true
+            return RadarLeaderboardItem(
                 id: entry.modelConfigurationId,
                 displayName: ModelIdentityPresentation.displayLabel(
                     model: entry.modelConfiguration.canonicalModelId,
@@ -491,9 +510,10 @@ final class AppSessionStore: ObservableObject {
                 isCurrent: currentID.map {
                     referenceEntry(entry, matches: $0)
                 } ?? false,
-                isRecommended: recommendedID.map {
-                    referenceEntry(entry, matches: $0)
-                } ?? false
+                isRecommended: hasOfficialRecommendedTag
+                    || (recommendedID.map {
+                        referenceEntry(entry, matches: $0)
+                    } ?? false)
             )
         }
     }
@@ -910,20 +930,6 @@ final class AppSessionStore: ObservableObject {
         )
     }
 
-    func startIngressCandidateScan(
-        candidateIDs: [String],
-        conflictPresentation: ScanConflictPresentation = .expanded
-    ) {
-        previewAndStartScan(
-            intent: BridgeScanIntent(
-                candidateIDs: candidateIDs,
-                selectionMode: .single
-            ),
-            autoResumeOnInterruption: false,
-            conflictPresentation: conflictPresentation
-        )
-    }
-
     func startSingleScan(
         candidateID: String,
         conflictPresentation: ScanConflictPresentation = .expanded
@@ -1297,7 +1303,10 @@ final class AppSessionStore: ObservableObject {
             } catch {
                 guard pendingScanPlanPreviewID == requestID else { return }
                 pendingScanPlanPreviewID = nil
-                transientMessage = error.localizedDescription
+                reportScanConflict(
+                    error.localizedDescription,
+                    presentation: conflictPresentation
+                )
             }
         }
     }
@@ -1309,12 +1318,18 @@ final class AppSessionStore: ObservableObject {
         conflictPresentation: ScanConflictPresentation
     ) {
         guard preview.valid else {
-            transientMessage = preview.message
-                ?? ScanPlanPreviewPresenter.failureText(reason: preview.reason)
+            reportScanConflict(
+                preview.message
+                    ?? ScanPlanPreviewPresenter.failureText(reason: preview.reason),
+                presentation: conflictPresentation
+            )
             return
         }
         guard let validatedIntent = intent.applying(preview) else {
-            transientMessage = "扫描计划响应与请求不一致，请重试"
+            reportScanConflict(
+                "扫描计划响应与请求不一致，请重试",
+                presentation: conflictPresentation
+            )
             return
         }
         startScan(
@@ -1375,7 +1390,10 @@ final class AppSessionStore: ObservableObject {
             armCurrentModelRefreshTimer()
         } catch {
             _ = completeBridgeOperation(operationID)
-            transientMessage = error.localizedDescription
+            reportScanConflict(
+                error.localizedDescription,
+                presentation: conflictPresentation
+            )
         }
     }
 
@@ -1661,7 +1679,10 @@ final class AppSessionStore: ObservableObject {
                     detail: event.failureMessage ?? "扫描结果数据与当前版本不兼容"
                 )
             }
-            transientMessage = event.failureMessage ?? "扫描失败"
+            reportScanConflict(
+                event.failureMessage ?? "扫描失败",
+                presentation: activeScanConflictPresentation
+            )
         case "scan.progress":
             transientMessage = progressMessage(for: event)
         case "scan.paused":
@@ -2223,6 +2244,7 @@ final class AppSessionStore: ObservableObject {
             recommendationStatus: snapshot?.recommendationPortfolioV2.status,
             hasOfficialReferenceResults: radarDisplaySource == "official_snapshot"
                 && !referenceSnapshotLeaderboardItems.isEmpty,
+            remoteOnlyRecommendation: remoteOnlyRecommendationSnapshot(),
             now: now
         )
         armGlanceBoundaryTimer(now: now)
@@ -2283,6 +2305,80 @@ final class AppSessionStore: ObservableObject {
             runCompletedAt: bridgeDate(from: best.runCompletedAt) ?? bridgeDate(from: dashboard.runMetadata.completedAt),
             staleAt: staleAt,
             expiresAt: expiresAt
+        )
+    }
+
+    private func remoteOnlyRecommendationSnapshot() -> RecommendationSnapshot? {
+        let activeSessions = snapshot?.config.recommendation.activeModelSessions ?? []
+        let hasActiveUserSession = activeSessions.contains {
+            $0.isEvaluationSession != true
+        } || (activeSessions.isEmpty
+            && (snapshot?.config.recommendation.detectedActiveSessionCount ?? 0) > 0)
+        let portfolio = snapshot?.recommendationPortfolioV2
+        let decision = portfolio?.representativeDecision
+        let hasValidDecision = decision.map { decision in
+            switch decision.decision {
+            case "recommend":
+                guard let candidateID = decision.candidateModelConfigurationId,
+                      !candidateID.isEmpty else {
+                    return false
+                }
+                return candidateID != decision.currentModelConfigurationId
+            case "keep":
+                return !decision.currentModelConfigurationId.isEmpty
+            default:
+                return false
+            }
+        } ?? false
+        let preservesLocalDecision = portfolio.map { portfolio in
+            portfolio.resolvedDataSource == "local_evaluation"
+                && (portfolio.status == "recommend" || portfolio.status == "keep")
+                && hasValidDecision
+        } ?? false
+        let status = portfolio?.status
+        let hasNonActionableStatus = status == nil
+            || (status != "recommend" && status != "keep")
+        let requiresRemoteOnly = portfolio?.status == "no_usage"
+            || !hasValidDecision
+            || hasNonActionableStatus
+        guard !preservesLocalDecision,
+              requiresRemoteOnly,
+              !hasActiveUserSession,
+              let latest = snapshot?.referenceSnapshotFeed.trustedLatest else {
+            return nil
+        }
+        let officialRecommendedID = latest.leaderboardProjection?.rows.first {
+            $0.decisionTags.contains(where: { $0.kind == "recommended" })
+        }?.modelConfigurationId
+        let item = officialRecommendedID.flatMap { recommendedID in
+            referenceSnapshotLeaderboardItems.first { $0.id == recommendedID }
+        } ?? referenceSnapshotLeaderboardItems.first
+        guard let item else { return nil }
+        let entry = latest.entries.first(where: { $0.modelConfigurationId == item.id })
+        let fullDisplayName = entry?.modelConfiguration.canonicalModelId ?? item.modelName
+        let publishedAt = bridgeDate(from: latest.publishedAt)
+        return RecommendationSnapshot(
+            fullDisplayName: fullDisplayName,
+            shortDisplayName: glanceShortDisplayName(
+                model: fullDisplayName,
+                fallback: item.displayName
+            ),
+            effortLabel: item.effort,
+            recommendationOutcome: "remote_only",
+            currentDefaultCandidateId: nil,
+            recommendedCandidateId: item.id,
+            currentUsageStatus: "unavailable",
+            activeSessionCount: 0,
+            evidenceState: "official",
+            runStatus: "completed",
+            scoreText: glanceScoreText(
+                item.score ?? 0,
+                maximum: item.maxScore ?? 100
+            ),
+            recommendationCreatedAt: publishedAt,
+            runCompletedAt: publishedAt,
+            staleAt: nil,
+            expiresAt: nil
         )
     }
 

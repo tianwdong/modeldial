@@ -17,6 +17,7 @@ from scanner.config_store import ConfigStore
 from scanner.history_store import HistoryStore
 from scanner.models import AppConfig, ConnectionConfig, ModelCandidateConfig
 from scanner.native_bridge import patch_config
+from scanner.scan_target_resolver import ScanTargetResolver
 
 
 class ConfigPatchCommandTest(unittest.TestCase):
@@ -194,7 +195,7 @@ class ConfigPatchCommandTest(unittest.TestCase):
         self.assertIsNone(config.recommendation.current_default_candidate_id)
         self.assertEqual(config.recommendation.current_model_mode, "auto")
 
-    def test_enabling_new_api_candidate_invalidates_connection_verification(self) -> None:
+    def test_enabling_new_api_candidate_keeps_connection_verification(self) -> None:
         config = self.config_store.load()
         config.model_ingress.connections.append(
             ConnectionConfig(
@@ -204,8 +205,8 @@ class ConfigPatchCommandTest(unittest.TestCase):
                 enabled=True,
                 api_format="openai_responses",
                 base_url="https://api.example.test/v1",
-                last_test_status="pass",
-                last_test_message="ok",
+                last_test_status="ok",
+                last_test_message="连接成功",
                 model_candidates=[
                     ModelCandidateConfig(
                         id="api-test:model-a:high",
@@ -234,8 +235,15 @@ class ConfigPatchCommandTest(unittest.TestCase):
             for item in updated.model_ingress.connections
             if item.id == "api-test"
         )
-        self.assertEqual(connection.last_test_status, "untested")
-        self.assertEqual(connection.last_test_message, "启用范围已变更，请重新测试")
+        self.assertEqual(connection.last_test_status, "ok")
+        self.assertEqual(connection.last_test_message, "连接成功")
+        self.assertIn(
+            "api-test:model-a:high",
+            {
+                target.candidate_id
+                for target in ScanTargetResolver().enabled_targets(updated)
+            },
+        )
 
     def test_endpoint_mutations_use_typed_patches_without_whole_config_replacement(
         self,

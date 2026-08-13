@@ -125,14 +125,20 @@ def check_grok_build_login(
             ),
         ) from None
 
-    if completed.returncode != 0:
+    login_status = _parse_grok_models_auth_status(completed.stdout)
+    if completed.returncode != 0 or login_status is not True:
+        terminal_state = (
+            "login_check_failed"
+            if completed.returncode != 0 or login_status is False
+            else "login_status_unavailable"
+        )
         raise GrokBuildError(
             "authentication_required",
             "Grok Build 登录态不可用，请先运行 grok login。",
             _execution_trace(
                 started_at_utc=started_at_utc,
                 timeout_seconds=bounded_timeout_seconds,
-                terminal_state="login_check_failed",
+                terminal_state=terminal_state,
                 stdout=completed.stdout,
                 stderr=completed.stderr,
                 returncode=completed.returncode,
@@ -318,6 +324,18 @@ def _parse_json_object(value: object) -> dict[str, object]:
     except json.JSONDecodeError:
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def _parse_grok_models_auth_status(value: object) -> bool | None:
+    """Parse only the official auth banner emitted by ``grok models``."""
+    text = _as_text(value)
+    for line in text.splitlines():
+        normalized = line.strip().lower()
+        if normalized.startswith("you are not authenticated"):
+            return False
+        if normalized.startswith("you are logged in with"):
+            return True
+    return None
 
 
 def _execution_trace(

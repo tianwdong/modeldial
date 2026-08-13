@@ -458,7 +458,7 @@ final class SelectionSettingsStore: ObservableObject {
                     configuredModels: [],
                     reasoningProfilesByModel: response.reasoningProfilesByModel,
                     defaultReasoningProfileByModel: response.defaultReasoningProfileByModel,
-                    message: response.message
+                    message: modelDiscoveryMessage(response)
                 )
                 endpoint.finishOperation()
                 completion(response.models)
@@ -634,7 +634,7 @@ final class SelectionSettingsStore: ObservableObject {
                     configuredModels: response.configuredModels,
                     reasoningProfilesByModel: response.reasoningProfilesByModel,
                     defaultReasoningProfileByModel: response.defaultReasoningProfileByModel,
-                    message: response.message
+                    message: modelDiscoveryMessage(response)
                 )
                 endpoint.finishOperation()
             } catch {
@@ -687,7 +687,7 @@ final class SelectionSettingsStore: ObservableObject {
                     configuredModels: models.filter { configuredModelIDs.contains($0) },
                     reasoningProfilesByModel: response.reasoningProfilesByModel,
                     defaultReasoningProfileByModel: response.defaultReasoningProfileByModel,
-                    message: response.message
+                    message: modelDiscoveryMessage(response)
                 )
             } catch {
                 guard endpoint.finishDraftOperation(operationGeneration) else { return }
@@ -703,6 +703,15 @@ final class SelectionSettingsStore: ObservableObject {
 
     func resetEndpointDraftFeedback() {
         endpoint.resetDraftFeedback()
+    }
+
+    private func modelDiscoveryMessage(_ response: BridgeModelDiscoveryResponse) -> String {
+        guard !response.ok,
+              response.manualEntryAllowed,
+              response.errorCategory == "network_error" else {
+            return response.message
+        }
+        return "网络连接失败；仍可手工填写准确的 Model ID。"
     }
 
     private func resolvedEndpointProbeAPIKey(

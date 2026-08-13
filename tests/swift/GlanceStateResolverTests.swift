@@ -84,13 +84,15 @@ private func resolve(
     _ runtime: RuntimeSnapshotState,
     recommendation: RecommendationSnapshot? = nil,
     recommendationStatus: String? = nil,
-    hasOfficialReferenceResults: Bool = false
+    hasOfficialReferenceResults: Bool = false,
+    remoteOnlyRecommendation: RecommendationSnapshot? = nil
 ) -> GlancePresentation {
     GlanceStateResolver.resolve(
         runtime: runtime,
         recommendation: recommendation,
         recommendationStatus: recommendationStatus,
         hasOfficialReferenceResults: hasOfficialReferenceResults,
+        remoteOnlyRecommendation: remoteOnlyRecommendation,
         now: now
     )
 }
@@ -374,6 +376,28 @@ private func verifyStateTable() {
     expect(remoteOnlyNeedsTest.compactLeft == "远端榜单", "remote evidence should remain useful without a local run")
     expect(remoteOnlyNeedsTest.peekLeftPrimary == "远端榜单可用", "remote-only copy should not require a local scan")
     expect(remoteOnlyNeedsTest.destination == .overview, "remote-only evidence should open the leaderboard")
+
+    let remoteOnlyRecommendation = resolve(
+        .available(runtime(lifecycle: .idle)),
+        remoteOnlyRecommendation: recommendation(
+            outcome: "remote_only",
+            recommendedCandidateId: "official-balanced",
+            evidenceState: "official"
+        )
+    )
+    expect(
+        remoteOnlyRecommendation.state == .remoteOnlyRecommendation,
+        "official leaderboard recommendation should have a remote-only glance state"
+    )
+    expect(
+        remoteOnlyRecommendation.peekLeftSecondary == "暂无本地对比",
+        "remote-only recommendation must explain that no local comparison exists"
+    )
+    expect(
+        remoteOnlyRecommendation.compactLeadingSymbol == nil
+            && remoteOnlyRecommendation.destination == .overview,
+        "remote-only recommendation must not imply an actionable switch"
+    )
 
     let v2StaleOverridesFresh = resolve(
         .available(runtime(lifecycle: .idle)),

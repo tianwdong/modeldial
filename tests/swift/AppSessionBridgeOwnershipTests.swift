@@ -62,6 +62,7 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
     private let localImportResult: BridgeLocalImportResponse?
     private let connectionTestResult: BridgeConnectionTestResponse?
     private let observationError: StubGatewayError?
+    private let scanPreviewResult: Result<BridgeScanPlanPreview, StubGatewayError>?
     private var snapshotResults: [BridgeSnapshot]
     private var loadSnapshots: [BridgeSnapshot]
     private var loadWarnings: [String?]
@@ -101,7 +102,8 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
         clearResult: BridgeDataOperationResponse? = nil,
         localImportResult: BridgeLocalImportResponse? = nil,
         connectionTestResult: BridgeConnectionTestResponse? = nil,
-        observationError: StubGatewayError? = nil
+        observationError: StubGatewayError? = nil,
+        scanPreviewResult: Result<BridgeScanPlanPreview, StubGatewayError>? = nil
     ) {
         self.defaultPatchResult = patchResult
         self.patchResults = patchResults
@@ -118,6 +120,7 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
         self.localImportResult = localImportResult
         self.connectionTestResult = connectionTestResult
         self.observationError = observationError
+        self.scanPreviewResult = scanPreviewResult
     }
 
     func loadSnapshot(
@@ -244,7 +247,15 @@ private actor StubBridgeGateway: AppSessionBridgeGatewayProtocol {
 
     func previewScan(_ intent: BridgeScanIntent) throws -> BridgeScanPlanPreview {
         scanPreviewRequests.append(intent)
-        throw StubGatewayError.expectedFailure
+        guard let scanPreviewResult else {
+            throw StubGatewayError.expectedFailure
+        }
+        switch scanPreviewResult {
+        case .success(let preview):
+            return preview
+        case .failure(let error):
+            throw error
+        }
     }
 
     func recordedScanPreviewRequest() -> BridgeScanIntent? {
@@ -647,6 +658,41 @@ private func scanPlanningSnapshot() throws -> BridgeSnapshot {
         dashboard["run_metadata"] = metadata
         payload["dashboard"] = dashboard
     }
+}
+
+private func unavailableQuickPairPreview() throws -> BridgeScanPlanPreview {
+    try decodedValue(
+        BridgeScanPlanPreview.self,
+        from: [
+            "schema_version": 1,
+            "valid": false,
+            "reason": "quick_recommendation_pair_unavailable",
+            "message": NSNull(),
+            "requested_selection_mode": "regular",
+            "requested_custom_round_mode": "new_round",
+            "execution_selection_mode": NSNull(),
+            "execution_custom_round_mode": NSNull(),
+            "profile": [
+                "id": "quick",
+                "label": "快速对比",
+                "question_count": 1,
+            ],
+            "requested_candidate_ids": [],
+            "effective_candidate_ids": [],
+            "execution_candidate_ids": [],
+            "regular_candidate_ids": [],
+            "appended_candidate_ids": [],
+            "skipped_candidate_ids": [],
+            "comparison_group": [
+                "id": NSNull(),
+                "mode": NSNull(),
+                "parent_run_id": NSNull(),
+                "append_target_group_id": NSNull(),
+            ],
+            "total_evaluations": 0,
+            "completed_evaluations": 0,
+        ]
+    )
 }
 
 private func leaderboardEntryPayload(
@@ -1639,6 +1685,13 @@ private func verifyLocalRadarConsumesBackendEligibilityDecisions() throws {
             candidateID: candidateID,
             resolvedDataSource: "local_evaluation"
         )
+        payload["reference_snapshot_feed"] = referenceFeedPayload(
+            entries: [
+                referenceEntryPayload(id: "official-candidate", model: "official-candidate", score: 99),
+            ],
+            leaderboardOrder: ["official-candidate"],
+            recommendedID: "official-candidate"
+        )
     }
     let store = makeStore(
         gateway: StubBridgeGateway(patchResult: .failure(.unexpectedCall)),
@@ -1654,6 +1707,10 @@ private func verifyLocalRadarConsumesBackendEligibilityDecisions() throws {
     expect(
         store.radarLeaderboardItems.first(where: { $0.id == candidateID }) != nil,
         "backend-eligible rows should display even when dashboard compatibility and freshness fields are stale"
+    )
+    expect(
+        store.glancePresentation.state != .remoteOnlyRecommendation,
+        "a valid local recommend decision must not be replaced by an official remote-only recommendation"
     )
 }
 
@@ -1835,6 +1892,97 @@ private func verifyAutoSourceUsesPortfolioResolvedOfficialIdentity() throws {
 }
 
 @MainActor
+private func verifyRadarSourceCanBeBrowsedWithoutCurrentConfiguration() throws {
+    let localID = "local-without-current"
+    let officialID = "official-without-current"
+    let snapshot = try decodedSnapshot(historyCount: 1) { payload in
+        var config = payload["config"] as! [String: Any]
+        var recommendation = config["recommendation"] as! [String: Any]
+        recommendation["current_default_candidate_id"] = NSNull()
+        recommendation["effective_current_candidate_id"] = NSNull()
+        recommendation["source_mode_by_configuration_id"] = [:]
+        config["recommendation"] = recommendation
+        payload["config"] = config
+
+        var dashboard = payload["dashboard"] as! [String: Any]
+        dashboard["leaderboard"] = [
+            leaderboardEntryPayload(id: localID, model: "local-model", score: 71),
+        ]
+        payload["dashboard"] = dashboard
+
+        var evidence = advisorEvidencePayload(
+            currentID: localID,
+            eligibleCandidateIDs: [],
+            decisions: [],
+            resolvedDataSource: "local_evaluation"
+        )
+        evidence["current_model_configuration_id"] = NSNull()
+        evidence["resolved_data_source"] = NSNull()
+        evidence["current_status"] = "no_usage"
+        payload["advisor_v2_evidence"] = evidence
+
+        var portfolio = recommendationPortfolioPayload(
+            currentID: localID,
+            candidateID: localID,
+            resolvedDataSource: "local_evaluation"
+        )
+        portfolio["representative_configuration_id"] = NSNull()
+        portfolio["representative_reason"] = NSNull()
+        portfolio["resolved_data_source"] = NSNull()
+        portfolio["status"] = "no_usage"
+        portfolio["decisions"] = []
+        portfolio["source_mode_by_configuration_id"] = [:]
+        payload["recommendation_portfolio_v2"] = portfolio
+        payload["reference_snapshot_feed"] = referenceFeedPayload(
+            entries: [
+                referenceEntryPayload(
+                    id: officialID,
+                    model: "official-model",
+                    score: 87
+                ),
+            ],
+            leaderboardOrder: [officialID],
+            recommendedID: officialID
+        )
+    }
+    let store = makeStore(
+        gateway: StubBridgeGateway(patchResult: .failure(.unexpectedCall)),
+        initialSnapshot: snapshot
+    )
+
+    expect(
+        store.radarRepresentativeConfigurationID == nil,
+        "the fixture must have no current or representative configuration"
+    )
+    expect(
+        !store.radarLeaderboardItems.isEmpty,
+        "auto browsing should keep an available source visible without a current configuration"
+    )
+
+    store.setRadarBrowseSourceMode("official_snapshot")
+    expect(
+        store.radarSelectedSourceMode == "official_snapshot"
+            && store.radarDisplaySource == "official_snapshot",
+        "official results should remain browsable without a current configuration"
+    )
+    expect(
+        store.radarLeaderboardItems.map(\.id) == [officialID],
+        "the unscoped official selection should display official rows"
+    )
+
+    store.setRadarBrowseSourceMode("local_evaluation")
+    expect(
+        store.radarSelectedSourceMode == "local_evaluation"
+            && store.radarDisplaySource == "local_evaluation",
+        "local results should remain browsable without a current configuration"
+    )
+    expect(
+        store.radarLeaderboardItems.map(\.id) == [localID],
+        "the unscoped local selection should display local rows"
+    )
+}
+
+@MainActor
 private func verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdentity() throws {
     let currentID = "codex-local-default:gpt-5.6-sol:xhigh"
     let candidateID = "codex-local-default:gpt-5.6-sol:max"
@@ -1880,6 +2028,17 @@ private func verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdent
                 ],
             ]],
         ]
+        var recommendation = config["recommendation"] as! [String: Any]
+        recommendation["detected_active_session_count"] = 1
+        recommendation["active_model_sessions"] = [[
+            "id": "modeldial-evaluation",
+            "source": "codex",
+            "workspace_name": "ModelDial",
+            "model": "gpt-5.6-sol",
+            "effort": "xhigh",
+            "is_evaluation_session": true,
+        ]]
+        config["recommendation"] = recommendation
         payload["config"] = config
         var evidence = advisorEvidencePayload(
             currentID: currentID,
@@ -1896,7 +2055,7 @@ private func verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdent
             resolvedDataSource: "official_snapshot"
         )
         portfolio["resolved_data_source"] = NSNull()
-        portfolio["status"] = "needs_test"
+        portfolio["status"] = "no_usage"
         payload["recommendation_portfolio_v2"] = portfolio
         var unverifiedEntry = referenceEntryPayload(
             id: "cloudflare-reference:unverified",
@@ -1954,8 +2113,13 @@ private func verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdent
         "remote identity should match a locally keyed portfolio candidate without replacing its source id"
     )
     expect(
-        store.glancePresentation.peekLeftPrimary == "远端榜单可用",
-        "remote-only evidence should not force a local run in the capsule"
+        store.glancePresentation.state == .remoteOnlyRecommendation,
+        "an enabled local configuration without actionable portfolio evidence should use remote-only recommendation"
+    )
+    expect(
+        store.glancePresentation.peekLeftPrimary == "gpt-5.6-sol"
+            && store.glancePresentation.peekLeftSecondary == "暂无本地对比",
+        "remote-only recommendation should identify the trusted official model and explain that no local comparison exists"
     )
 }
 
@@ -2217,6 +2381,17 @@ private func verifyScanEntryPointsPreviewBackendPlans() async throws {
         if !(await quickGateway.recordedScanPreviewRequests()).isEmpty { break }
         try await Task.sleep(nanoseconds: 5_000_000)
     }
+    try await waitUntil("quick preview failure should be visible as a scan conflict") {
+        quickStore.scanConflictMessage != nil
+    }
+    expect(
+        quickStore.scanConflictMessage == StubGatewayError.expectedFailure.localizedDescription,
+        "preview errors should publish the conflict message consumed by the UI"
+    )
+    expect(
+        quickStore.scanConflictPresentation != nil,
+        "preview errors should publish a conflict presentation"
+    )
     let quickIntent = await quickGateway.recordedScanPreviewRequest()
     expect(quickIntent?.selectionMode == .regular, "regular quick scan should preview regular mode")
     expect(quickIntent?.evaluationProfileID == "quick", "regular quick scan should send only the requested profile")
@@ -2254,6 +2429,29 @@ private func verifyScanEntryPointsPreviewBackendPlans() async throws {
     expect(selectedIntent?.upgradeFromRunID == "run-quick", "selected upgrade should still preview its source run")
     expect(selectedIntent?.candidateIDs == ["candidate-b"], "explicit user candidate intent should reach the backend unchanged")
     expect(selectedIntent?.evaluationProfileID == "full", "explicit user profile intent should reach the backend unchanged")
+
+    let unavailableGateway = StubBridgeGateway(
+        patchResult: .failure(.unexpectedCall),
+        scanPreviewResult: .success(try unavailableQuickPairPreview())
+    )
+    let unavailableStore = makeStore(
+        gateway: unavailableGateway,
+        initialSnapshot: try scanPlanningSnapshot()
+    )
+    unavailableStore.selectEvaluationProfile("quick")
+    unavailableStore.startRegularScan()
+    try await waitUntil("an unavailable quick pair should be visible as a scan conflict") {
+        unavailableStore.scanConflictMessage != nil
+    }
+    expect(
+        unavailableStore.scanConflictMessage
+            == "暂无唯一可用的建议配置，请在“自定义本轮”中选择两个配置",
+        "quick pair planning failures should preserve the backend reason copy"
+    )
+    expect(
+        unavailableStore.scanConflictPresentation != nil,
+        "quick pair planning failures should publish a conflict presentation"
+    )
 }
 
 @MainActor
@@ -2985,6 +3183,7 @@ private enum AppSessionBridgeOwnershipTestMain {
             try verifyLocalRadarConsumesBackendEligibilityDecisions()
             try verifyLocalRadarRetainsLastCompletedRowsWhenCurrentConfigurationNeedsTest()
             try verifyAutoSourceUsesPortfolioResolvedOfficialIdentity()
+            try verifyRadarSourceCanBeBrowsedWithoutCurrentConfiguration()
             try verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdentity()
             try verifyAmbiguousRemoteIdentityFailsClosed()
             try await verifySuccessfulPatchPublishesExactlyOnce()

@@ -2048,6 +2048,13 @@ with exclusive_process_lock(
                 if item.id == "grok-local-default"
             ).enabled
         )
+        self.assertTrue(
+            next(
+                item
+                for item in reloaded.model_ingress.connections
+                if item.id == "grok-local-default"
+            ).local_login_verified
+        )
         grok_candidates = next(
             item
             for item in reloaded.model_ingress.connections
@@ -3376,6 +3383,21 @@ with exclusive_process_lock(
         self.assertIn('"--config-path"', bridge_source)
         self.assertIn('"--history-path"', bridge_source)
         self.assertIn('"--active-run-path"', bridge_source)
+
+    def test_acceptance_data_directory_override_is_debug_only(self) -> None:
+        root = Path(__file__).resolve().parent.parent
+        source = (root / "Sources" / "Model" / "NativeBridgeClient.swift").read_text(
+            encoding="utf-8"
+        )
+        override = source.split(
+            '"MODELDIAL_ACCEPTANCE_DATA_DIR"', 1
+        )[0].rsplit("#if DEBUG", 1)[1]
+
+        self.assertIn('"ModelDialAcceptanceDataDirectory"', override)
+        self.assertIn("Bundle.main.object(forInfoDictionaryKey:", override)
+        self.assertIn("ProcessInfo.processInfo.environment", override)
+        self.assertIn("#else", source)
+        self.assertIn("let acceptanceDataDirectory: String? = nil", source)
 
     def test_native_bridge_has_no_manual_review_mode(self) -> None:
         source = (

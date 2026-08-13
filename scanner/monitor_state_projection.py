@@ -378,6 +378,7 @@ class MonitorStateProjector:
                     cache_write_input_tokens=item.cache_write_input_tokens,
                     output_tokens=item.output_tokens,
                     reasoning_tokens=item.reasoning_tokens,
+                    reasoning_tokens_supported=item.reasoning_tokens_supported,
                     reference_cost_usd=(
                         None
                         if reprice_from_usage
@@ -401,6 +402,8 @@ class MonitorStateProjector:
                     retry_index=item.retry_index,
                     flags=list(item.flags),
                     final_status=item.final_status,
+                    evaluation_id=item.evaluation_id,
+                    execution_trace=dict(item.execution_trace),
                 )
             )
         dashboard_current_run_id = self.comparison_group_projector.group_id(

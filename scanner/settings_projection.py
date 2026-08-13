@@ -233,7 +233,10 @@ class SettingsProjectionProjector:
     ) -> tuple[str, str, str]:
         if source is None:
             return "blocked", "source_missing", "repair_configuration"
-        if source.id == "claude_local" and not connection.local_login_verified:
+        if (
+            source.id in {"claude_local", "grok_local"}
+            and not connection.local_login_verified
+        ):
             return "blocked", "local_login_unverified", "verify_local_login"
         if not source.enabled:
             return "disabled", "source_disabled", "enable_source"

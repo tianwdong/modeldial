@@ -1,0 +1,19 @@
+ModelDial 首次启动复测
+
+1. 双击“Run-ModelDial-First-Run-Diagnostics.command”。
+2. 如果 macOS 询问是否打开，选择“打开”。
+3. 如果系统询问读取本地密钥，按测试需要允许；密钥值不会写进日志包。
+4. 在 App 中随意测试，重点覆盖：
+   - 快速扫描；
+   - 全量扫描；
+   - 扫描完成后左上角切换“本机结果／官网榜单”；
+   - 右上角档位数量与实际选择是否一致；
+   - 外部 API Provider 能否发现模型、手工填写准确 Model ID 并完成连接测试；
+   - 失败或无法扫描时是否出现明确提示。
+5. 测试完成后，请从 ModelDial 的电源菜单退出 App。不要直接关闭终端窗口。
+6. 退出后 Finder 会自动定位到新生成的日志 ZIP：
+   /Users/Shared/ModelDial-First-Run-Diagnostics-用户名-时间.zip
+
+请切回原账号后告诉 Codex“已经测完”，Codex 会直接读取该 ZIP。
+
+说明：脚本会保存本轮前后的 ModelDial 配置、扫描历史、运行状态和调试日志；不会导出 Keychain 密钥值，也不会导出原始会话正文。

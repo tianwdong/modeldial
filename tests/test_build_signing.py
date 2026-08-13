@@ -78,7 +78,7 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn('-project "ModelDial.xcodeproj"', self.source)
         self.assertIn('-configuration "Release"', self.source)
         self.assertNotIn("swiftc", self.source)
-        self.assertIn("CURRENT_PROJECT_VERSION = 112;", self.project_source)
+        self.assertIn("CURRENT_PROJECT_VERSION = 113;", self.project_source)
         self.assertIn("MARKETING_VERSION = 0.1.0;", self.project_source)
         for resource in (
             "AppIcon.icns in Resources",
@@ -382,6 +382,9 @@ class BuildSigningTest(unittest.TestCase):
         self.assertIn("ssl.OPENSSL_VERSION", self.source)
         self.assertIn("ssl.get_default_verify_paths()", self.source)
         self.assertIn('cert_store_stats()["x509_ca"] > 0', self.source)
+        self.assertIn("from scanner.endpoint_client import _default_endpoint_opener", self.source)
+        self.assertIn("_default_endpoint_opener().handlers", self.source)
+        self.assertIn("any(context is not None", self.source)
         self.assertIn('BACKEND_RUNTIME_DIR="$BACKEND_DIR/Runtime"', self.source)
         self.assertIn('modeldial-backend', self.source)
 

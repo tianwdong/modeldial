@@ -106,7 +106,7 @@ class ScanTargetResolver:
                 or connections_by_id[target.connection_id].last_test_status == "ok"
             )
             and (
-                target.source_id != "claude_local"
+                target.source_id not in {"claude_local", "grok_local"}
                 or connections_by_id[target.connection_id].local_login_verified
             )
         ]

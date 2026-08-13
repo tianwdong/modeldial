@@ -222,12 +222,63 @@ class GrokBuildClientTest(unittest.TestCase):
 
         def runner(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
             calls.append((command, kwargs))
-            return subprocess.CompletedProcess(command, 0, stdout="Available models:", stderr="")
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout="You are logged in with grok.com.\n\nAvailable models:",
+                stderr="",
+            )
 
         check_grok_build_login(runner=runner)
 
         self.assertEqual(calls[0][0], ["/opt/homebrew/bin/grok", "models"])
         self.assertEqual(calls[0][1]["timeout"], 10)
+
+    @patch(
+        "scanner.grok_build_client.resolve_grok_build_executable",
+        return_value="/opt/homebrew/bin/grok",
+    )
+    def test_login_check_rejects_successful_cli_without_explicit_auth_status(
+        self,
+        resolve_mock,  # type: ignore[no-untyped-def]
+    ) -> None:
+        def runner(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout="Available models:\ngrok-4.5",
+                stderr="",
+            )
+
+        with self.assertRaises(GrokBuildError) as error:
+            check_grok_build_login(runner=runner)
+
+        self.assertEqual(error.exception.category, "authentication_required")
+        self.assertEqual(
+            error.exception.execution_trace["terminal_state"],
+            "login_status_unavailable",
+        )
+
+    @patch(
+        "scanner.grok_build_client.resolve_grok_build_executable",
+        return_value="/opt/homebrew/bin/grok",
+    )
+    def test_login_check_does_not_treat_api_key_as_user_login(
+        self,
+        resolve_mock,  # type: ignore[no-untyped-def]
+    ) -> None:
+        def runner(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout="You are using XAI_API_KEY.\n",
+                stderr="",
+            )
+
+        with self.assertRaises(GrokBuildError) as error:
+            check_grok_build_login(runner=runner)
+
+        self.assertEqual(error.exception.category, "authentication_required")
 
     @patch(
         "scanner.grok_build_client.resolve_grok_build_executable",
@@ -244,6 +295,10 @@ class GrokBuildClientTest(unittest.TestCase):
             check_grok_build_login(runner=runner)
 
         self.assertEqual(error.exception.category, "authentication_required")
+        self.assertEqual(
+            error.exception.execution_trace["terminal_state"],
+            "login_check_failed",
+        )
         self.assertNotIn("not logged in", str(error.exception))
 
 

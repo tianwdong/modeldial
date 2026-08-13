@@ -403,6 +403,26 @@ private func verifyCompactRecommendationPresentation() throws {
     )
     expect(pendingPresentation.comparisonState == .pending, "missing decision should wait for same-round comparable evidence")
     expect(pendingPresentation.metrics == nil, "pending comparison should not expose metrics")
+
+    let remoteOnlyPresentation = CompactSessionPresenter.recommendation(
+        snapshot: nil,
+        dashboard: nil,
+        portfolio: nil,
+        displaySource: "official_snapshot",
+        displayFreshness: nil,
+        leaderboardItems: [],
+        remoteOnlyDisplayName: "GPT-5.6 Sol High"
+    )
+    expect(
+        remoteOnlyPresentation.contextLabel == "官网综合推荐"
+            && remoteOnlyPresentation.title == "GPT-5.6 Sol High",
+        "remote-only compact presentation should use the official recommendation identity"
+    )
+    expect(
+        remoteOnlyPresentation.basisText == "官方榜单 · 暂无本地对比"
+            && remoteOnlyPresentation.comparisonState == .pending,
+        "remote-only compact presentation must avoid actionable local comparison copy"
+    )
 }
 
 @main

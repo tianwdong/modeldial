@@ -134,10 +134,23 @@ class ComparisonProjectionTest(unittest.TestCase):
         self.assertEqual(reverse_pair["comparison_status"], "comparable")
         self.assertEqual(reverse_pair["quality_delta_points"], 5)
 
-    def test_pairwise_projection_is_empty_without_an_authoritative_baseline(self) -> None:
+    def test_pairwise_projection_is_available_without_an_authoritative_baseline(self) -> None:
         summary = _summary(current_default_candidate_id=None)
 
-        self.assertEqual(summary["pairwise_comparisons"], [])
+        comparisons = summary["pairwise_comparisons"]
+        self.assertEqual(len(comparisons), 6)
+        self.assertEqual(
+            {
+                (item["baseline_candidate_id"], item["candidate_id"])
+                for item in comparisons
+            },
+            {
+                (baseline["candidate_id"], candidate["candidate_id"])
+                for baseline in summary["leaderboard"]
+                for candidate in summary["leaderboard"]
+                if baseline["candidate_id"] != candidate["candidate_id"]
+            },
+        )
         self.assertEqual(summary["comparison_contract"]["schema_version"], 1)
 
     def test_swift_decodes_comparison_projection_and_legacy_rank_defaults(self) -> None:

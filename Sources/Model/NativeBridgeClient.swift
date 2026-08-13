@@ -186,7 +186,18 @@ final class NativeBridgeClient {
                     atPath: $0.appendingPathComponent("scripts/native_bridge.py").path
                 )
             } ?? bundledRoot ?? developmentRoot
-        dataDirectory = fileManager.homeDirectoryForCurrentUser
+        #if DEBUG
+        let acceptanceDataDirectory = (
+            Bundle.main.object(forInfoDictionaryKey: "ModelDialAcceptanceDataDirectory")
+                as? String
+            ?? ProcessInfo.processInfo.environment["MODELDIAL_ACCEPTANCE_DATA_DIR"]
+        )?.trimmingCharacters(in: .whitespacesAndNewlines)
+        #else
+        let acceptanceDataDirectory: String? = nil
+        #endif
+        dataDirectory = acceptanceDataDirectory.flatMap { path in
+            path.isEmpty ? nil : URL(fileURLWithPath: path, isDirectory: true)
+        } ?? fileManager.homeDirectoryForCurrentUser
             .appendingPathComponent("Library", isDirectory: true)
             .appendingPathComponent("Application Support", isDirectory: true)
             .appendingPathComponent("modeldial", isDirectory: true)

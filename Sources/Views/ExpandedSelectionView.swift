@@ -52,6 +52,7 @@ struct ExpandedSelectionView: View, Equatable {
     @State private var exportErrorMessage: String?
     @State private var exportedLeaderboardURL: URL?
     @State private var pendingScanConfirmation: ScanConfirmation?
+    @State private var isRadarModelSetupNoticeDismissed = false
     @Namespace private var pageSelectionNamespace
 
     private var questionSemantics: [QuestionSemantic] {
@@ -290,7 +291,7 @@ struct ExpandedSelectionView: View, Equatable {
             return L10n.tr(
                 "将按“%@”启动新一轮扫描，共 %d 个档位。扫描会调用模型并可能产生 Token 消耗。",
                 profileLabel,
-                scanExecutionCandidateCount
+                scanModelPickerSelectedCount
             )
         case .pause:
             return L10n.tr("正在执行的请求会被终止；已完成进度会保留，可以稍后继续。")
@@ -679,13 +680,6 @@ struct ExpandedSelectionView: View, Equatable {
         ingressPresentation.selectedCandidateCount
     }
 
-    private var scanExecutionCandidateCount: Int {
-        if displayedEvaluationProfile?.id == "quick" {
-            return 2
-        }
-        return scanModelPickerSelectedCount
-    }
-
     private var scanModelSelectionIsLocked: Bool {
         ingressPresentation.selectionIsLocked
     }
@@ -1042,7 +1036,7 @@ struct ExpandedSelectionView: View, Equatable {
                     .lineLimit(1)
 
                 Spacer(minLength: 8)
-                currentModelActionButton
+                radarNoSessionAction
             }
             .padding(.vertical, 11)
         } else {
@@ -1101,6 +1095,20 @@ struct ExpandedSelectionView: View, Equatable {
             .popover(isPresented: $showsRadarSessionsPopover, arrowEdge: .leading) {
                 radarSessionsPopover
             }
+        }
+    }
+
+    @ViewBuilder
+    private var radarNoSessionAction: some View {
+        if requiresModelSetup {
+            if !isRadarModelSetupNoticeDismissed {
+                HStack(spacing: 6) {
+                    currentModelActionButton
+                    dismissRadarModelSetupButton
+                }
+            }
+        } else {
+            currentModelActionButton
         }
     }
 
@@ -1294,7 +1302,7 @@ struct ExpandedSelectionView: View, Equatable {
             )
         }
         .menuStyle(.borderlessButton)
-        .disabled(store.radarRepresentativeConfigurationID == nil || settings.isSaving)
+        .disabled(settings.isSaving)
         .help(L10n.tr("选择本页唯一数据来源"))
         .accessibilityLabel(L10n.tr("数据来源"))
         .accessibilityValue(radarSourcePresentation.accessibilityValue)
@@ -1785,7 +1793,7 @@ struct ExpandedSelectionView: View, Equatable {
     }
 
     private var showsRadarModelSetupCTA: Bool {
-        requiresModelSetup
+        requiresModelSetup && !isRadarModelSetupNoticeDismissed
     }
 
     private var radarModelSetupNotice: some View {
@@ -1821,6 +1829,8 @@ struct ExpandedSelectionView: View, Equatable {
 
             Button(L10n.tr("接入模型"), action: openModelIngress)
                 .buttonStyle(IslandActionButtonStyle(.secondary))
+
+            dismissRadarModelSetupButton
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
@@ -1830,6 +1840,21 @@ struct ExpandedSelectionView: View, Equatable {
                 .fill(IslandColor.interaction.opacity(0.14))
                 .frame(height: 0.5)
         }
+    }
+
+    private var dismissRadarModelSetupButton: some View {
+        Button {
+            isRadarModelSetupNoticeDismissed = true
+        } label: {
+            Image(systemName: "xmark")
+                .font(Typography.micro)
+                .foregroundStyle(IslandVisual.tertiaryText)
+                .frame(width: 24, height: 24)
+        }
+        .buttonStyle(.plain)
+        .islandPointerOnHover()
+        .help(L10n.tr("关闭提示"))
+        .accessibilityLabel(L10n.tr("关闭模型接入提示"))
     }
 
     private func repairNotice(entry: DisplayEntry) -> some View {
@@ -2375,8 +2400,7 @@ struct ExpandedSelectionView: View, Equatable {
                         }
                     )
                 } ?? [],
-                enabledCandidateCount: store.snapshot?.settingsProjection.scanScope
-                    .candidateCount ?? 0,
+                enabledCandidateCount: ingress?.targets.filter(\.enabled).count ?? 0,
                 runtimeIsRunning: store.snapshot?.runtime.isRunning == true,
                 hasResumableRun: store.snapshot?.runtime.hasResumableRun == true
             )
@@ -2591,8 +2615,11 @@ struct ExpandedSelectionView: View, Equatable {
     }
 
     private func setRadarSourceMode(_ sourceMode: String) {
-        guard let configurationID = store.radarRepresentativeConfigurationID else { return }
-        settings.setSourceMode(sourceMode, configurationID: configurationID)
+        if let configurationID = store.radarRepresentativeConfigurationID {
+            settings.setSourceMode(sourceMode, configurationID: configurationID)
+        } else {
+            store.setRadarBrowseSourceMode(sourceMode)
+        }
     }
 
     private var radarSurfacePresentation: RadarPresenter.SurfacePresentation {
@@ -2825,10 +2852,10 @@ struct ExpandedSelectionView: View, Equatable {
     }
 
     private var overviewModelCountText: String {
-        if requiresModelSetup {
+        if scanModelPickerSelectedCount == 0 && requiresModelSetup {
             return modelSetupHeaderText
         }
-        return L10n.tr("%lld 个已选档位", scanExecutionCandidateCount)
+        return L10n.tr("%lld 个已选档位", scanModelPickerSelectedCount)
     }
 
     private var heroAccentColor: Color {
@@ -3682,7 +3709,9 @@ private struct ComparisonPage: View {
             manualCandidateByCurrentConfigurationID: manualCandidateByCurrentConfigurationID,
             itemIDByConfigurationID: itemIDByConfigurationID,
             displaySource: displaySource,
-            sourceModeByConfigurationID: sourceModeByConfigurationID
+            sourceModeByConfigurationID: sourceModeByConfigurationID,
+            allowsLocalFreeComparison: displaySource == "local_evaluation"
+                && !pairwiseComparisons.isEmpty
         )
     }
 
@@ -3692,6 +3721,14 @@ private struct ComparisonPage: View {
 
     private var comparisonChoices: [BridgeRecommendationDecisionV2] {
         comparisonSelection.choices
+    }
+
+    private var supportsFreeComparison: Bool {
+        comparisonSelection.supportsFreeComparison
+    }
+
+    private var freeComparisonItems: [RadarLeaderboardItem] {
+        comparisonSelection.freeComparisonItems
     }
 
     private var currentItem: RadarLeaderboardItem? {
@@ -3975,15 +4012,54 @@ private struct ComparisonPage: View {
     }
 
     private var comparisonDecisionPresentation: ComparisonPresenter.DecisionPresentation {
-        ComparisonPresenter.decisionPresentation(
+        let presentation = ComparisonPresenter.decisionPresentation(
             decision: decision?.decision,
             isManualComparison: isManualComparison
+        )
+        guard supportsFreeComparison else { return presentation }
+        return ComparisonPresenter.DecisionPresentation(
+            title: displaySource == "official_snapshot"
+                ? L10n.tr("官方手动对比")
+                : L10n.tr("本地手动对比"),
+            emphasis: presentation.emphasis,
+            automaticCandidatePrefix: presentation.automaticCandidatePrefix
         )
     }
 
     @ViewBuilder
     private var comparisonCurrentControl: some View {
-        if comparisonChoices.count > 1 {
+        if supportsFreeComparison {
+            Menu {
+                ForEach(freeComparisonItems) { item in
+                    Button {
+                        selectedCurrentConfigurationID = item.id
+                    } label: {
+                        if item.id == currentItem?.id {
+                            Label(item.displayName, systemImage: "checkmark")
+                        } else {
+                            Text(item.displayName)
+                        }
+                    }
+                }
+            } label: {
+                Color.clear.frame(maxWidth: .infinity, minHeight: 28, maxHeight: 28)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .overlay(alignment: .leading) {
+                comparisonIdentity(
+                    label: L10n.tr("基线"),
+                    value: currentItem?.displayName ?? L10n.tr("选择基线"),
+                    showsChevron: true
+                )
+                .allowsHitTesting(false)
+            }
+            .help(
+                displaySource == "official_snapshot"
+                    ? L10n.tr("选择官方榜单中的对比基线")
+                    : L10n.tr("选择本地结果中的对比基线")
+            )
+        } else if comparisonChoices.count > 1 {
             Menu {
                 ForEach(comparisonChoices, id: \.currentModelConfigurationId) { choice in
                     Button {
@@ -4021,13 +4097,15 @@ private struct ComparisonPage: View {
 
     private var comparisonCandidateControl: some View {
         Menu {
-            Button {
-                setManualCandidateID(nil)
-            } label: {
-                if !isManualComparison {
-                    Label(automaticCandidateMenuLabel, systemImage: "checkmark")
-                } else {
-                    Text(automaticCandidateMenuLabel)
+            if !supportsFreeComparison {
+                Button {
+                    setManualCandidateID(nil)
+                } label: {
+                    if !isManualComparison {
+                        Label(automaticCandidateMenuLabel, systemImage: "checkmark")
+                    } else {
+                        Text(automaticCandidateMenuLabel)
+                    }
                 }
             }
 
@@ -4058,7 +4136,13 @@ private struct ComparisonPage: View {
             )
             .allowsHitTesting(false)
         }
-        .help(L10n.tr("替换本页对比候选；不改变雷达和胶囊推荐"))
+        .help(
+            supportsFreeComparison
+                ? displaySource == "official_snapshot"
+                    ? L10n.tr("选择官方榜单中的对比候选")
+                    : L10n.tr("选择本地结果中的对比候选")
+                : L10n.tr("替换本页对比候选；不改变雷达和胶囊推荐")
+        )
         .accessibilityLabel(L10n.tr("选择对比候选"))
         .accessibilityValue(candidateItem?.displayName ?? L10n.tr("暂无候选"))
     }
@@ -4073,7 +4157,9 @@ private struct ComparisonPage: View {
     }
 
     private func setManualCandidateID(_ candidateID: String?) {
-        guard let currentID = decision?.currentModelConfigurationId else { return }
+        guard let currentID = decision?.currentModelConfigurationId ?? currentItem?.id else {
+            return
+        }
         if let candidateID {
             manualCandidateByCurrentConfigurationID[currentID] = candidateID
         } else {

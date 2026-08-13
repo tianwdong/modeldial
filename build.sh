@@ -381,7 +381,7 @@ find "$BACKEND_DIR" -type f -name '.DS_Store' -delete
 MODELDIAL_BACKEND_ROOT="$BACKEND_DIR" \
   "$BACKEND_RUNTIME_DIR/modeldial-backend" \
   --modeldial-python-code \
-  'import compression.zstd, hashlib, ssl; from pathlib import Path; payload = b"modeldial-runtime-smoke"; assert compression.zstd.decompress(compression.zstd.compress(payload)) == payload; assert len(hashlib.sha256(payload).digest()) == 32; assert ssl.OPENSSL_VERSION.startswith("OpenSSL "); paths = ssl.get_default_verify_paths(); assert paths.cafile and Path(paths.cafile).is_file(); assert ssl.create_default_context().cert_store_stats()["x509_ca"] > 0' \
+  'import compression.zstd, hashlib, ssl; from pathlib import Path; from scanner.endpoint_client import _default_endpoint_opener; payload = b"modeldial-runtime-smoke"; assert compression.zstd.decompress(compression.zstd.compress(payload)) == payload; assert len(hashlib.sha256(payload).digest()) == 32; assert ssl.OPENSSL_VERSION.startswith("OpenSSL "); paths = ssl.get_default_verify_paths(); assert paths.cafile and Path(paths.cafile).is_file(); assert ssl.create_default_context().cert_store_stats()["x509_ca"] > 0; endpoint_contexts = [getattr(handler, "_context", None) for handler in _default_endpoint_opener().handlers]; assert any(context is not None and context.cert_store_stats()["x509_ca"] > 0 for context in endpoint_contexts)' \
   >/dev/null
 MODELDIAL_BACKEND_ROOT="$BACKEND_DIR" \
   "$BACKEND_RUNTIME_DIR/modeldial-backend" \

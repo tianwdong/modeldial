@@ -39,8 +39,12 @@ enum CompactSessionPresenter {
         portfolio: BridgeRecommendationPortfolioV2?,
         displaySource: String?,
         displayFreshness: String?,
-        leaderboardItems: [RadarLeaderboardItem]
+        leaderboardItems: [RadarLeaderboardItem],
+        remoteOnlyDisplayName: String? = nil
     ) -> CompactRecommendationPresentation {
+        if let remoteOnlyDisplayName {
+            return remoteOnlyPresentation(displayName: remoteOnlyDisplayName)
+        }
         let effectiveDisplaySource: String?
         if displaySource == "official_snapshot" {
             effectiveDisplaySource = snapshot?.referenceSnapshotFeed.trustedLatest == nil
@@ -144,6 +148,19 @@ enum CompactSessionPresenter {
             comparisonState: comparisonState,
             basisText: L10n.tr("%@%@ · %@", sourceText, timestamp, completeness),
             freshnessText: freshnessText
+        )
+    }
+
+    private static func remoteOnlyPresentation(
+        displayName: String
+    ) -> CompactRecommendationPresentation {
+        CompactRecommendationPresentation(
+            contextLabel: L10n.tr("官网综合推荐"),
+            title: displayName,
+            tone: .unavailable,
+            comparisonState: .pending,
+            basisText: L10n.tr("官方榜单 · 暂无本地对比"),
+            freshnessText: ""
         )
     }
 

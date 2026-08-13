@@ -768,6 +768,7 @@ enum OperationalStatePresenter {
         case .freshRecommendation: return nil
         case .staleRecommendation: return L10n.tr("结果需要更新")
         case .expiredRecommendation: return L10n.tr("结果已过期，请重扫")
+        case .remoteOnlyRecommendation: return L10n.tr("官网综合推荐")
         case .neverScanned: return L10n.tr("等待有效扫描结果")
         }
     }
@@ -822,6 +823,8 @@ enum OperationalStatePresenter {
             return L10n.tr("结果不是最新一轮，请重扫后再决定是否切换。")
         case .expiredRecommendation:
             return L10n.tr("历史结果已超过有效期，不应再用于切换决策。")
+        case .remoteOnlyRecommendation:
+            return L10n.tr("暂无本地对比，仅供浏览官方榜单。")
         case .neverScanned:
             return L10n.tr("等待首次扫描。")
         }
@@ -859,6 +862,7 @@ enum OperationalStatePresenter {
         case .degradedRecommendation: return L10n.tr("部分结果异常")
         case .staleRecommendation: return L10n.tr("历史结果")
         case .expiredRecommendation: return L10n.tr("结果已过期")
+        case .remoteOnlyRecommendation: return L10n.tr("官方榜单")
         case .neverScanned: return L10n.tr("等待扫描")
         case .freshRecommendation:
             if input.best?.evidenceState == "retained_after_failure" {
@@ -921,6 +925,7 @@ enum OperationalStatePresenter {
         case .degradedRecommendation: return "需谨慎"
         case .backendUnavailableWithoutCache, .recommendationUnavailable,
              .failedWithoutRecommendation, .expiredRecommendation: return "不可用"
+        case .remoteOnlyRecommendation: return "仅供参考"
         case .freshRecommendation, .neverScanned:
             return input.best?.confidenceLabel ?? "低"
         }

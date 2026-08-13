@@ -105,16 +105,9 @@ def _apply_operation(
                 f"unknown candidate_ids for connection {connection.id}: "
                 + ", ".join(missing)
             )
-        expanded_verified_scope = False
         for candidate_id in candidate_ids:
             candidate = candidates_by_id[candidate_id]
-            expanded_verified_scope = (
-                expanded_verified_scope or enabled and not candidate.enabled
-            )
             candidate.enabled = enabled
-        if expanded_verified_scope and connection.api_format is not None:
-            connection.last_test_status = "untested"
-            connection.last_test_message = "启用范围已变更，请重新测试"
         return
 
     if operation == "connection_enabled":

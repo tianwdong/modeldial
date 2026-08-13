@@ -19,9 +19,11 @@ enum ComparisonSelectionPresenter {
         let selectableManualCandidates: [RadarLeaderboardItem]
         let choiceLabelsByCurrentID: [String: String]
         let itemIDByConfigurationID: [String: String]
+        let supportsFreeComparison: Bool
+        let freeComparisonItems: [RadarLeaderboardItem]
 
         var isManualComparison: Bool {
-            selectedManualCandidateID != nil
+            supportsFreeComparison || selectedManualCandidateID != nil
         }
 
         func choiceLabel(for decision: BridgeRecommendationDecisionV2) -> String {
@@ -67,7 +69,8 @@ enum ComparisonSelectionPresenter {
         manualCandidateByCurrentConfigurationID: [String: String],
         itemIDByConfigurationID: [String: String] = [:],
         displaySource: String? = nil,
-        sourceModeByConfigurationID: [String: String] = [:]
+        sourceModeByConfigurationID: [String: String] = [:],
+        allowsLocalFreeComparison: Bool = false
     ) -> Selection {
         let itemByID = Dictionary(
             items.map { ($0.id, $0) },
@@ -92,6 +95,30 @@ enum ComparisonSelectionPresenter {
                 configurationIDs: configurationIDs,
                 displaySource: displaySource,
                 sourceModeByConfigurationID: sourceModeByConfigurationID
+            )
+        }
+        let supportsFreeComparison = displaySource == "official_snapshot"
+            || (displaySource == "local_evaluation" && allowsLocalFreeComparison)
+        if supportsFreeComparison, items.count >= 2 {
+            let baseline = selectedCurrentConfigurationID.flatMap { itemByID[$0] }
+                ?? items[0]
+            let defaultCandidate = items.first { $0.id != baseline.id }
+            let selectedCandidate = manualCandidateByCurrentConfigurationID[baseline.id]
+                .flatMap { itemByID[$0] }
+                .flatMap { $0.id == baseline.id ? nil : $0 }
+                ?? defaultCandidate
+            return Selection(
+                choices: [],
+                decision: nil,
+                currentItem: baseline,
+                automaticCandidateItem: nil,
+                selectedManualCandidateID: selectedCandidate?.id,
+                candidateItem: selectedCandidate,
+                selectableManualCandidates: items.filter { $0.id != baseline.id },
+                choiceLabelsByCurrentID: [:],
+                itemIDByConfigurationID: itemIDByConfigurationID,
+                supportsFreeComparison: true,
+                freeComparisonItems: items
             )
         }
         let sourceChoices = decisions.isEmpty
@@ -175,7 +202,9 @@ enum ComparisonSelectionPresenter {
                 },
                 uniquingKeysWith: { first, _ in first }
             ),
-            itemIDByConfigurationID: itemIDByConfigurationID
+            itemIDByConfigurationID: itemIDByConfigurationID,
+            supportsFreeComparison: false,
+            freeComparisonItems: []
         )
     }
 

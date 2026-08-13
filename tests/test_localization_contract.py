@@ -451,6 +451,7 @@ class LocalizationContractTest(unittest.TestCase):
             "常规扫描档位": "Regular scan profiles",
             "目录档位": "Catalog profiles",
             "已启用档位": "Enabled profiles",
+            "已启用／目录档位": "Enabled / catalog profiles",
             "已选择 %@/%@ 个档位": "%@/%@ profiles selected",
             "档位": "Profiles",
         }
@@ -484,6 +485,9 @@ class LocalizationContractTest(unittest.TestCase):
             "整组开启": "All enabled",
             "整组关闭": "All disabled",
             "部分开启": "Partially enabled",
+            "网络连接失败；仍可手工填写准确的 Model ID。": (
+                "Network connection failed. You can still enter the exact Model ID manually."
+            ),
         }
         for key, expected in expected_english.items():
             with self.subTest(key=key):

@@ -368,6 +368,8 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
             ".accessibilityValue(radarSourcePresentation.accessibilityValue)",
             source_control,
         )
+        self.assertNotIn("store.radarRepresentativeConfigurationID == nil", source_control)
+        self.assertIn("store.setRadarBrowseSourceMode(sourceMode)", self.source)
         self.assertIn("RadarPresenter.sourceLabels(", self.source)
 
     def test_radar_models_keep_official_and_local_sources_separate(self) -> None:
@@ -809,29 +811,25 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
             "private var heroAccentColor",
         )
         self.assertIn(
-            'return L10n.tr("%lld 个已选档位", scanExecutionCandidateCount)',
+            "if scanModelPickerSelectedCount == 0 && requiresModelSetup",
+            count_source,
+        )
+        self.assertIn(
+            'return L10n.tr("%lld 个已选档位", scanModelPickerSelectedCount)',
             count_source,
         )
         self.assertNotIn("detailEntries.count", count_source)
         self.assertNotIn("个可比较档位", count_source)
         self.assertNotIn("本轮 Q1～Q5", self.source)
 
-        execution_count_source = self._section(
-            self.source,
-            "private var scanExecutionCandidateCount: Int {",
-            "private var scanModelSelectionIsLocked",
-        )
-        self.assertIn('displayedEvaluationProfile?.id == "quick"', execution_count_source)
-        self.assertIn("return 2", execution_count_source)
-        self.assertIn("return scanModelPickerSelectedCount", execution_count_source)
+        self.assertNotIn("scanExecutionCandidateCount", self.source)
 
         confirmation_source = self._section(
             self.source,
             "private func scanConfirmationMessage(",
             "private var exportErrorIsPresented",
         )
-        self.assertIn("scanExecutionCandidateCount", confirmation_source)
-        self.assertNotIn("scanModelPickerSelectedCount", confirmation_source)
+        self.assertIn("scanModelPickerSelectedCount", confirmation_source)
 
     def test_zero_scan_candidate_state_is_driven_by_loaded_model_ingress(self) -> None:
         state_source = self._section(
@@ -845,10 +843,10 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertNotIn("settings.draftConfig", state_source)
         self.assertIn("OperationalStatePresenter.ingress(", state_source)
         self.assertIn(
-            "enabledCandidateCount: store.snapshot?.settingsProjection.scanScope",
+            r"enabledCandidateCount: ingress?.targets.filter(\.enabled).count ?? 0",
             state_source,
         )
-        self.assertNotIn(r"targets.filter(\.enabled)", state_source)
+        self.assertNotIn("settingsProjection.scanScope", state_source)
         self.assertIn("private var requiresModelSetup: Bool", state_source)
         self.assertIn("ingressPresentation.requiresModelSetup", state_source)
         self.assertNotIn("enabledModelCandidateCount == 0", state_source)
@@ -885,6 +883,53 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
             "let modelSetupNoticeHeight: CGFloat = showsRadarModelSetupCTA ? 74 : 0",
             sizing_source,
         )
+
+    def test_first_run_model_setup_notice_is_session_dismissible(self) -> None:
+        self.assertIn(
+            "@State private var isRadarModelSetupNoticeDismissed = false",
+            self.source,
+        )
+        self.assertIn(
+            "requiresModelSetup && !isRadarModelSetupNoticeDismissed",
+            self.source,
+        )
+        notice_source = self._section(
+            self.source,
+            "private var radarModelSetupNotice: some View {",
+            "private func repairNotice",
+        )
+        self.assertIn("isRadarModelSetupNoticeDismissed = true", notice_source)
+        self.assertIn('L10n.tr("关闭模型接入提示")', notice_source)
+        session_source = self._section(
+            self.source,
+            "private var radarSessionSummary: some View {",
+            "private var radarNoSessionAction: some View {",
+        )
+        self.assertIn("radarNoSessionAction", session_source)
+        no_session_action = self._section(
+            self.source,
+            "private var radarNoSessionAction: some View {",
+            "private func radarSessionSummaryPreview(",
+        )
+        self.assertIn("if requiresModelSetup", no_session_action)
+        self.assertIn("!isRadarModelSetupNoticeDismissed", no_session_action)
+        self.assertIn("dismissRadarModelSetupButton", no_session_action)
+        self.assertIn("currentModelActionButton", no_session_action)
+
+    def test_official_comparison_exposes_free_baseline_and_candidate_selection(self) -> None:
+        presenter_source = self.comparison_selection_presenter_source
+        comparison_source = self.source.split(
+            "private struct ComparisonPage: View {", 1
+        )[1]
+        self.assertIn("supportsFreeComparison", presenter_source)
+        self.assertIn('displaySource == "official_snapshot"', presenter_source)
+        self.assertIn('displaySource == "local_evaluation"', presenter_source)
+        self.assertIn("allowsLocalFreeComparison", presenter_source)
+        self.assertIn("freeComparisonItems", presenter_source)
+        self.assertIn("if supportsFreeComparison", comparison_source)
+        self.assertIn('label: L10n.tr("基线")', comparison_source)
+        self.assertIn('L10n.tr("选择官方榜单中的对比候选")', comparison_source)
+        self.assertIn('L10n.tr("选择本地结果中的对比候选")', comparison_source)
 
     def test_zero_scan_candidate_primary_actions_open_model_ingress(self) -> None:
         current_model_source = self._section(

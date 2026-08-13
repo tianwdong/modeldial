@@ -124,7 +124,7 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         self.assertIn('bundle_has_quarantine_metadata "$zip_app"', self.source)
 
     def test_artifacts_are_versioned_arm64_dmg_zip_and_checksums(self) -> None:
-        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.13}"', self.source)
+        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.14}"', self.source)
         self.assertIn('artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"', self.source)
         self.assertIn('dmg_name="${artifact_prefix}-macos-arm64.dmg"', self.source)
         self.assertIn(

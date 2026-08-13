@@ -220,7 +220,7 @@ class ConfigCommand:
                 raise ValueError("local provider defaults are missing")
             source.enabled = True
             connection.enabled = True
-            if provider_id == "claude":
+            if provider_id in {"claude", "grok"}:
                 connection.local_login_verified = True
             return config
 

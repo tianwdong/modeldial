@@ -542,10 +542,7 @@ def build_dashboard_summary(
         metadata,
         current_run_id=current_run_id,
     )
-    pairwise_comparisons = _build_pairwise_comparisons(
-        leaderboard,
-        baseline_candidate_id=current_default_candidate_id,
-    )
+    pairwise_comparisons = _build_pairwise_comparisons(leaderboard)
     provisional_leader = (
         _build_provisional_leader(
             leaderboard,
@@ -1096,22 +1093,7 @@ def _canonical_rank_score(
 
 def _build_pairwise_comparisons(
     leaderboard: list[dict[str, object]],
-    *,
-    baseline_candidate_id: str | None,
 ) -> list[dict[str, object]]:
-    if not baseline_candidate_id:
-        return []
-    baseline = next(
-        (
-            entry
-            for entry in leaderboard
-            if str(entry.get("candidate_id") or "") == baseline_candidate_id
-        ),
-        None,
-    )
-    if baseline is None:
-        return []
-
     comparisons: list[dict[str, object]] = []
     for baseline_entry in leaderboard:
         baseline_id = str(baseline_entry.get("candidate_id") or "")

@@ -130,7 +130,7 @@ struct IngressReadiness {
                 ? L10n.tr("先发现或手工添加模型。")
                 : L10n.tr("至少开启一个扫描档位。")
         case .needsBaseline:
-            return L10n.tr("模型已经准备好；完成首次扫描后即可参与推荐。")
+            return L10n.tr("配置已经完成；首次扫描会直接生成雷达结果，无需再扫描一轮。")
         case .ready:
             return L10n.tr("已有本轮题目的扫描成绩，可以参与推荐比较。")
         }

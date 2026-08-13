@@ -510,6 +510,68 @@ private func verifyComparisonSelectionPresenter() {
         "comparison evidence should use the resolved remote candidate id"
     )
 
+    let officialItems = [
+        leaderboardItem(id: "official:first"),
+        leaderboardItem(id: "official:second"),
+        leaderboardItem(id: "official:third"),
+    ]
+    let officialFreeSelection = ComparisonSelectionPresenter.select(
+        items: officialItems,
+        representativeDecision: nil,
+        decisions: [],
+        selectedCurrentConfigurationID: nil,
+        manualCandidateByCurrentConfigurationID: [:],
+        displaySource: "official_snapshot"
+    )
+    expect(
+        officialFreeSelection.supportsFreeComparison,
+        "official snapshots with two or more rows should enable free comparison"
+    )
+    expect(
+        officialFreeSelection.currentItem?.id == "official:first"
+            && officialFreeSelection.candidateItem?.id == "official:second",
+        "official free comparison should default to the first two leaderboard rows"
+    )
+    expect(
+        officialFreeSelection.isManualComparison
+            && officialFreeSelection.selectableManualCandidates.map(\.id)
+                == ["official:second", "official:third"],
+        "official free comparison should expose every other row as a manual candidate"
+    )
+    let switchedOfficialFreeSelection = ComparisonSelectionPresenter.select(
+        items: officialItems,
+        representativeDecision: nil,
+        decisions: [],
+        selectedCurrentConfigurationID: "official:second",
+        manualCandidateByCurrentConfigurationID: ["official:second": "official:third"],
+        displaySource: "official_snapshot"
+    )
+    expect(
+        switchedOfficialFreeSelection.currentItem?.id == "official:second"
+            && switchedOfficialFreeSelection.candidateItem?.id == "official:third",
+        "official free comparison should allow any baseline and candidate pair"
+    )
+
+    let localFreeItems = [
+        leaderboardItem(id: "local:first"),
+        leaderboardItem(id: "local:second"),
+    ]
+    let localFreeSelection = ComparisonSelectionPresenter.select(
+        items: localFreeItems,
+        representativeDecision: nil,
+        decisions: [],
+        selectedCurrentConfigurationID: nil,
+        manualCandidateByCurrentConfigurationID: [:],
+        displaySource: "local_evaluation",
+        allowsLocalFreeComparison: true
+    )
+    expect(
+        localFreeSelection.supportsFreeComparison
+            && localFreeSelection.currentItem?.id == "local:first"
+            && localFreeSelection.candidateItem?.id == "local:second",
+        "local evidence with pairwise data should support comparison without a current model"
+    )
+
     let localDataset = ComparisonSelectionPresenter.dataset(
         usesLocalDataset: true,
         usesOfficialSnapshot: false,

@@ -104,6 +104,15 @@ class ScanPlanPreviewQuery:
         )
         normalized = list(dict.fromkeys(candidate_ids or []))
         if len(normalized) != 2:
+            normalized = list(
+                dict.fromkeys(
+                    target.candidate_id
+                    for target in self.service.scan_target_resolver.enabled_targets(
+                        self.service.load_config()
+                    )
+                )
+            )
+        if len(normalized) != 2:
             raise ScanPlanningError(
                 "quick_recommendation_pair_unavailable",
                 "暂无唯一可用的建议配置，请在“自定义本轮”中选择两个配置",

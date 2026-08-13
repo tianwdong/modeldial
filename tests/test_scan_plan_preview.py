@@ -327,6 +327,33 @@ class ScanPlanPreviewQueryTest(unittest.TestCase):
         self.assertEqual(preview["effective_candidate_ids"], candidate_ids)
         self.assertEqual(preview["execution_candidate_ids"], candidate_ids)
 
+    def test_regular_quick_preview_uses_exactly_two_enabled_targets_without_a_pair(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            service = _service(root)
+            config = service.config_store.load()
+            service.config_store.save(config)
+            targets = service.scan_target_resolver.enabled_targets(config)[:2]
+            candidate_ids = [target.candidate_id for target in targets]
+
+            with patch.object(
+                service.scan_target_resolver,
+                "enabled_targets",
+                return_value=targets,
+            ):
+                preview = _preview_query(
+                    service,
+                    quick_candidate_ids_provider=lambda: None,
+                ).build_preview(
+                    selection_mode="regular",
+                    evaluation_profile_id="quick",
+                )
+
+        self.assertTrue(preview["valid"])
+        self.assertEqual(preview["requested_candidate_ids"], candidate_ids)
+        self.assertEqual(preview["effective_candidate_ids"], candidate_ids)
+        self.assertEqual(preview["execution_candidate_ids"], candidate_ids)
+
     def test_regular_quick_preview_rejects_a_missing_backend_pair(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             service = _service(Path(temp_dir))

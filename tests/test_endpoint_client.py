@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import io
 import hashlib
+import os
 from http.client import RemoteDisconnected
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -17,6 +19,7 @@ from scanner.endpoint_client import (
     EndpointError,
     EndpointRequest,
     _EndpointRedirectHandler,
+    _default_endpoint_opener,
     _isolated_worker_main,
     build_endpoint_request,
     discover_model_catalog,
@@ -88,6 +91,22 @@ CHAT_SUCCESS = {
 
 
 class EndpointClientTest(unittest.TestCase):
+    def tearDown(self) -> None:
+        _default_endpoint_opener.cache_clear()
+
+    @patch("scanner.endpoint_client.build_opener")
+    def test_default_endpoint_opener_is_created_lazily(self, build_opener) -> None:  # type: ignore[no-untyped-def]
+        opener = object()
+        build_opener.return_value = opener
+        _default_endpoint_opener.cache_clear()
+
+        self.assertIs(_default_endpoint_opener(), opener)
+        self.assertIs(_default_endpoint_opener(), opener)
+
+        build_opener.assert_called_once()
+        redirect_handler = build_opener.call_args.args[0]
+        self.assertIsInstance(redirect_handler, _EndpointRedirectHandler)
+
     def test_default_redirect_handler_keeps_auth_on_same_origin_redirect(self) -> None:
         request = Request(
             "https://example.com/v1/chat/completions",
@@ -162,6 +181,24 @@ class EndpointClientTest(unittest.TestCase):
 
         self.assertEqual(error.exception.category, "invalid_response")
 
+    def test_model_discovery_remote_disconnect_is_network_error(self) -> None:
+        def urlopen(*_: object, **__: object) -> FakeResponse:
+            raise RemoteDisconnected("proxy token=api-secret")
+
+        with self.assertRaises(EndpointError) as error:
+            discover_models(
+                "https://example.com/v1",
+                "api-secret",
+                urlopen=urlopen,
+            )
+
+        self.assertEqual(error.exception.category, "network_error")
+        self.assertEqual(
+            error.exception.diagnostics,
+            {"exception_type": "RemoteDisconnected"},
+        )
+        self.assertNotIn("api-secret", str(error.exception.diagnostics))
+
     @patch("scanner.endpoint_client.MAX_SSE_RESPONSE_BYTES", 24)
     def test_sse_total_response_budget_fails_closed(self) -> None:
         with self.assertRaises(EndpointError) as error:
@@ -227,6 +264,72 @@ class EndpointClientTest(unittest.TestCase):
         self.assertEqual(process_input["api_key"], "api-secret")
         self.assertEqual(result.text, "21")
         self.assertEqual(result.cached_input_tokens, 6)
+
+    @patch("scanner.endpoint_client.is_frozen_runtime", return_value=True)
+    @patch("scanner.endpoint_client.module_worker_command")
+    def test_frozen_isolated_request_fixture_worker_succeeds_with_backend_root(
+        self,
+        module_command,
+        _is_frozen,
+    ) -> None:  # type: ignore[no-untyped-def]
+        expected_output = json.dumps({"ok": True, "payload": CHAT_SUCCESS})
+        fixture_code = (
+            "import json, os, sys\n"
+            "assert os.environ.get('MODELDIAL_BACKEND_ROOT') == "
+            "'/tmp/modeldial-backend'\n"
+            "assert 'MODELDIAL_DATA_DIR' not in os.environ\n"
+            "assert 'OPENAI_API_KEY' not in os.environ\n"
+            "json.load(sys.stdin)\n"
+            f"print({expected_output!r})\n"
+        )
+        module_command.return_value = [sys.executable, "-c", fixture_code]
+
+        with patch.dict(
+            os.environ,
+            {
+                "MODELDIAL_BACKEND_ROOT": "/tmp/modeldial-backend",
+                "MODELDIAL_DATA_DIR": "/must-not-pass",
+                "OPENAI_API_KEY": "must-not-pass",
+            },
+            clear=True,
+        ):
+            result = run_endpoint_request_isolated(
+                target(),
+                "return 21",
+                "api-secret",
+            )
+
+        module_command.assert_called_once_with(
+            "scanner.endpoint_client",
+            "--execute-request",
+        )
+        self.assertEqual(result.text, "21")
+
+    @patch("scanner.endpoint_client.is_frozen_runtime", return_value=False)
+    @patch("scanner.endpoint_client.subprocess.run")
+    def test_non_frozen_isolated_request_does_not_forward_backend_root(
+        self,
+        run,
+        _is_frozen,
+    ) -> None:  # type: ignore[no-untyped-def]
+        run.return_value = subprocess.CompletedProcess(
+            args=[],
+            returncode=0,
+            stdout=json.dumps({"ok": True, "payload": CHAT_SUCCESS}),
+            stderr="",
+        )
+
+        with patch.dict(
+            os.environ,
+            {"MODELDIAL_BACKEND_ROOT": "/tmp/modeldial-backend"},
+            clear=True,
+        ):
+            run_endpoint_request_isolated(target(), "return 21", "api-secret")
+
+        self.assertNotIn(
+            "MODELDIAL_BACKEND_ROOT",
+            run.call_args.kwargs["env"],
+        )
 
     def test_response_usage_preserves_cached_input_tokens(self) -> None:
         result = parse_endpoint_response(

@@ -10,7 +10,7 @@ from scanner.active_run_store import ActiveRunStore
 from scanner.config_application import ConfigApplicationService, ConfigCommand
 from scanner.config_store import ConfigStore
 from scanner.endpoint_client import EndpointResult
-from scanner.models import ConnectionConfig, ModelCandidateConfig
+from scanner.models import AppConfig, ConnectionConfig, ModelCandidateConfig
 
 
 class ConfigCommandTest(unittest.TestCase):
@@ -78,6 +78,30 @@ class ConfigCommandTest(unittest.TestCase):
                 if connection.id == "codex-local-default"
             ).enabled
         )
+
+    def test_unverified_legacy_grok_disables_ingress_without_dropping_candidates(self) -> None:
+        payload = AppConfig.default().to_dict()
+        for source in payload["model_ingress"]["sources"]:  # type: ignore[index]
+            if source["id"] == "grok_local":  # type: ignore[index]
+                source["enabled"] = True  # type: ignore[index]
+        for connection in payload["model_ingress"]["connections"]:  # type: ignore[index]
+            if connection["id"] != "grok-local-default":  # type: ignore[index]
+                continue
+            connection["enabled"] = True  # type: ignore[index]
+            for candidate in connection["model_candidates"]:  # type: ignore[index]
+                candidate["enabled"] = True  # type: ignore[index]
+
+        config = AppConfig.from_dict(payload)
+        source = next(item for item in config.model_ingress.sources if item.id == "grok_local")
+        connection = next(
+            item
+            for item in config.model_ingress.connections
+            if item.id == "grok-local-default"
+        )
+
+        self.assertFalse(source.enabled)
+        self.assertFalse(connection.enabled)
+        self.assertTrue(all(candidate.enabled for candidate in connection.model_candidates))
 
     def test_verify_endpoint_records_only_the_safe_result(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

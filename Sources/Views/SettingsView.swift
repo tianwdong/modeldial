@@ -1712,7 +1712,13 @@ struct SettingsView: View {
     ) -> some View {
         HStack(spacing: LayoutRhythm.standard) {
             Image(systemName: provider.providerId == "codex" ? "terminal.fill" : "sparkles")
-                .foregroundStyle(provider.detected ? IslandColor.liveTeal : IslandVisual.tertiaryText)
+                .foregroundStyle(
+                    isImported
+                        ? IslandColor.liveTeal
+                        : provider.detected
+                        ? IslandColor.alertAmber
+                        : IslandVisual.tertiaryText
+                )
                 .frame(width: 24)
             VStack(alignment: .leading, spacing: 4) {
                 Text(provider.displayName)
@@ -1791,6 +1797,9 @@ struct SettingsView: View {
             return L10n.tr("本机适配器尚未接入")
         }
         if provider.status == "login_check_required" {
+            if provider.providerId == "grok" {
+                return L10n.tr("已检测到 Grok Build CLI，需验证登录")
+            }
             return L10n.tr(provider.statusMessage)
         }
         if provider.detected { return L10n.tr("已检测到本机登录态") }
@@ -2194,11 +2203,8 @@ struct SettingsView: View {
             .font(Typography.micro)
             .foregroundStyle(IslandColor.alertAmber)
         case .scanBaseline:
-            Button("扫描所选档位") {
-                selectionStore.startIngressCandidateScan(
-                    candidateIDs: readiness.enabledCandidateIDs,
-                    conflictPresentation: .settings
-                )
+            Button("开始首次扫描") {
+                selectionStore.startRegularScan(conflictPresentation: .settings)
             }
             .buttonStyle(IslandActionButtonStyle(.primary))
             .disabled(settings.isSaving)
@@ -2298,6 +2304,7 @@ struct SettingsView: View {
         guard item.source.mode == "local" else { return true }
         guard item.source.enabled && item.connection.enabled else { return false }
         return item.source.kind != "claude_code"
+            && item.source.kind != "grok_build"
             || item.connection.localLoginVerified == true
     }
 

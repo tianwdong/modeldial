@@ -3164,6 +3164,23 @@
         }
       }
     },
+    "已启用／目录档位": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enabled / catalog profiles"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已启用／目录档位"
+          }
+        }
+      }
+    },
     "已安全保存": {
       "extractionState": "manual",
       "localizations": {
@@ -12344,6 +12361,7 @@
         }
       }
     },
+    "配置已经完成；首次扫描会直接生成雷达结果，无需再扫描一轮。": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Setup is complete. The first scan directly generates Radar results, so no second scan is needed."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"配置已经完成；首次扫描会直接生成雷达结果，无需再扫描一轮。"}}}},
     "模型范围已变化：新增 %lld 个、移除 %lld 个。补全当前选择会复用已有题目结果，仅执行当前 %lld 个模型缺失的题目；已移除模型仍保留在历史表现。": {
       "extractionState": "manual",
       "localizations": {
@@ -15486,6 +15504,7 @@
     "先选模型簇和档位，再保存连接；未命中的模型仍可在下方手工补充。": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Select model families and profiles before saving the connection. You can add any unlisted models manually below."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"先选模型簇和档位，再保存连接；未命中的模型仍可在下方手工补充。"}}}},
     "关闭后不再参与常规扫描": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Exclude from regular scans when disabled"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"关闭后不再参与常规扫描"}}}},
     "准确的 Model ID": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Exact Model ID"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"准确的 Model ID"}}}},
+    "网络连接失败；仍可手工填写准确的 Model ID。": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Network connection failed. You can still enter the exact Model ID manually."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"网络连接失败；仍可手工填写准确的 Model ID。"}}}},
     "删除连接": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Delete connection"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"删除连接"}}}},
     "删除连接？": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Delete connection?"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"删除连接？"}}}},
     "前往模型接入": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Go to Model Connections"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"前往模型接入"}}}},
@@ -15511,6 +15530,7 @@
     "已配置模型会保留；此处只用于新增模型，未命中的模型仍可在下方手工补充。": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Configured models are preserved. This section only adds models; you can add any unlisted models manually below."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"已配置模型会保留；此处只用于新增模型，未命中的模型仍可在下方手工补充。"}}}},
     "开启后参与常规扫描": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Include in regular scans when enabled"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"开启后参与常规扫描"}}}},
     "开始首次扫描": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Run the first scan"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"开始首次扫描"}}}},
+    "本地手动对比": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Manual local comparison"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"本地手动对比"}}}},
     "恢复自动识别": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Restore automatic detection"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"恢复自动识别"}}}},
     "打开图片": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Open image"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"打开图片"}}}},
     "扫描所选档位": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Scan selected profiles"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"扫描所选档位"}}}},
@@ -15632,6 +15652,23 @@
     "%.1f 秒": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"%.1f seconds"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"%.1f 秒"}}}},
     "（部分）": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":" (partial)"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"（部分）"}}}},
     "等待比较证据": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Waiting for comparison results"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"等待比较证据"}}}},
+    "glance.accessibility.remote_only_recommendation": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Official balanced recommendation %@; no local comparison yet"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"官网综合推荐模型 %@，暂无本地对比"}}}},
+    "官网综合推荐": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Official balanced recommendation"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"官网综合推荐"}}}},
+    "官方综合推荐": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Official balanced recommendation"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"官方综合推荐"}}}},
+    "官方榜单 · 暂无本地对比": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Official leaderboard · No local comparison yet"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"官方榜单 · 暂无本地对比"}}}},
+    "暂无本地对比": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"No local comparison yet"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"暂无本地对比"}}}},
+    "暂无本地对比，仅供浏览官方榜单。": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"No local comparison yet; browse the official leaderboard for reference only."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"暂无本地对比，仅供浏览官方榜单。"}}}},
+    "官方榜单": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Official leaderboard"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"官方榜单"}}}},
+    "关闭提示": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Dismiss"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"关闭提示"}}}},
+    "关闭模型接入提示": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Dismiss model setup notice"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"关闭模型接入提示"}}}},
+    "官方手动对比": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Manual official comparison"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"官方手动对比"}}}},
+    "基线": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Baseline"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"基线"}}}},
+    "选择基线": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Select baseline"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"选择基线"}}}},
+    "选择官方榜单中的对比基线": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Select a baseline from the official leaderboard"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"选择官方榜单中的对比基线"}}}},
+    "选择官方榜单中的对比候选": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Select a comparison candidate from the official leaderboard"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"选择官方榜单中的对比候选"}}}},
+    "选择本地结果中的对比候选": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Select a comparison candidate from local results"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"选择本地结果中的对比候选"}}}},
+    "选择本地结果中的对比基线": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Select a baseline from local results"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"选择本地结果中的对比基线"}}}},
+    "已检测到 Grok Build CLI，需验证登录": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Grok Build CLI detected; login verification required"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"已检测到 Grok Build CLI，需验证登录"}}}},
     "unknown": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Not available"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"暂不可用"}}}}
   },
   "version": "1.0"

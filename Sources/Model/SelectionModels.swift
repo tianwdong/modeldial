@@ -1391,7 +1391,11 @@ struct BridgeModelIngress: Decodable {
             let connectionAvailable = source?.enabled == true
                 && connection.enabled
                 && (source?.mode != "api" || connection.lastTestStatus == "ok")
-                && (connection.sourceId != "claude_local" || connection.localLoginVerified == true)
+                && (
+                    connection.sourceId != "claude_local"
+                        && connection.sourceId != "grok_local"
+                    || connection.localLoginVerified == true
+                )
             return connection.modelCandidates.map { candidate in
                 BridgeTarget(
                     id: candidate.id,
@@ -1412,7 +1416,11 @@ struct BridgeModelIngress: Decodable {
         return connections.compactMap { connection in
             guard let source = sourcesByID[connection.sourceId],
                   source.mode != "api" || connection.lastTestStatus == "ok",
-                  connection.sourceId != "claude_local" || connection.localLoginVerified == true else {
+                  (
+                      connection.sourceId != "claude_local"
+                          && connection.sourceId != "grok_local"
+                      || connection.localLoginVerified == true
+                  ) else {
                 return nil
             }
             guard let apiKeyRef = connection.apiKeyRef,

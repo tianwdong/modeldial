@@ -70,6 +70,7 @@ class LocalProviderDetectionTest(unittest.TestCase):
         self.assertTrue(grok.detected)
         self.assertTrue(grok.importable)
         self.assertEqual(grok.status, "login_check_required")
+        self.assertIn("需验证登录", grok.status_message)
         self.assertEqual(grok.source_id, "grok_local")
         self.assertEqual(grok.connection_id, "grok-local-default")
         self.assertNotIn("token", str(grok.to_dict()))

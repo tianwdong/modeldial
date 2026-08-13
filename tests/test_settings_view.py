@@ -844,6 +844,8 @@ class SettingsViewSourceTest(unittest.TestCase):
         self.assertIn("var configuredDiscoveredModelIDs", endpoint_state_source)
         self.assertIn("response.newModels", store_source)
         self.assertIn("response.configuredModels", store_source)
+        self.assertIn("response.manualEntryAllowed", store_source)
+        self.assertIn("仍可手工填写准确的 Model ID。", store_source)
         self.assertIn('Text("新增模型")', self.source)
         self.assertIn('Text("已配置")', self.source)
         self.assertIn('Button("加入配置")', self.source)
@@ -1407,7 +1409,7 @@ class SettingsViewSourceTest(unittest.TestCase):
             "totalCandidateCount:",
             'label: L10n.tr("已启用来源")',
             'label: L10n.tr("本轮模型")',
-            'label: L10n.tr("扫描档位")',
+            'label: L10n.tr("已启用／目录档位")',
         ):
             self.assertIn(token, self.settings_ingress_presenter_source)
 
@@ -1718,6 +1720,14 @@ class SettingsViewSourceTest(unittest.TestCase):
         self.assertIn("不会参与 Reason Tok 推荐", detail)
         self.assertIn("isLocalConnectionImported(item)", header)
 
+    def test_grok_build_requires_verified_local_login_for_imported_state(self) -> None:
+        source = self.section_source("isLocalConnectionImported")
+        detection = self.section_source("localProviderDetectionRow")
+        self.assertIn('item.source.kind != "grok_build"', source)
+        self.assertIn("isImported", detection)
+        self.assertIn("IslandColor.alertAmber", detection)
+        self.assertIn("需验证登录", self.source)
+
     def test_api_provider_catalog_is_explicitly_labeled(self) -> None:
         catalog = self.section_source("commonProviderCatalogSection")
 
@@ -1769,8 +1779,9 @@ class SettingsViewSourceTest(unittest.TestCase):
         action = self.section_source("ingressReadinessAction")
 
         self.assertIn('title: L10n.tr("待扫描")', readiness)
-        self.assertIn('Button("扫描所选档位")', action)
-        self.assertIn("selectionStore.startIngressCandidateScan", action)
+        self.assertIn('Button("开始首次扫描")', action)
+        self.assertIn("selectionStore.startRegularScan", action)
+        self.assertIn("无需再扫描一轮", readiness)
         self.assertIn('["连接", "选择档位", "扫描一次", "可参与推荐"]', track)
         for internal_term in ("待基线", "建立有效基线", "有效基线模型"):
             self.assertNotIn(internal_term, readiness + track + action)
@@ -1793,14 +1804,15 @@ class SettingsViewSourceTest(unittest.TestCase):
         ):
             self.assertNotIn(evidence_rule, self.settings_view_source)
 
-    def test_added_candidates_submit_single_intent_for_backend_planning(self) -> None:
+    def test_first_scan_uses_the_same_regular_scan_path_as_radar(self) -> None:
         action = self.section_source("ingressReadinessAction")
 
-        self.assertIn("func startIngressCandidateScan(", self.selection_store_source)
-        self.assertIn("candidateIDs: [String]", self.selection_store_source)
-        self.assertIn("selectionMode: .single", self.selection_store_source)
-        self.assertIn("previewAndStartScan(", self.selection_store_source)
-        self.assertIn("selectionStore.startIngressCandidateScan", action)
+        self.assertNotIn("func startIngressCandidateScan(", self.selection_store_source)
+        self.assertNotIn("selectionStore.startIngressCandidateScan", action)
+        self.assertIn(
+            "selectionStore.startRegularScan(conflictPresentation: .settings)",
+            action,
+        )
 
     def test_rate_limited_endpoint_probe_saves_a_disabled_encrypted_draft(self) -> None:
         source = self.settings_store_source

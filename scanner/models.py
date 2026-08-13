@@ -1282,13 +1282,14 @@ class AppConfig:
             source = source_by_id.get(connection.source_id)
             if (
                 source is not None
-                and source.kind == "claude_code"
+                and source.kind in {"claude_code", "grok_build"}
                 and not connection.local_login_verified
             ):
                 source.enabled = False
                 connection.enabled = False
-                for candidate in connection.model_candidates:
-                    candidate.enabled = False
+                if source.kind == "claude_code":
+                    for candidate in connection.model_candidates:
+                        candidate.enabled = False
         recommendation = RecommendationConfig.from_dict(
             payload.get("recommendation")  # type: ignore[arg-type]
         )

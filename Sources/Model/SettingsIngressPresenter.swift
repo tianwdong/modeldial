@@ -331,7 +331,7 @@ enum SettingsIngressPresenter {
                 Metric(
                     id: "scan-configurations",
                     value: "\(enabledCandidateCount)/\(totalCandidateCount)",
-                    label: L10n.tr("扫描档位")
+                    label: L10n.tr("已启用／目录档位")
                 ),
             ],
             sourcesByID: sourcesByID,

@@ -88,7 +88,7 @@ def detect_local_providers(
             importable=grok_detected,
             status="login_check_required" if grok_detected else "not_detected",
             status_message=(
-                "已检测到 Grok Build CLI，导入时验证本机登录态"
+                "已检测到 Grok Build CLI，需验证登录"
                 if grok_detected
                 else "未检测到 Grok Build CLI"
             ),

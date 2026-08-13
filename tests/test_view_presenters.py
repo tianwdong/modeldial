@@ -91,6 +91,12 @@ class ViewPresenterBoundaryTest(unittest.TestCase):
         self.assertNotIn("var candidatesByFamilyID", settings)
         self.assertNotIn("SwiftUI", settings_ingress_presenter)
         self.assertNotIn("AppKit", settings_ingress_presenter)
+        self.assertIn('label: L10n.tr("已启用／目录档位")', settings_ingress_presenter)
+        self.assertIn(
+            'value: "\\(enabledCandidateCount)/\\(totalCandidateCount)"',
+            settings_ingress_presenter,
+        )
+        self.assertNotIn('label: L10n.tr("扫描档位")', settings_ingress_presenter)
 
         self.assertIn("UpdateCheckPresenter.presentation(", settings)
         self.assertIn("enum UpdateCheckPresenter", update_check_presenter)

@@ -10,7 +10,7 @@ from scanner.active_run_store import ActiveRunStore
 from scanner.comparison_groups import ComparisonGroupProjector
 from scanner.config_store import ConfigStore
 from scanner.history_store import HistoryStore
-from scanner.models import AppConfig
+from scanner.models import AppConfig, ScanResult
 from scanner.monitor_state_projection import MonitorStateProjector
 from scanner.question_bank import QuestionBank
 from scanner.scan_target_resolver import ScanTargetResolver
@@ -98,6 +98,58 @@ class MonitorStateProjectorTest(unittest.TestCase):
                 service.monitor_state_projector.comparison_group_projector,
                 service.comparison_group_projector,
             )
+
+    def test_comparison_group_projection_preserves_route_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            service = MonitorService(
+                config_store=ConfigStore(root / "config.json"),
+                history_store=HistoryStore(root / "history.jsonl"),
+                active_run_store=ActiveRunStore(root / "active_run.json"),
+            )
+            run_id = "run-route-evidence"
+            result = ScanResult(
+                run_id=run_id,
+                candidate_id="endpoint:test-model:low",
+                model="test-model",
+                effort="low",
+                phase="scan",
+                question_id="q1",
+                started_at="2026-08-11T17:20:00+08:00",
+                elapsed_seconds=1.0,
+                source_mode="api",
+                answer_ok=True,
+                answer_preview="ok",
+                input_tokens=10,
+                output_tokens=5,
+                reasoning_tokens=None,
+                reasoning_tokens_supported=False,
+                evaluation_id="evaluation-route-evidence",
+                execution_trace={"route_fingerprint": "route-v1:sha256:test"},
+            )
+            metadata = {
+                "run_id": run_id,
+                "selection_mode": "regular",
+                "comparison_group_id": run_id,
+                "comparison_group_mode": "regular",
+            }
+
+            history, current_run_id, _ = (
+                service.monitor_state_projector.dashboard_history_context(
+                    history=[result],
+                    run_metadata_by_id={run_id: metadata},
+                    current_run_id=run_id,
+                )
+            )
+
+        self.assertEqual(current_run_id, run_id)
+        self.assertEqual(len(history), 1)
+        self.assertEqual(
+            history[0].execution_trace,
+            {"route_fingerprint": "route-v1:sha256:test"},
+        )
+        self.assertEqual(history[0].evaluation_id, "evaluation-route-evidence")
+        self.assertFalse(history[0].reasoning_tokens_supported)
 
     def test_full_and_refresh_reads_keep_the_existing_order(self) -> None:
         events: list[str] = []
