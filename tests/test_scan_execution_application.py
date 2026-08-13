@@ -59,7 +59,7 @@ class ScanExecutionApplicationTests(unittest.TestCase):
                 for name, rule in sorted(config.rules.items())
             },
         )
-        self.assertEqual(payload["schema_version"], 2)
+        self.assertEqual(payload["schema_version"], 1)
         self.assertEqual(payload["max_concurrent_targets"], 4)
         self.assertEqual(
             payload["max_concurrent_targets_by_connection"],

@@ -421,7 +421,7 @@ class ReferenceSnapshotTests(unittest.TestCase):
         snapshot = _first_party_snapshot_fixture()
         snapshot["retry_policy"].update(
             {
-                "schema_version": 2,
+                "schema_version": 1,
                 "max_concurrent_targets": 8,
                 "max_concurrent_targets_by_connection": {
                     "first-party": 8,
@@ -433,12 +433,15 @@ class ReferenceSnapshotTests(unittest.TestCase):
 
         validated = validate_reference_snapshot(snapshot)
 
-        self.assertEqual(validated["retry_policy"]["schema_version"], 2)
+        self.assertEqual(validated["retry_policy"]["schema_version"], 1)
 
     def test_snapshot_validator_rejects_malformed_grouped_execution_policy(
         self,
     ) -> None:
         cases = (
+            {
+                "schema_version": 2,
+            },
             {
                 "schema_version": 2,
                 "max_concurrent_targets_by_connection": {"deepseek": 2},
@@ -454,7 +457,7 @@ class ReferenceSnapshotTests(unittest.TestCase):
                 "max_concurrent_targets_by_connection": {"deepseek": 0},
             },
             {
-                "schema_version": 1,
+                "schema_version": 3,
                 "max_concurrent_targets": 8,
                 "max_concurrent_targets_by_connection": {"deepseek": 2},
             },

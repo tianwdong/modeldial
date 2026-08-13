@@ -300,25 +300,29 @@ def validate_reference_snapshot(
         connection_limits = retry_policy.get(
             "max_concurrent_targets_by_connection"
         )
-        if retry_policy_schema == 1:
-            if (
-                "max_concurrent_targets" in retry_policy
-                or connection_limits is not None
-            ):
-                raise ValueError("first-party snapshot retry policy is invalid")
-        elif (
-            not _is_positive_integer(retry_policy.get("max_concurrent_targets"))
-            or not isinstance(connection_limits, Mapping)
-            or not connection_limits
-            or any(
-                not isinstance(connection_id, str)
-                or not connection_id
-                or connection_id.strip() != connection_id
-                or not _is_positive_integer(limit)
-                for connection_id, limit in connection_limits.items()
-            )
+        has_global_limit = "max_concurrent_targets" in retry_policy
+        has_connection_limits = connection_limits is not None
+        if retry_policy_schema == 2 and not (
+            has_global_limit or has_connection_limits
         ):
             raise ValueError("first-party snapshot retry policy is invalid")
+        if has_global_limit or has_connection_limits:
+            if (
+                not has_global_limit
+                or not _is_positive_integer(
+                    retry_policy.get("max_concurrent_targets")
+                )
+                or not isinstance(connection_limits, Mapping)
+                or not connection_limits
+                or any(
+                    not isinstance(connection_id, str)
+                    or not connection_id
+                    or connection_id.strip() != connection_id
+                    or not _is_positive_integer(limit)
+                    for connection_id, limit in connection_limits.items()
+                )
+            ):
+                raise ValueError("first-party snapshot retry policy is invalid")
         grader_replay = snapshot.get("grader_replay")
         if not isinstance(grader_replay, Mapping):
             raise ValueError("first-party snapshot grader replay is required")

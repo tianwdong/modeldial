@@ -65,7 +65,6 @@ def execution_policy_snapshot(config: AppConfig) -> dict[str, object]:
     if config.system.max_concurrent_targets_by_connection:
         payload.update(
             {
-                "schema_version": 2,
                 "max_concurrent_targets": max(
                     1, int(config.system.max_concurrent_targets)
                 ),
