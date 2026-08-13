@@ -289,11 +289,34 @@ def validate_reference_snapshot(
         retry_policy = snapshot.get("retry_policy")
         if not isinstance(retry_policy, Mapping):
             raise ValueError("first-party snapshot retry policy is required")
+        retry_policy_schema = retry_policy.get("schema_version")
         if (
-            retry_policy.get("schema_version") != 1
+            retry_policy_schema not in {1, 2}
             or retry_policy.get("mode") != "app_rules_v1"
             or retry_policy.get("selective_score_retry") is not False
             or not isinstance(retry_policy.get("rules"), Mapping)
+        ):
+            raise ValueError("first-party snapshot retry policy is invalid")
+        connection_limits = retry_policy.get(
+            "max_concurrent_targets_by_connection"
+        )
+        if retry_policy_schema == 1:
+            if (
+                "max_concurrent_targets" in retry_policy
+                or connection_limits is not None
+            ):
+                raise ValueError("first-party snapshot retry policy is invalid")
+        elif (
+            not _is_positive_integer(retry_policy.get("max_concurrent_targets"))
+            or not isinstance(connection_limits, Mapping)
+            or not connection_limits
+            or any(
+                not isinstance(connection_id, str)
+                or not connection_id
+                or connection_id.strip() != connection_id
+                or not _is_positive_integer(limit)
+                for connection_id, limit in connection_limits.items()
+            )
         ):
             raise ValueError("first-party snapshot retry policy is invalid")
         grader_replay = snapshot.get("grader_replay")
@@ -1798,6 +1821,10 @@ def _non_negative_integer(value: object, label: str) -> int:
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
         raise ValueError(f"{label} is invalid")
     return value
+
+
+def _is_positive_integer(value: object) -> bool:
+    return not isinstance(value, bool) and isinstance(value, int) and value > 0
 
 
 def _empty_feed(status: str) -> dict[str, object]:

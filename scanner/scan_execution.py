@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, Generic, TypeVar
 
 from .active_run_store import ActiveRunStore
@@ -100,6 +100,8 @@ class ScanExecutionCommand(Generic[ResultT]):
         after_finished: Callable[[ExecutionJob, ResultT], None],
         on_skipped: Callable[[ExecutionJob], None],
         discard_result: Callable[[ResultT, str | None], bool],
+        group_key: Callable[[ExecutionJob], str] | None = None,
+        max_workers_by_group: Mapping[str, int] | None = None,
     ) -> None:
         self.session.execute_jobs(
             jobs,
@@ -120,6 +122,8 @@ class ScanExecutionCommand(Generic[ResultT]):
             ),
             stop_on_failure=True,
             persist_before_execute=True,
+            group_key=group_key,
+            max_workers_by_group=max_workers_by_group,
         )
 
     def clear_control_action(self) -> None:

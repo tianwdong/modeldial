@@ -417,6 +417,57 @@ class ReferenceSnapshotTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "decision tags"):
             validate_reference_snapshot(snapshot)
 
+    def test_snapshot_validator_accepts_grouped_execution_policy(self) -> None:
+        snapshot = _first_party_snapshot_fixture()
+        snapshot["retry_policy"].update(
+            {
+                "schema_version": 2,
+                "max_concurrent_targets": 8,
+                "max_concurrent_targets_by_connection": {
+                    "first-party": 8,
+                    "deepseek": 2,
+                },
+            }
+        )
+        snapshot["batch_sha256"] = reference_snapshot_hash(snapshot)
+
+        validated = validate_reference_snapshot(snapshot)
+
+        self.assertEqual(validated["retry_policy"]["schema_version"], 2)
+
+    def test_snapshot_validator_rejects_malformed_grouped_execution_policy(
+        self,
+    ) -> None:
+        cases = (
+            {
+                "schema_version": 2,
+                "max_concurrent_targets_by_connection": {"deepseek": 2},
+            },
+            {
+                "schema_version": 2,
+                "max_concurrent_targets": 8,
+                "max_concurrent_targets_by_connection": {},
+            },
+            {
+                "schema_version": 2,
+                "max_concurrent_targets": 8,
+                "max_concurrent_targets_by_connection": {"deepseek": 0},
+            },
+            {
+                "schema_version": 1,
+                "max_concurrent_targets": 8,
+                "max_concurrent_targets_by_connection": {"deepseek": 2},
+            },
+        )
+        for policy_update in cases:
+            with self.subTest(policy_update=policy_update):
+                snapshot = _first_party_snapshot_fixture()
+                snapshot["retry_policy"].update(policy_update)
+                snapshot["batch_sha256"] = reference_snapshot_hash(snapshot)
+
+                with self.assertRaisesRegex(ValueError, "retry policy"):
+                    validate_reference_snapshot(snapshot)
+
     def test_snapshot_validator_rejects_entries_missing_consumer_contract_fields(self) -> None:
         cases = (
             ("advisor_eligible", None),

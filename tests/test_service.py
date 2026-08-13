@@ -5470,6 +5470,133 @@ class MonitorServiceTest(unittest.TestCase):
             self.assertEqual({item.phase for item in results}, {"scan"})
             self.assertGreaterEqual(max_active_workers, 2)
 
+    def test_run_enabled_targets_applies_connection_scoped_concurrency(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_store = ConfigStore(Path(temp_dir) / "config.json")
+            config = config_store.load()
+            _set_enabled_candidates(
+                config,
+                {
+                    "gpt-5.4 / high",
+                    "gpt-5.4 / xhigh",
+                },
+            )
+            for connection_id, name, model_id, api_format, base_url in (
+                (
+                    "deepseek",
+                    "DeepSeek",
+                    "deepseek-v4-pro",
+                    "openai_chat_completions",
+                    "https://api.deepseek.com",
+                ),
+                (
+                    "grok-api",
+                    "Grok API",
+                    "grok-4.6",
+                    "openai_responses",
+                    "https://api.x.ai/v1",
+                ),
+            ):
+                config.model_ingress.connections.append(
+                    ConnectionConfig(
+                        id=connection_id,
+                        source_id="custom_endpoint",
+                        name=name,
+                        enabled=True,
+                        api_format=api_format,
+                        base_url=base_url,
+                        api_key_ref=f"env:{connection_id.upper()}_API_KEY",
+                        last_test_status="ok",
+                        model_candidates=[
+                            ModelCandidateConfig(
+                                id=f"{connection_id}:{model_id}:high",
+                                connection_id=connection_id,
+                                model_id=model_id,
+                                display_name=f"{model_id} high",
+                                scan_profile="high",
+                                enabled=True,
+                            )
+                        ],
+                    )
+                )
+            config.system.max_concurrent_targets = 4
+            config.system.max_concurrent_targets_by_connection = {
+                "codex-local-default": 2,
+                "deepseek": 1,
+                "grok-api": 1,
+            }
+            config_store.save(config)
+
+            active_by_connection = {
+                "codex-local-default": 0,
+                "deepseek": 0,
+                "grok-api": 0,
+            }
+            maximum_by_connection = dict(active_by_connection)
+            first_wave_ready = threading.Event()
+            lock = threading.Lock()
+
+            def grouped_runner(target, question, use_mock_results, **kwargs):  # type: ignore[no-untyped-def]
+                is_first_question = question.id == DEFAULT_QUESTION_IDS[0]
+                if is_first_question:
+                    with lock:
+                        active_by_connection[target.connection_id] += 1
+                        maximum_by_connection[target.connection_id] = max(
+                            maximum_by_connection[target.connection_id],
+                            active_by_connection[target.connection_id],
+                        )
+                        if sum(active_by_connection.values()) == 4:
+                            first_wave_ready.set()
+                    first_wave_ready.wait(timeout=2)
+                try:
+                    return ScanResult(
+                        candidate_id=target.candidate_id,
+                        run_id=kwargs["run_id"],
+                        model=target.model,
+                        effort=target.effort,
+                        phase=kwargs["phase"],
+                        question_id=question.id,
+                        question_title=question.title,
+                        grader_kind=question.grader.kind,
+                        attempt_index=kwargs["attempt_index"],
+                        started_at="2026-08-13T14:00:00+08:00",
+                        elapsed_seconds=0.05,
+                        source_mode="live",
+                        answer_ok=True,
+                        answer_preview="ok",
+                        input_tokens=100,
+                        output_tokens=20,
+                        reasoning_tokens=430,
+                        final_status="pass",
+                    )
+                finally:
+                    if is_first_question:
+                        with lock:
+                            active_by_connection[target.connection_id] -= 1
+
+            history_store = HistoryStore(Path(temp_dir) / "history.jsonl")
+            service = MonitorService(
+                config_store=config_store,
+                history_store=history_store,
+                active_run_store=ActiveRunStore(
+                    Path(temp_dir) / "active_run.json"
+                ),
+                runner=grouped_runner,
+            )
+
+            results = service.run_enabled_targets()
+
+            self.assertTrue(first_wave_ready.is_set())
+            self.assertEqual(len(results), 4 * DEFAULT_QUESTION_COUNT)
+            self.assertEqual(
+                maximum_by_connection,
+                {
+                    "codex-local-default": 2,
+                    "deepseek": 1,
+                    "grok-api": 1,
+                },
+            )
+
     def test_run_enabled_targets_fills_concurrency_with_one_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             config_store = ConfigStore(Path(temp_dir) / "config.json")

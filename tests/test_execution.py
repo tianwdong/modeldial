@@ -448,6 +448,107 @@ class ExecutionEngineTests(unittest.TestCase):
         self.assertEqual(started, [jobs[0]])
         self.assertEqual(skipped, jobs[1:])
 
+    def test_group_limits_start_independent_connections_fairly(self) -> None:
+        jobs = [
+            *(("first-party", index) for index in range(8)),
+            *(("deepseek", index) for index in range(4)),
+            *(("grok", index) for index in range(4)),
+        ]
+        lock = threading.Lock()
+        first_wave_started = threading.Event()
+        release = threading.Event()
+        active_by_group = {"first-party": 0, "deepseek": 0, "grok": 0}
+        maximum_by_group = dict(active_by_group)
+        maximum_total = 0
+        errors: list[Exception] = []
+
+        def run_job(job: tuple[str, int]) -> tuple[str, int]:
+            nonlocal maximum_total
+            group = job[0]
+            with lock:
+                active_by_group[group] += 1
+                maximum_by_group[group] = max(
+                    maximum_by_group[group], active_by_group[group]
+                )
+                maximum_total = max(maximum_total, sum(active_by_group.values()))
+                if sum(active_by_group.values()) == 4:
+                    first_wave_started.set()
+            release.wait(timeout=2)
+            with lock:
+                active_by_group[group] -= 1
+            return job
+
+        def execute() -> None:
+            try:
+                engine: ExecutionEngine[tuple[str, int]] = ExecutionEngine()
+                engine.execute(  # type: ignore[arg-type]
+                    jobs,
+                    max_workers=4,
+                    try_start=lambda _job: True,
+                    run_job=run_job,
+                    finish_job=lambda _job, _result: None,
+                    fail_job=lambda _job, _error: None,
+                    group_key=lambda job: job[0],
+                    max_workers_by_group={
+                        "first-party": 2,
+                        "deepseek": 1,
+                        "grok": 1,
+                    },
+                )
+            except Exception as exc:
+                errors.append(exc)
+
+        worker = threading.Thread(target=execute)
+        worker.start()
+        try:
+            self.assertTrue(first_wave_started.wait(timeout=2))
+            with lock:
+                self.assertEqual(
+                    active_by_group,
+                    {"first-party": 2, "deepseek": 1, "grok": 1},
+                )
+        finally:
+            release.set()
+            worker.join(timeout=3)
+
+        self.assertFalse(worker.is_alive())
+        self.assertEqual(errors, [])
+        self.assertEqual(maximum_total, 4)
+        self.assertEqual(
+            maximum_by_group,
+            {"first-party": 2, "deepseek": 1, "grok": 1},
+        )
+
+    def test_grouped_stop_on_failure_skips_pending_jobs(self) -> None:
+        jobs = [
+            ("first-party", 1),
+            ("deepseek", 1),
+            ("first-party", 2),
+            ("deepseek", 2),
+        ]
+        started: list[tuple[str, int]] = []
+        skipped: list[tuple[str, int]] = []
+        engine: ExecutionEngine[tuple[str, int]] = ExecutionEngine()
+
+        with self.assertRaisesRegex(RuntimeError, "boom"):
+            engine.execute(  # type: ignore[arg-type]
+                jobs,
+                max_workers=1,
+                try_start=lambda job: started.append(job) is None,
+                run_job=lambda _job: (_ for _ in ()).throw(
+                    RuntimeError("boom")
+                ),
+                finish_job=lambda _job, _result: None,
+                fail_job=lambda _job, _error: None,
+                stop_on_failure=True,
+                skip_job=skipped.append,
+                group_key=lambda job: job[0],
+                max_workers_by_group={"first-party": 1, "deepseek": 1},
+            )
+
+        self.assertEqual(started, [jobs[0]])
+        self.assertCountEqual(skipped, jobs[1:])
+
 
 class ExecutionSessionTests(unittest.TestCase):
     @staticmethod

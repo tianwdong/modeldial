@@ -74,23 +74,34 @@ class ConfigStoreTest(unittest.TestCase):
         config = AppConfig.default()
 
         self.assertEqual(config.system.max_concurrent_targets, 1)
+        self.assertEqual(config.system.max_concurrent_targets_by_connection, {})
         self.assertEqual(config.system.execution_timeout_seconds, 1200)
         self.assertEqual(config.system.timeout_retry_count, 0)
 
         config.system.max_concurrent_targets = 4
+        config.system.max_concurrent_targets_by_connection = {
+            "first-party": 2,
+            "deepseek": 1,
+        }
         config.system.execution_timeout_seconds = 420
         config.system.timeout_retry_count = 2
         restored = AppConfig.from_dict(config.to_dict())
         self.assertEqual(restored.system.max_concurrent_targets, 4)
+        self.assertEqual(
+            restored.system.max_concurrent_targets_by_connection,
+            {"first-party": 2, "deepseek": 1},
+        )
         self.assertEqual(restored.system.execution_timeout_seconds, 420)
         self.assertEqual(restored.system.timeout_retry_count, 2)
 
         legacy_payload = config.to_dict()
         legacy_payload["system"].pop("max_concurrent_targets")
+        legacy_payload["system"].pop("max_concurrent_targets_by_connection")
         legacy_payload["system"].pop("execution_timeout_seconds")
         legacy_payload["system"].pop("timeout_retry_count")
         legacy = AppConfig.from_dict(legacy_payload)
         self.assertEqual(legacy.system.max_concurrent_targets, 1)
+        self.assertEqual(legacy.system.max_concurrent_targets_by_connection, {})
         self.assertEqual(legacy.system.execution_timeout_seconds, 1200)
         self.assertEqual(legacy.system.timeout_retry_count, 0)
 

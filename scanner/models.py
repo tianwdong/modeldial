@@ -890,11 +890,14 @@ class SystemConfig:
     language: str = "zh-CN"
     attempts_per_target: int = 3
     max_concurrent_targets: int = 1
+    max_concurrent_targets_by_connection: dict[str, int] = field(
+        default_factory=dict
+    )
     execution_timeout_seconds: int = 1200
     timeout_retry_count: int = 0
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "use_mock_results": self.use_mock_results,
             "auto_open_browser": self.auto_open_browser,
             "history_limit": self.history_limit,
@@ -904,9 +907,31 @@ class SystemConfig:
             "execution_timeout_seconds": max(60, self.execution_timeout_seconds),
             "timeout_retry_count": max(0, self.timeout_retry_count),
         }
+        if self.max_concurrent_targets_by_connection:
+            payload["max_concurrent_targets_by_connection"] = {
+                connection_id: max(1, int(limit))
+                for connection_id, limit in sorted(
+                    self.max_concurrent_targets_by_connection.items()
+                )
+                if connection_id
+            }
+        return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, object]) -> "SystemConfig":
+        raw_connection_limits = payload.get(
+            "max_concurrent_targets_by_connection",
+            {},
+        )
+        connection_limits = (
+            {
+                str(connection_id): max(1, int(limit))
+                for connection_id, limit in raw_connection_limits.items()
+                if str(connection_id)
+            }
+            if isinstance(raw_connection_limits, dict)
+            else {}
+        )
         return cls(
             use_mock_results=bool(payload.get("use_mock_results", True)),
             auto_open_browser=bool(payload.get("auto_open_browser", True)),
@@ -916,6 +941,7 @@ class SystemConfig:
             max_concurrent_targets=max(
                 1, int(payload.get("max_concurrent_targets", 1))
             ),
+            max_concurrent_targets_by_connection=connection_limits,
             execution_timeout_seconds=max(
                 60, int(payload.get("execution_timeout_seconds", 1200))
             ),

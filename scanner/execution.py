@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
+from collections import deque
+from collections.abc import Mapping
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import json
@@ -868,9 +870,15 @@ class ExecutionEngine(Generic[ResultT]):
         fail_job: Callable[[ExecutionJob, Exception], None],
         stop_on_failure: bool = False,
         skip_job: Callable[[ExecutionJob], None] | None = None,
+        group_key: Callable[[ExecutionJob], str] | None = None,
+        max_workers_by_group: Mapping[str, int] | None = None,
     ) -> None:
         if not jobs:
             return
+        if (group_key is None) != (max_workers_by_group is None):
+            raise ValueError(
+                "group_key and max_workers_by_group must be provided together"
+            )
         failure = threading.Event()
 
         def execute_job(job: ExecutionJob) -> None:
@@ -890,6 +898,84 @@ class ExecutionEngine(Generic[ResultT]):
             finish_job(job, result)
 
         worker_count = min(len(jobs), max(1, max_workers))
+        if group_key is not None and max_workers_by_group is not None:
+            job_queues: dict[str, deque[ExecutionJob]] = {}
+            group_order: list[str] = []
+            group_limits: dict[str, int] = {}
+            for job in jobs:
+                key = group_key(job)
+                if not key:
+                    raise ValueError("execution job group key must not be empty")
+                if key not in max_workers_by_group:
+                    raise ValueError(f"execution job group has no limit: {key}")
+                limit = int(max_workers_by_group[key])
+                if limit < 1:
+                    raise ValueError(
+                        f"execution job group limit must be positive: {key}"
+                    )
+                if key not in job_queues:
+                    job_queues[key] = deque()
+                    group_order.append(key)
+                    group_limits[key] = limit
+                job_queues[key].append(job)
+
+            active_by_group = {key: 0 for key in group_order}
+            group_cursor = 0
+            first_error: Exception | None = None
+            futures: dict[Future[None], str] = {}
+
+            with ThreadPoolExecutor(max_workers=worker_count) as executor:
+                while futures or any(job_queues.values()):
+                    while len(futures) < worker_count:
+                        selected_index: int | None = None
+                        for offset in range(len(group_order)):
+                            index = (group_cursor + offset) % len(group_order)
+                            key = group_order[index]
+                            if (
+                                job_queues[key]
+                                and active_by_group[key] < group_limits[key]
+                            ):
+                                selected_index = index
+                                break
+                        if selected_index is None:
+                            break
+                        key = group_order[selected_index]
+                        group_cursor = (selected_index + 1) % len(group_order)
+                        job = job_queues[key].popleft()
+                        active_by_group[key] += 1
+                        futures[executor.submit(execute_job, job)] = key
+
+                    if not futures:
+                        if any(job_queues.values()):
+                            raise RuntimeError(
+                                "execution group limits prevent pending jobs from starting"
+                            )
+                        break
+
+                    completed, _pending = wait(
+                        tuple(futures),
+                        return_when=FIRST_COMPLETED,
+                    )
+                    for future in completed:
+                        key = futures.pop(future)
+                        active_by_group[key] -= 1
+                        try:
+                            future.result()
+                        except Exception as exc:
+                            if first_error is None:
+                                first_error = exc
+
+                    if stop_on_failure and failure.is_set():
+                        for key in group_order:
+                            while job_queues[key]:
+                                job = job_queues[key].popleft()
+                                if skip_job is not None:
+                                    skip_job(job)
+
+            if first_error is not None:
+                raise first_error
+            return
+
         with ThreadPoolExecutor(max_workers=worker_count) as executor:
             futures = [executor.submit(execute_job, job) for job in jobs]
             for future in futures:
@@ -989,6 +1075,8 @@ class ExecutionSession(Generic[ResultT]):
         callbacks: ExecutionJobCallbacks[ResultT],
         stop_on_failure: bool = False,
         persist_before_execute: bool = False,
+        group_key: Callable[[ExecutionJob], str] | None = None,
+        max_workers_by_group: Mapping[str, int] | None = None,
     ) -> None:
         runtime_state = self.state_machine.runtime_state
         runtime_state["active_evaluation_count"] = 0
@@ -1066,6 +1154,8 @@ class ExecutionSession(Generic[ResultT]):
             fail_job=fail,
             stop_on_failure=stop_on_failure,
             skip_job=skip,
+            group_key=group_key,
+            max_workers_by_group=max_workers_by_group,
         )
 
     def complete(

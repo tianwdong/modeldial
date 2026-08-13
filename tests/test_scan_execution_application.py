@@ -40,6 +40,11 @@ class ScanExecutionApplicationTests(unittest.TestCase):
 
     def test_execution_policy_snapshot_preserves_complete_rule_contract(self) -> None:
         config = AppConfig.default()
+        config.system.max_concurrent_targets = 4
+        config.system.max_concurrent_targets_by_connection = {
+            "first-party": 2,
+            "deepseek": 1,
+        }
 
         payload = execution_policy_snapshot(config)
 
@@ -54,6 +59,21 @@ class ScanExecutionApplicationTests(unittest.TestCase):
                 for name, rule in sorted(config.rules.items())
             },
         )
+        self.assertEqual(payload["schema_version"], 2)
+        self.assertEqual(payload["max_concurrent_targets"], 4)
+        self.assertEqual(
+            payload["max_concurrent_targets_by_connection"],
+            {"deepseek": 1, "first-party": 2},
+        )
+
+    def test_execution_policy_snapshot_preserves_legacy_shape_without_groups(
+        self,
+    ) -> None:
+        payload = execution_policy_snapshot(AppConfig.default())
+
+        self.assertEqual(payload["schema_version"], 1)
+        self.assertNotIn("max_concurrent_targets", payload)
+        self.assertNotIn("max_concurrent_targets_by_connection", payload)
 
     def test_scan_execution_ports_stay_explicit_and_narrow(self) -> None:
         self.assertEqual(

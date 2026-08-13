@@ -44,7 +44,7 @@ def execution_policy_snapshot(config: AppConfig) -> dict[str, object]:
         if rule.enabled and rule.action == "retry"
     ]
     retry_counts.append(max(0, config.system.timeout_retry_count))
-    return {
+    payload: dict[str, object] = {
         "schema_version": 1,
         "mode": "app_rules_v1",
         "execution_timeout_seconds": max(
@@ -62,6 +62,21 @@ def execution_policy_snapshot(config: AppConfig) -> dict[str, object]:
             for name, rule in sorted(config.rules.items())
         },
     }
+    if config.system.max_concurrent_targets_by_connection:
+        payload.update(
+            {
+                "schema_version": 2,
+                "max_concurrent_targets": max(
+                    1, int(config.system.max_concurrent_targets)
+                ),
+                "max_concurrent_targets_by_connection": dict(
+                    sorted(
+                        config.system.max_concurrent_targets_by_connection.items()
+                    )
+                ),
+            }
+        )
+    return payload
 
 
 class ScanExecutionApplicationService:
@@ -340,6 +355,14 @@ class ScanExecutionApplicationService:
                         action == "pause"
                         and result.error_message is not None
                     )
+                ),
+                group_key=(
+                    (lambda job: job.target.connection_id)
+                    if config.system.max_concurrent_targets_by_connection
+                    else None
+                ),
+                max_workers_by_group=(
+                    config.system.max_concurrent_targets_by_connection or None
                 ),
             )
 

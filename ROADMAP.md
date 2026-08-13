@@ -1,8 +1,10 @@
 # ModelDial Roadmap
 
-最后更新：2026-08-12
+最后更新：2026-08-13
 
 ## 当前阶段
+
+远程评测的跨连接公平并发已完成本地候选：执行内核同时保留整轮全局硬上限和每个 `connection_id` 的独立上限，并按连接轮转分配可用槽位，避免单一厂商先占满整轮并发。未提供分组上限的旧 App 配置和调用仍走原执行路径。本候选尚未提交、推送或发布，不影响已安装 App 或线上定时评测。
 
 公开仓库能够独立测试和构建 App；unsigned preview 与完成 Developer ID／Apple notarization 的正式发行仍是两个分开的发布门槛。当前公开安装入口为 `v0.1.0-preview.13`／Build 112，二进制精确对应源码提交 `b9d4c92f2e9b74df16a30ec9bf1c60d8f2605545`。annotated tag、GitHub prerelease、GitHub／R2 四项资产、签名 preview appcast、Homebrew Cask、双语 README 和官网入口均已发布并完成公开回读。历史公开源码根仍保持单一无父 `main`；正式签名二进制、stable appcast、正式 stable Homebrew Cask 和干净机器 Gatekeeper 验收仍未完成。
 
@@ -107,6 +109,7 @@
 
 ## 最近验证
 
+- 2026-08-13：跨连接公平并发本地候选的公开仓 Python／Swift 合同全量 `1473/1473` 通过（`1200.372s`）；新增执行内核用例确认全局 4 并发下首波为第一方 2、DeepSeek 1、Grok 1，且分组执行在失败停止时不遗留待运行任务。fresh `./build.sh` 通过 60 个 Mach-O／65 个架构记录、macOS 13 门禁、深层 ad-hoc 签名和 Designated Requirement，候选产物为 `build/modeldial-candidate.app`，未覆盖已有 `build/modeldial.app`。本轮未 commit、push、打包或发布。
 - 2026-08-13：`v0.1.0-preview.14`／Build 113 在精确源码提交 `739c9c5e55f973be59906367c222f3ae200df4b6` 上完成 fresh build 和公开分发。全量 Python／Swift 合同 `1467/1467`、首启自动验收、60 个 Mach-O／65 个架构记录、深层 ad-hoc 签名、SPDX SBOM 通过；DMG `17,788,564` bytes／`40bc120e...8931`、ZIP `15,545,258` bytes／`c2e82723...cb5e`、SBOM 与 `SHA256SUMS` 已发布到 GitHub prerelease 和不可变 R2 路径并完成无认证逐字节回读。签名 preview appcast 指向 Build 113，enclosure 与 feed payload 的 Ed25519 验签通过；Homebrew Tap 提交 `183cf2a0787c22900a4013dda13f9611a8d15e1f` 已公开，两轮隔离安装／卸载／重装、版本、源码身份、深层签名与 quarantine 边界通过；Cloudflare Pages 部署 `e9a420ae` 已完成，production `modeldial.com` 与不可变 Pages 首页一致，下载重定向指向 preview.14，官网 Radar 同步到 `snapshot-2026-08-13T00-00-00Z`。真实 `/Applications` App 已从 Build 112 经设置页发现、下载、EdDSA 验签并安装 Build 113；重新打开后回读版本／build／源码／feed／公钥／验签开关正确，再次检查显示“当前已是最新版本”。安装 bundle 的 271 项 manifest 与发布 ZIP 完全一致，83 个稳定配置／历史／Radar 缓存／Secrets／运行证据文件均未改变，升级前后均无活动扫描。当前仍是 unsigned／unnotarized Apple Silicon 预览版；独立 Gatekeeper 开启机器的 App Translocation／“仍要打开”验收尚未完成。
 - 2026-08-12：排查用户反馈的“添加外部模型提示网络错误”后，在正式冻结候选中复现到 Endpoint 默认 opener 在 `configure_frozen_tls_trust()` 之前随模块导入创建，实际 CA 数为 `0`，而同进程稍后创建的默认 SSL context 为 `121`；该初始化顺序同时影响模型发现、连接测试和隔离扫描。修复为 TLS 配置完成后的懒加载缓存 opener，并把模型发现中的断连／OS 网络异常统一映射为脱敏 `network_error`；自动发现网络失败时明确提示仍可手工填写准确 Model ID。构建门禁现在直接检查 Endpoint 实际 opener 的 CA store，避免只检查未被请求路径使用的全局 SSL context。全量 Python／Swift 合同 `1467/1467`（`813.618s`）通过；fresh `./build.sh` 的 60 个 Mach-O／65 个架构记录、macOS 13 门禁、深层 ad-hoc 签名和 Designated Requirement 通过；冻结候选实测默认／Endpoint CA 均为 `121`，OpenRouter 真实 HTTPS 发现 `406` 个模型，8 个已支持的外部 Provider 不再出现 `network_error` 或未捕获异常，OpenAI 普通及隔离请求均正确到达服务端并以假 Key 返回 `authentication_failed`。首启自动验收 `artifacts/first-run-acceptance/first-run-acceptance-20260812-103223.json` 为 `PASSED`。最终复测包 `/Users/Shared/ModelDial-first-run-test-20260812-v5.zip` 已重新解压核对官方 Radar／preview 更新身份、脚本语法与深层签名；大小 `15,590,295` bytes，SHA-256 `7628fec77ce0d25a2a66fe2b5e370681711aa50c46aac5f636b63ac8704283c9`。未覆盖 `build/modeldial.app` 或 `/Applications`，未读取真实 Key，未创建提交、tag、Release 或发布。
 - 2026-08-12：按“先自行完整测试、最后再由测试账号验收”的边界完成最新候选系统自验。全量 Python／Swift 可执行合同在 `ResourceWarning` 按错误处理下 `1465/1465` 通过（`873.391s`）；使用官方 Radar、preview appcast 与 Ed25519 公钥 fresh `./build.sh` 后，60 个 Mach-O／65 个架构记录、macOS 13 门禁、深层 ad-hoc 签名和 Designated Requirement 通过；首启自动验收报告 `artifacts/first-run-acceptance/first-run-acceptance-20260812-083434.json` 为 `PASSED`，本机假 endpoint 完成 2 档位 × 5 题、10 条历史和双向 pairwise，真实模型请求／Keychain／正式用户数据读取均为 `0`。另外构造四套唯一 bundle identity、隔离数据目录的 Debug App 并由 macOS Computer Use 实际点击：可信官方首启可浏览 Radar、官方任意两行对比且接入提示可关闭；已验证 Endpoint、2 个已启用档位、零历史时首页直接显示“已选 2 个档位”与“开始扫描”，不再要求设置页预扫；本机假扫描和测试账号诊断包 `after` 状态均可切换“本机结果”，Radar 显示 2／3 行成绩，对比页显示“本地手动对比”；缺少唯一推荐组合的快速对比会弹出“无法开始扫描”，不再静默。测试账号真实诊断包的 3 档位全量轮次同时恢复为 57／51／50 分、6 条有序 pairwise。隔离进程已终止，临时 fixture 移入废纸篓；未触发真实 endpoint、未覆盖 `/Applications`、未改正式用户数据。代码级自验没有再发现阻断问题；剩余只需最终测试账号核销真实 Keychain、真实 API 服务端账单及 Safari quarantine／Gatekeeper。
