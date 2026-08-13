@@ -39,7 +39,7 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         )
         self.assertIn("MODELDIAL_DISABLE_UPDATES=0", self.source)
         self.assertIn(
-            "preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10|preview.11|preview.12|preview.13)",
+            "preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10|preview.11|preview.12|preview.13|preview.14)",
             self.source,
         )
         self.assertIn(

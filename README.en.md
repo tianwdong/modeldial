@@ -4,7 +4,7 @@
   <p><strong>Use real coding evaluations to choose a better-fit model configuration for each task.</strong></p>
   <p>Compare complete <code>model + effort + route</code> combinations across quality, speed, tokens, and reference cost.</p>
   <p>
-    <strong><a href="https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.13">Download macOS preview.13</a></strong>
+    <strong><a href="https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.14">Download macOS preview.14</a></strong>
     · <a href="https://modeldial.com">Website</a>
     · <a href="https://modeldial.com/radar">Official Radar</a>
     · <a href="https://github.com/tianwdong/modeldial">GitHub</a>
@@ -14,7 +14,7 @@
 </div>
 
 > [!CAUTION]
-> `preview.13` keeps the nested-signing fix and further hardens first launch for a clean user: it does not import unrelated historical data, create `~/.codex` merely for discovery, or delay the initial official Radar refresh. This build is still unsigned and unnotarized; review the installation boundary below and do not disable or bypass Gatekeeper for first launch.
+> `preview.14` keeps the nested-signing fix and further hardens first launch for a clean user: it does not import unrelated historical data, create `~/.codex` merely for discovery, or delay the initial official Radar refresh. This build is still unsigned and unnotarized; review the installation boundary below and do not disable or bypass Gatekeeper for first launch.
 
 <p align="center">
   <img src="docs/media/modeldial-demo-en.gif" alt="ModelDial capsule, official Radar, and configuration comparison demo" width="840">
@@ -30,7 +30,7 @@ Connect a local Codex, Claude Code, or Grok Build provider—or a compatible end
 
 ## Download & Install
 
-**Latest published version: [`v0.1.0-preview.13`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.13)**
+**Latest published version: [`v0.1.0-preview.14`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.14)**
 
 Requirements: macOS 13 or later on Apple Silicon. Intel Macs are not currently supported.
 
@@ -42,23 +42,23 @@ Install with the fully qualified one-line command:
 brew install --cask tianwdong/tap/modeldial
 ```
 
-This is a ModelDial-maintained personal tap, not the official `homebrew/cask`. The cask downloads the exact `preview.13` DMG published on GitHub Releases and pins its SHA-256; later app updates still use the signed Sparkle preview channel.
+This is a ModelDial-maintained personal tap, not the official `homebrew/cask`. The cask downloads the exact `preview.14` DMG published on GitHub Releases and pins its SHA-256; later app updates still use the signed Sparkle preview channel.
 
 The current preview is not Apple-signed or notarized. To let the app and its embedded Sparkle helpers launch, the cask recursively removes `com.apple.quarantine` only from the installed `modeldial.app` bundle (normally `/Applications/modeldial.app`). It uses no `sudo`, does not disable Gatekeeper, and changes no system-wide security setting. Running the install command accepts this temporary preview policy; review the cask source in [`tianwdong/homebrew-tap`](https://github.com/tianwdong/homebrew-tap).
 
 ### DMG
 
-Download [`modeldial-0.1.0-preview.13-macos-arm64.dmg`](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.13/modeldial-0.1.0-preview.13-macos-arm64.dmg). Download [`SHA256SUMS`](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.13/SHA256SUMS) as well if you want to verify the file.
+Download [`modeldial-0.1.0-preview.14-macos-arm64.dmg`](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.14/modeldial-0.1.0-preview.14-macos-arm64.dmg). Download [`SHA256SUMS`](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.14/SHA256SUMS) as well if you want to verify the file.
 
 1. Open the DMG, drag `modeldial.app` to `Applications`, eject the DMG, and launch the copy from `Applications`.
 2. Click the ModelDial capsule in the menu bar and browse official Radar immediately; no model connection or scan is required.
 3. To produce evidence for your own configurations, open **Evaluation → Connections** and import a provider or add a compatible endpoint.
 
 > [!IMPORTANT]
-> `v0.1.0-preview.13` is an unsigned / unnotarized preview with no Developer ID signature or Apple notarization. For a manual DMG install, if macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway**; there is no need to run `xattr` or `spctl` yourself, and do not disable Gatekeeper. The Homebrew cask above is a separately disclosed exception that automatically removes quarantine only from the installed `modeldial.app` bundle.
+> `v0.1.0-preview.14` is an unsigned / unnotarized preview with no Developer ID signature or Apple notarization. For a manual DMG install, if macOS blocks the first launch, use **System Settings → Privacy & Security → Open Anyway**; there is no need to run `xattr` or `spctl` yourself, and do not disable Gatekeeper. The Homebrew cask above is a separately disclosed exception that automatically removes quarantine only from the installed `modeldial.app` bundle.
 
 > [!NOTE]
-> An independent Sparkle preview channel is enabled from `preview.7`. Users who can open `preview.7` through `preview.11` can update from **Settings → Software Update**; if `preview.11` cannot launch, install `preview.13` over it with the DMG or Homebrew command above. The updater in `preview.6` and earlier does not work, so those builds require a manual install. To verify downloaded files, run `shasum -a 256 -c SHA256SUMS` in the asset directory.
+> An independent Sparkle preview channel is enabled from `preview.7`. Users who can open `preview.7` through `preview.11` can update from **Settings → Software Update**; if `preview.11` cannot launch, install `preview.14` over it with the DMG or Homebrew command above. The updater in `preview.6` and earlier does not work, so those builds require a manual install. To verify downloaded files, run `shasum -a 256 -c SHA256SUMS` in the asset directory.
 
 ## What It Solves
 
@@ -141,7 +141,7 @@ The second command targets versioned DTO or architecture-contract changes. For o
 - [Benchmark and data distribution policy](docs/benchmark-and-data-policy.md): question packs, answer fixtures, pricing snapshots, and provider assets.
 - [Open-source content audit](docs/open-source-content-audit.md): source, attribution, and question-pack search records.
 - [Release checklist](docs/release-checklist.md): separate source-candidate and binary-release gates.
-- [Current preview notes](docs/releases/v0.1.0-preview.13.md): installation, verification, and limitations.
+- [Current preview notes](docs/releases/v0.1.0-preview.14.md): installation, verification, and limitations.
 - [Security policy](SECURITY.md): private vulnerability-reporting channel.
 
 ## Contributing & License
