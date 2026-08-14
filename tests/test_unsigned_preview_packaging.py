@@ -39,7 +39,7 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         )
         self.assertIn("MODELDIAL_DISABLE_UPDATES=0", self.source)
         self.assertIn(
-            "preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10|preview.11|preview.12|preview.13|preview.14)",
+            "preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10|preview.11|preview.12|preview.13|preview.14|preview.15)",
             self.source,
         )
         self.assertIn(
@@ -124,7 +124,7 @@ class UnsignedPreviewPackagingTest(unittest.TestCase):
         self.assertIn('bundle_has_quarantine_metadata "$zip_app"', self.source)
 
     def test_artifacts_are_versioned_arm64_dmg_zip_and_checksums(self) -> None:
-        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.15}"', self.source)
+        self.assertIn('PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.16}"', self.source)
         self.assertIn('artifact_prefix="modeldial-${version}-${PREVIEW_LABEL}"', self.source)
         self.assertIn('dmg_name="${artifact_prefix}-macos-arm64.dmg"', self.source)
         self.assertIn(

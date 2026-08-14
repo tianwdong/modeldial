@@ -29,7 +29,7 @@ fi
 
 BUILD_ROOT="$ROOT_DIR/build"
 OUTPUT_DIR="${MODELDIAL_UNSIGNED_PREVIEW_OUTPUT_DIR:-$BUILD_ROOT/unsigned-preview}"
-PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.15}"
+PREVIEW_LABEL="${MODELDIAL_PREVIEW_LABEL:-preview.16}"
 MODELDIAL_REFERENCE_SNAPSHOT_URL="https://reference.modeldial.com/reference-snapshots"
 REFERENCE_SNAPSHOT_URL="$MODELDIAL_REFERENCE_SNAPSHOT_URL"
 OFFICIAL_PREVIEW_UPDATE_FEED_URL="https://updates.modeldial.com/macos/preview/appcast.xml"
@@ -38,7 +38,7 @@ UPDATE_PUBLIC_ED_KEY="${MODELDIAL_PREVIEW_UPDATE_PUBLIC_ED_KEY:-}"
 [[ "$PREVIEW_LABEL" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]] \
   || fail "invalid preview label: $PREVIEW_LABEL"
 case "$PREVIEW_LABEL" in
-  preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10|preview.11|preview.12|preview.13|preview.14)
+  preview.1|preview.2|preview.3|preview.4|preview.5|preview.6|preview.7|preview.8|preview.9|preview.10|preview.11|preview.12|preview.13|preview.14|preview.15)
     fail "$PREVIEW_LABEL is already published and cannot be overwritten"
     ;;
 esac
