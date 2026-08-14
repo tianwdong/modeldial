@@ -94,7 +94,12 @@ class LocalizationContractTest(unittest.TestCase):
 
     def test_menu_and_dynamic_ui_copy_is_complete_and_idiomatic(self) -> None:
         expected_english = {
-            "自动选择（优先本机实测）": "Auto (prefer local results)",
+            "自动选择（仅使用有效结果）": "Auto (usable results only)",
+            "自动模式不会采用过期本机结果；手动选择本机实测仍可查看历史结果": (
+                "Auto never selects expired local results; choose Local results to inspect history."
+            ),
+            "本机实测 · 已过期": "Local · Expired",
+            "来源：本机实测（结果已过期）": "Source: Local results (expired)",
             "综合平衡": "Balanced",
             "质量优先": "Quality first",
             "速度优先": "Speed first",
@@ -118,7 +123,7 @@ class LocalizationContractTest(unittest.TestCase):
         expanded = (
             ROOT / "Sources" / "Views" / "ExpandedSelectionView.swift"
         ).read_text(encoding="utf-8")
-        for key in ("自动选择（优先本机实测）", "综合平衡", "质量优先", "速度优先", "费用优先"):
+        for key in ("自动选择（仅使用有效结果）", "综合平衡", "质量优先", "速度优先", "费用优先"):
             with self.subTest(menu_key=key):
                 self.assertIn(f'Button(L10n.tr("{key}"))', expanded)
 
@@ -412,6 +417,7 @@ class LocalizationContractTest(unittest.TestCase):
             "累计约少 %@": "About %@ saved",
             "累计约省 %@": "About %@ saved",
             "累计约多 %@": "About %@ more",
+            "历史实际切换累计": "Cumulative actual switches",
             "模型综合榜单": "Model ranking",
             "未提供": "Not available",
             "第一梯队模型，参考费用最低。": (

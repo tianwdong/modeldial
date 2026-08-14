@@ -1292,7 +1292,7 @@ struct ExpandedSelectionView: View, Equatable {
 
     private var radarSourceControl: some View {
         Menu {
-            Button(L10n.tr("自动选择（优先本机实测）")) { setRadarSourceMode("auto") }
+            Button(L10n.tr("自动选择（仅使用有效结果）")) { setRadarSourceMode("auto") }
             Button(L10n.tr("官网榜单")) { setRadarSourceMode("official_snapshot") }
             Button(L10n.tr("本机实测")) { setRadarSourceMode("local_evaluation") }
         } label: {
@@ -1303,7 +1303,7 @@ struct ExpandedSelectionView: View, Equatable {
         }
         .menuStyle(.borderlessButton)
         .disabled(settings.isSaving)
-        .help(L10n.tr("选择本页唯一数据来源"))
+        .help(L10n.tr("自动模式不会采用过期本机结果；手动选择本机实测仍可查看历史结果"))
         .accessibilityLabel(L10n.tr("数据来源"))
         .accessibilityValue(radarSourcePresentation.accessibilityValue)
     }
@@ -2603,7 +2603,8 @@ struct ExpandedSelectionView: View, Equatable {
     private var radarSourcePresentation: RadarPresenter.SourceLabels {
         RadarPresenter.sourceLabels(
             selectedSourceMode: store.radarSelectedSourceMode,
-            displaySource: store.radarDisplaySource
+            displaySource: store.radarDisplaySource,
+            displayFreshness: store.radarDisplayFreshness
         )
     }
 
@@ -2615,10 +2616,9 @@ struct ExpandedSelectionView: View, Equatable {
     }
 
     private func setRadarSourceMode(_ sourceMode: String) {
+        store.setRadarBrowseSourceMode(sourceMode)
         if let configurationID = store.radarRepresentativeConfigurationID {
             settings.setSourceMode(sourceMode, configurationID: configurationID)
-        } else {
-            store.setRadarBrowseSourceMode(sourceMode)
         }
     }
 
@@ -4379,8 +4379,7 @@ private struct ComparisonPage: View {
                     referenceCostDeltaUsd: $0.referenceCostDeltaUsd,
                     modelWaitDeltaMs: $0.modelWaitDeltaMs
                 )
-            },
-            isManualComparison: isManualComparison
+            }
         )
     }
 

@@ -259,11 +259,9 @@ enum ComparisonPresenter {
     }
 
     static func realizedBenefit(
-        _ summary: RealizedBenefitInput?,
-        isManualComparison: Bool
+        _ summary: RealizedBenefitInput?
     ) -> RealizedBenefitPresentation? {
-        guard !isManualComparison,
-              let summary,
+        guard let summary,
               summary.observedWorkUnitCount > 0,
               summary.status == "estimated" || summary.status == "unavailable" else {
             return nil
@@ -274,7 +272,7 @@ enum ComparisonPresenter {
         let waitCovered = summary.modelWaitWorkUnitCount
             ?? (summary.modelWaitDeltaMs == nil ? 0 : total)
         return RealizedBenefitPresentation(
-            title: L10n.tr("调整模型后"),
+            title: L10n.tr("历史实际切换累计"),
             statusIcon: summary.status == "estimated"
                 ? "checkmark.circle.fill"
                 : "info.circle",
@@ -286,7 +284,7 @@ enum ComparisonPresenter {
                 ? L10n.tr("根据本机使用记录估算，不代表实际账单或工作总时长。")
                 : L10n.tr("记录还不够，暂时无法估算等待时间或参考费用。"),
             helpText: L10n.tr(
-                "根据调整模型后记录到的 %d 次已完成任务估算。参考费用覆盖 %d/%d 次，等待时间覆盖 %d/%d 次；不代表实际账单或工作总时长。",
+                "汇总历史实际切换后记录到的 %d 次已完成任务。参考费用覆盖 %d/%d 次，等待时间覆盖 %d/%d 次；与当前选中的对比组合无关，不代表实际账单或工作总时长。",
                 total,
                 costCovered,
                 total,

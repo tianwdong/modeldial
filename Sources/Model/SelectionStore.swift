@@ -264,10 +264,13 @@ final class AppSessionStore: ObservableObject {
     }
 
     var radarSelectedSourceMode: String {
+        if let sourceMode = radarBrowseSourceModeOverride {
+            return sourceMode == "official_snapshot" && referenceSnapshotLeaderboardItems.isEmpty
+                ? "auto"
+                : sourceMode
+        }
         guard let configurationID = radarRepresentativeConfigurationID else {
-            let sourceMode = radarBrowseSourceModeOverride
-                ?? radarPortfolio?.sourceMode
-                ?? "auto"
+            let sourceMode = radarPortfolio?.sourceMode ?? "auto"
             return sourceMode == "official_snapshot" && referenceSnapshotLeaderboardItems.isEmpty
                 ? "auto"
                 : sourceMode
@@ -276,14 +279,18 @@ final class AppSessionStore: ObservableObject {
             ?? radarPortfolio?.sourceModeByConfigurationId[configurationID]
             ?? radarPortfolio?.sourceMode
             ?? "auto"
+        if sourceMode == "local_evaluation",
+           snapshot?.config.recommendation.currentModelMode != "manual",
+           radarPortfolio?.status == "stale" || radarEvidence?.currentStatus == "stale" {
+            return "auto"
+        }
         return sourceMode == "official_snapshot" && referenceSnapshotLeaderboardItems.isEmpty
             ? "auto"
             : sourceMode
     }
 
     func setRadarBrowseSourceMode(_ sourceMode: String) {
-        guard radarRepresentativeConfigurationID == nil,
-              ["auto", "official_snapshot", "local_evaluation"].contains(sourceMode) else {
+        guard ["auto", "official_snapshot", "local_evaluation"].contains(sourceMode) else {
             return
         }
         radarBrowseSourceModeOverride = sourceMode
@@ -305,9 +312,6 @@ final class AppSessionStore: ObservableObject {
             if let resolved = radarEvidence?.resolvedDataSource,
                radarHasResults(for: resolved) {
                 return resolved
-            }
-            if !localEvaluationLeaderboardItems.isEmpty {
-                return "local_evaluation"
             }
             if !referenceSnapshotLeaderboardItems.isEmpty {
                 return "official_snapshot"

@@ -410,10 +410,9 @@ private func verifyRealizedBenefitProjection() {
             modelWaitWorkUnitCount: 3,
             referenceCostDeltaUsd: -0.1234,
             modelWaitDeltaMs: -65_000
-        ),
-        isManualComparison: false
+        )
     )
-    expect(estimated?.title == "调整模型后", "estimated benefit title should use plain language")
+    expect(estimated?.title == "历史实际切换累计", "estimated benefit title should identify the cumulative scope")
     expect(estimated?.statusIcon == "checkmark.circle.fill", "estimated benefit should use success status")
     expect(estimated?.emphasis == .positive, "estimated benefit should use positive emphasis")
     expect(estimated?.completedWorkText == "已完成 4 次任务", "work count should use plain language")
@@ -431,26 +430,25 @@ private func verifyRealizedBenefitProjection() {
             modelWaitWorkUnitCount: nil,
             referenceCostDeltaUsd: nil,
             modelWaitDeltaMs: nil
-        ),
-        isManualComparison: false
+        )
     )
-    expect(unavailable?.title == "调整模型后", "unavailable estimates should keep the same plain-language context")
+    expect(unavailable?.title == "历史实际切换累计", "unavailable estimates should keep the same cumulative scope")
     expect(unavailable?.modelWaitText == "暂不可用", "missing wait delta should not be invented")
     expect(unavailable?.noteText.contains("记录还不够") == true, "unavailable benefit note should explain the missing conclusion")
     expect(unavailable?.helpText.contains("参考费用覆盖 0/2 次") == true, "missing deltas should report zero coverage")
+    let manualComparison = ComparisonPresenter.realizedBenefit(
+        ComparisonPresenter.RealizedBenefitInput(
+            status: "estimated",
+            observedWorkUnitCount: 1,
+            referenceCostWorkUnitCount: 1,
+            modelWaitWorkUnitCount: 1,
+            referenceCostDeltaUsd: 0,
+            modelWaitDeltaMs: 0
+        )
+    )
     expect(
-        ComparisonPresenter.realizedBenefit(
-            ComparisonPresenter.RealizedBenefitInput(
-                status: "estimated",
-                observedWorkUnitCount: 1,
-                referenceCostWorkUnitCount: 1,
-                modelWaitWorkUnitCount: 1,
-                referenceCostDeltaUsd: 0,
-                modelWaitDeltaMs: 0
-            ),
-            isManualComparison: true
-        ) == nil,
-        "manual comparisons must not claim recommendation benefit"
+        manualComparison?.title == "历史实际切换累计",
+        "free comparison must not hide the independent cumulative switch summary"
     )
 }
 

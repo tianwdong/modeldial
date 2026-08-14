@@ -86,9 +86,14 @@ private func verifySourceAndPreferenceLabels() {
     )
     let explicit = RadarPresenter.sourceLabels(
         selectedSourceMode: "local_evaluation",
-        displaySource: "official_snapshot"
+        displaySource: "official_snapshot",
+        displayFreshness: "expired"
     )
-    expect(explicit.control == "本机实测", "explicit source should override resolved source")
+    expect(explicit.control == "本机实测 · 已过期", "expired local source should stay explicit")
+    expect(
+        explicit.accessibilityValue == "来源：本机实测（结果已过期）",
+        "expired local source should expose its freshness to assistive technology"
+    )
     expect(
         RadarPresenter.preferenceLabel("cost") == "目标：费用优先",
         "preference should be display-only mapping"

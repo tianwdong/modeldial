@@ -1797,6 +1797,92 @@ private func verifyLocalRadarRetainsLastCompletedRowsWhenCurrentConfigurationNee
 }
 
 @MainActor
+private func verifyAutomaticSourceRejectsExpiredPersistedLocalResults() throws {
+    let currentID = "current-expired-local"
+    let localID = "local-expired-row"
+    let officialID = "official-fresh-row"
+    let snapshot = try decodedSnapshot(historyCount: 1) { payload in
+        var config = payload["config"] as! [String: Any]
+        var recommendation = config["recommendation"] as! [String: Any]
+        recommendation["current_model_mode"] = "auto"
+        recommendation["effective_current_candidate_id"] = currentID
+        recommendation["source_mode_by_configuration_id"] = [
+            currentID: "local_evaluation",
+        ]
+        config["recommendation"] = recommendation
+        payload["config"] = config
+
+        var dashboard = payload["dashboard"] as! [String: Any]
+        dashboard["leaderboard"] = [
+            leaderboardEntryPayload(id: localID, model: "local-expired", score: 91),
+        ]
+        payload["dashboard"] = dashboard
+
+        var evidence = advisorEvidencePayload(
+            currentID: currentID,
+            eligibleCandidateIDs: [],
+            decisions: [],
+            resolvedDataSource: "local_evaluation"
+        )
+        evidence["source_mode"] = "local_evaluation"
+        evidence["current_status"] = "stale"
+        payload["advisor_v2_evidence"] = evidence
+
+        var portfolio = recommendationPortfolioPayload(
+            currentID: currentID,
+            candidateID: localID,
+            resolvedDataSource: "local_evaluation"
+        )
+        portfolio["source_mode"] = "local_evaluation"
+        portfolio["source_mode_by_configuration_id"] = [
+            currentID: "local_evaluation",
+        ]
+        portfolio["status"] = "stale"
+        portfolio["decisions"] = []
+        payload["recommendation_portfolio_v2"] = portfolio
+        payload["reference_snapshot_feed"] = referenceFeedPayload(
+            entries: [
+                referenceEntryPayload(
+                    id: officialID,
+                    model: "official-fresh",
+                    score: 87
+                ),
+            ],
+            leaderboardOrder: [officialID],
+            recommendedID: officialID
+        )
+    }
+    let store = makeStore(
+        gateway: StubBridgeGateway(patchResult: .failure(.unexpectedCall)),
+        initialSnapshot: snapshot
+    )
+
+    expect(
+        store.radarSelectedSourceMode == "auto",
+        "automatic current-model mode must not revive an expired persisted local source"
+    )
+    expect(
+        store.radarDisplaySource == "official_snapshot",
+        "automatic source selection should fall back to the trusted official snapshot"
+    )
+    expect(
+        store.radarLeaderboardItems.map(\.id) == [officialID],
+        "expired local rows must not replace fresh official rows in automatic mode"
+    )
+
+    store.setRadarBrowseSourceMode("local_evaluation")
+    expect(
+        store.radarSelectedSourceMode == "local_evaluation"
+            && store.radarDisplaySource == "local_evaluation",
+        "an explicit in-session local selection should still allow historical inspection"
+    )
+    expect(
+        store.radarLeaderboardItems.map(\.id) == [localID],
+        "explicit local browsing should retain the saved historical rows"
+    )
+}
+
+@MainActor
 private func verifyAutoSourceUsesPortfolioResolvedOfficialIdentity() throws {
     let currentID = "current"
     let candidateID = "candidate"
@@ -3182,6 +3268,7 @@ private enum AppSessionBridgeOwnershipTestMain {
             try await verifyInitialFixtureDoesNotSuppressNormalInitialLoad()
             try verifyLocalRadarConsumesBackendEligibilityDecisions()
             try verifyLocalRadarRetainsLastCompletedRowsWhenCurrentConfigurationNeedsTest()
+            try verifyAutomaticSourceRejectsExpiredPersistedLocalResults()
             try verifyAutoSourceUsesPortfolioResolvedOfficialIdentity()
             try verifyRadarSourceCanBeBrowsedWithoutCurrentConfiguration()
             try verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdentity()

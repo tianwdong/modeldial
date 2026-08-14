@@ -9063,19 +9063,19 @@
         }
       }
     },
-    "根据调整模型后记录到的 %d 次已完成任务估算。参考费用覆盖 %d/%d 次，等待时间覆盖 %d/%d 次；不代表实际账单或工作总时长。": {
+    "汇总历史实际切换后记录到的 %d 次已完成任务。参考费用覆盖 %d/%d 次，等待时间覆盖 %d/%d 次；与当前选中的对比组合无关，不代表实际账单或工作总时长。": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Estimated from %d completed tasks after the model change. Estimated cost covers %d/%d tasks and wait time covers %d/%d; not an actual bill or total work duration."
+            "value": "Summarized from %d completed tasks observed after actual model switches. Estimated cost covers %d/%d tasks and wait time covers %d/%d; this is independent of the currently selected comparison and is not an actual bill or total work duration."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "根据调整模型后记录到的 %d 次已完成任务估算。参考费用覆盖 %d/%d 次，等待时间覆盖 %d/%d 次；不代表实际账单或工作总时长。"
+            "value": "汇总历史实际切换后记录到的 %d 次已完成任务。参考费用覆盖 %d/%d 次，等待时间覆盖 %d/%d 次；与当前选中的对比组合无关，不代表实际账单或工作总时长。"
           }
         }
       }
@@ -9539,19 +9539,19 @@
         }
       }
     },
-    "调整模型后": {
+    "历史实际切换累计": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Since switching models"
+            "value": "Cumulative actual switches"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "切换模型后"
+            "value": "历史实际切换累计"
           }
         }
       }
@@ -15559,7 +15559,10 @@
     "综合平衡": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Balanced"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"综合平衡"}}}},
     "编辑连接": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Edit connection"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"编辑连接"}}}},
     "自动发现模型": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Discover models automatically"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"自动发现模型"}}}},
-    "自动选择（优先本机实测）": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Auto (prefer local results)"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"自动（优先本机结果）"}}}},
+    "自动选择（仅使用有效结果）": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Auto (usable results only)"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"自动（仅使用有效结果）"}}}},
+    "自动模式不会采用过期本机结果；手动选择本机实测仍可查看历史结果": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Auto never selects expired local results; choose Local results to inspect history."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"自动模式不会采用过期本机结果；手动选择本机实测仍可查看历史结果"}}}},
+    "本机实测 · 已过期": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Local · Expired"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"本机实测 · 已过期"}}}},
+    "来源：本机实测（结果已过期）": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Source: Local results (expired)"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"来源：本机实测（结果已过期）"}}}},
     "官方 Radar 可直接浏览": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Browse the official Radar directly"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"官方 Radar 可直接浏览"}}}},
     "官方 Radar 尚未载入": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Official Radar is not loaded yet"}},"zh-Hans":{"stringUnit":{"state":"translated","value":"官方 Radar 尚未载入"}}}},
     "接入本地模型后，可继续进行本机实测与个性化推荐。": {"extractionState":"manual","localizations":{"en":{"stringUnit":{"state":"translated","value":"Connect a local model to run local evaluations and get personalized recommendations."}},"zh-Hans":{"stringUnit":{"state":"translated","value":"接入本地模型后，可继续进行本机实测与个性化推荐。"}}}},

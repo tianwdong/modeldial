@@ -371,6 +371,12 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertNotIn("store.radarRepresentativeConfigurationID == nil", source_control)
         self.assertIn("store.setRadarBrowseSourceMode(sourceMode)", self.source)
         self.assertIn("RadarPresenter.sourceLabels(", self.source)
+        self.assertIn("displayFreshness: store.radarDisplayFreshness", self.source)
+        self.assertIn('L10n.tr("自动选择（仅使用有效结果）")', source_control)
+        self.assertIn(
+            'L10n.tr("自动模式不会采用过期本机结果；手动选择本机实测仍可查看历史结果")',
+            source_control,
+        )
 
     def test_radar_models_keep_official_and_local_sources_separate(self) -> None:
         self.assertIn("let advisorV2Evidence: BridgeAdvisorV2Evidence", self.model_source)
@@ -1799,6 +1805,7 @@ class ExpandedSelectionViewCopyTest(unittest.TestCase):
         self.assertIn("observedWorkUnitCount", benefit_projection)
         self.assertIn("referenceCostWorkUnitCount", benefit_projection)
         self.assertIn("modelWaitWorkUnitCount", benefit_projection)
+        self.assertNotIn("isManualComparison", benefit_projection)
         self.assertIn('Text(L10n.tr("ModelDial 记录到的变化"))', usage_source)
         self.assertIn('Text(L10n.tr("近期归因"))', usage_source)
         self.assertIn("Text(benefit.title)", usage_source)

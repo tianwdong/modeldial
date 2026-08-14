@@ -141,7 +141,8 @@ enum RadarPresenter {
 
     static func sourceLabels(
         selectedSourceMode: String?,
-        displaySource: String?
+        displaySource: String?,
+        displayFreshness: String? = nil
     ) -> SourceLabels {
         switch selectedSourceMode {
         case "official_snapshot":
@@ -150,6 +151,12 @@ enum RadarPresenter {
                 accessibilityValue: L10n.tr("来源：官网榜单")
             )
         case "local_evaluation":
+            if displayFreshness == "expired" {
+                return SourceLabels(
+                    control: L10n.tr("本机实测 · 已过期"),
+                    accessibilityValue: L10n.tr("来源：本机实测（结果已过期）")
+                )
+            }
             return SourceLabels(
                 control: L10n.tr("本机实测"),
                 accessibilityValue: L10n.tr("来源：本机实测")
