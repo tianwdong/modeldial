@@ -8,6 +8,7 @@ import os
 import socket
 import subprocess
 import sys
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Protocol
 from urllib.error import HTTPError, URLError
@@ -174,7 +175,8 @@ def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointReque
         body: dict[str, object] = {
             "model": target.model_id,
             "messages": [{"role": "user", "content": prompt}],
-            "stream": False,
+            "stream": True,
+            "stream_options": {"include_usage": True},
         }
         catalog_efforts = resolve_model_reasoning_efforts(
             model_id=target.model_id,
@@ -220,6 +222,7 @@ def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointReque
             "model": target.model_id,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 16_384,
+            "stream": True,
         }
         if target.scan_profile != "default":
             body["thinking"] = {"type": "adaptive"}
@@ -241,7 +244,12 @@ def execute_endpoint_request(
     urlopen=default_urlopen,
 ) -> dict[str, object]:
     encoded = json.dumps(request.body, ensure_ascii=False).encode("utf-8")
-    headers = _request_headers(request.api_format, api_key)
+    is_streaming = request.body.get("stream") is True
+    headers = _request_headers(
+        request.api_format,
+        api_key,
+        streaming=is_streaming,
+    )
     if evaluation_id:
         headers["X-Modeldial-Evaluation-ID"] = evaluation_id
     http_request = Request(
@@ -252,11 +260,12 @@ def execute_endpoint_request(
     )
     try:
         with _open_endpoint_url(http_request, timeout_seconds, urlopen) as response:
-            if (
-                request.api_format == "openai_responses"
-                and request.body.get("stream") is True
-            ):
+            if is_streaming and request.api_format == "openai_chat_completions":
+                payload = _read_chat_completions_sse(response)
+            elif is_streaming and request.api_format == "openai_responses":
                 payload = _read_responses_sse(response)
+            elif is_streaming and request.api_format == "anthropic_messages":
+                payload = _read_anthropic_messages_sse(response)
             else:
                 payload = json.loads(
                     _read_response_bytes(
@@ -665,11 +674,11 @@ def _responses_text(payload: dict[str, object]) -> str:
     return text
 
 
-def _read_responses_sse(
+def _iter_sse_events(
     response: object,
     *,
     maximum_bytes: int | None = None,
-) -> dict[str, object]:
+) -> Iterator[tuple[str, dict[str, object] | None]]:
     readline = getattr(response, "readline", None)
     if not callable(readline):
         raise EndpointError("invalid_response")
@@ -681,10 +690,11 @@ def _read_responses_sse(
     data_lines: list[str] = []
     data_bytes = 0
 
-    def dispatch() -> dict[str, object] | None:
+    def dispatch() -> tuple[str, dict[str, object] | None] | None:
         nonlocal event_name, data_lines, data_bytes
         if not data_lines:
             event_name = ""
+            data_bytes = 0
             return None
         data = "\n".join(data_lines)
         current_event_name = event_name
@@ -692,7 +702,7 @@ def _read_responses_sse(
         data_lines = []
         data_bytes = 0
         if data == "[DONE]":
-            return None
+            return "[DONE]", None
         try:
             event = json.loads(data)
         except (json.JSONDecodeError, TypeError):
@@ -700,19 +710,7 @@ def _read_responses_sse(
         if not isinstance(event, dict):
             raise EndpointError("invalid_response")
         event_type = str(event.get("type") or current_event_name).strip()
-        if event_type == "response.completed":
-            completed = event.get("response")
-            if not isinstance(completed, dict):
-                raise EndpointError("invalid_response")
-            return completed
-        if event_type in {"response.failed", "error"}:
-            raise _responses_stream_error(event_type, event)
-        if event_type == "response.incomplete":
-            raise EndpointError(
-                "invalid_response",
-                diagnostics={"event_type": event_type},
-            )
-        return None
+        return event_type, event
 
     while True:
         try:
@@ -738,9 +736,9 @@ def _read_responses_sse(
             raise EndpointError("invalid_response")
         line = line.rstrip("\r\n")
         if not line:
-            completed = dispatch()
-            if completed is not None:
-                return completed
+            dispatched = dispatch()
+            if dispatched is not None:
+                yield dispatched
             continue
         if line.startswith(":"):
             continue
@@ -757,22 +755,161 @@ def _read_responses_sse(
                 raise EndpointError("invalid_response")
             data_lines.append(value)
 
-    completed = dispatch()
-    if completed is not None:
-        return completed
-    raise EndpointError(
+    dispatched = dispatch()
+    if dispatched is not None:
+        yield dispatched
+
+
+def _read_chat_completions_sse(
+    response: object,
+    *,
+    maximum_bytes: int | None = None,
+) -> dict[str, object]:
+    response_id: str | None = None
+    text_parts: list[str] = []
+    usage: dict[str, object] = {}
+    completed = False
+
+    for event_type, event in _iter_sse_events(
+        response,
+        maximum_bytes=maximum_bytes,
+    ):
+        if event is None:
+            completed = True
+            break
+        if event_type == "error" or isinstance(event.get("error"), dict):
+            raise _stream_error(event_type or "error", event)
+        response_id = _optional_str(event.get("id")) or response_id
+        event_usage = event.get("usage")
+        if isinstance(event_usage, dict):
+            usage = event_usage
+        choices = event.get("choices")
+        if not isinstance(choices, list):
+            continue
+        for item in choices:
+            choice = _dict(item)
+            delta = _dict(choice.get("delta"))
+            content = delta.get("content")
+            if isinstance(content, str):
+                text_parts.append(content)
+            elif isinstance(content, list):
+                text_parts.extend(
+                    str(part.get("text") or "")
+                    for value in content
+                    if isinstance(value, dict)
+                    for part in [value]
+                    if part.get("type") in {"text", "output_text"}
+                )
+
+    if not completed:
+        raise _incomplete_sse_error()
+    payload: dict[str, object] = {
+        "choices": [{"message": {"content": "".join(text_parts)}}],
+        "usage": usage,
+    }
+    if response_id is not None:
+        payload["id"] = response_id
+    return payload
+
+
+def _read_responses_sse(
+    response: object,
+    *,
+    maximum_bytes: int | None = None,
+) -> dict[str, object]:
+    for event_type, event in _iter_sse_events(
+        response,
+        maximum_bytes=maximum_bytes,
+    ):
+        if event is None:
+            continue
+        if event_type == "response.completed":
+            completed = event.get("response")
+            if not isinstance(completed, dict):
+                raise EndpointError("invalid_response")
+            return completed
+        if event_type in {"response.failed", "error"}:
+            raise _stream_error(event_type, event)
+        if event_type == "response.incomplete":
+            raise EndpointError(
+                "invalid_response",
+                diagnostics={"event_type": event_type},
+            )
+    raise _incomplete_sse_error()
+
+
+def _read_anthropic_messages_sse(
+    response: object,
+    *,
+    maximum_bytes: int | None = None,
+) -> dict[str, object]:
+    response_id: str | None = None
+    text_parts: dict[int, list[str]] = {}
+    usage: dict[str, object] = {}
+    completed = False
+
+    for event_type, event in _iter_sse_events(
+        response,
+        maximum_bytes=maximum_bytes,
+    ):
+        if event is None:
+            completed = True
+            break
+        if event_type == "error" or isinstance(event.get("error"), dict):
+            raise _stream_error(event_type or "error", event)
+        if event_type == "message_start":
+            message = _dict(event.get("message"))
+            response_id = _optional_str(message.get("id")) or response_id
+            usage.update(_dict(message.get("usage")))
+        elif event_type == "content_block_start":
+            index = _int(event.get("index"))
+            content_block = _dict(event.get("content_block"))
+            if index is not None and content_block.get("type") == "text":
+                text_parts.setdefault(index, []).append(
+                    str(content_block.get("text") or "")
+                )
+        elif event_type == "content_block_delta":
+            index = _int(event.get("index"))
+            delta = _dict(event.get("delta"))
+            if index is not None and delta.get("type") == "text_delta":
+                text_parts.setdefault(index, []).append(
+                    str(delta.get("text") or "")
+                )
+        elif event_type == "message_delta":
+            usage.update(_dict(event.get("usage")))
+        elif event_type == "message_stop":
+            completed = True
+            break
+
+    if not completed:
+        raise _incomplete_sse_error()
+    payload = {
+        "type": "message",
+        "content": [
+            {"type": "text", "text": "".join(text_parts[index])}
+            for index in sorted(text_parts)
+        ],
+        "usage": usage,
+    }
+    if response_id is not None:
+        payload["id"] = response_id
+    return payload
+
+
+def _incomplete_sse_error() -> EndpointError:
+    return EndpointError(
         "network_error",
         diagnostics={"exception_type": "IncompleteSSEStream"},
     )
 
 
-def _responses_stream_error(
+def _stream_error(
     event_type: str,
     event: dict[str, object],
 ) -> EndpointError:
     response = _dict(event.get("response"))
     error = _dict(response.get("error")) or _dict(event.get("error"))
-    code = str(error.get("code") or "").strip()[:160]
+    code = str(error.get("code") or error.get("type") or "").strip()[:160]
     normalized = code.lower()
     if "rate" in normalized and "limit" in normalized:
         category = "rate_limited"
@@ -809,21 +946,24 @@ def _anthropic_text(payload: dict[str, object]) -> str:
     return text
 
 
-def _request_headers(api_format: str, api_key: str) -> dict[str, str]:
+def _request_headers(
+    api_format: str,
+    api_key: str,
+    *,
+    streaming: bool = False,
+) -> dict[str, str]:
     if api_format == "anthropic_messages":
         return {
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
             "Content-Type": "application/json",
-            "Accept": "application/json",
+            "Accept": "text/event-stream" if streaming else "application/json",
         }
     return {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "Accept": (
-            "text/event-stream"
-            if api_format == "openai_responses"
-            else "application/json"
+            "text/event-stream" if streaming else "application/json"
         ),
     }
 

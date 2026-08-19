@@ -163,7 +163,10 @@ class EndpointClientTest(unittest.TestCase):
     def test_non_stream_response_budget_fails_closed(self) -> None:
         with self.assertRaises(EndpointError) as error:
             execute_endpoint_request(
-                build_endpoint_request(target(), "2+2"),
+                EndpointRequest(
+                    url="https://example.com/v1/chat/completions",
+                    body={"model": "gpt-test", "stream": False},
+                ),
                 "api-secret",
                 urlopen=lambda *_args, **_kwargs: FakeResponse({"data": "123456789"}),
             )
@@ -610,7 +613,12 @@ class EndpointClientTest(unittest.TestCase):
             captured["headers"] = {
                 key.lower(): value for key, value in request.header_items()
             }
-            return FakeResponse({})
+            return FakeStreamingResponse([
+                b'data: {"id":"chat-header","choices":[{"delta":{"content":"OK"}}]}\n',
+                b"\n",
+                b"data: [DONE]\n",
+                b"\n",
+            ])
 
         execute_endpoint_request(
             build_endpoint_request(target(), "2+2"),
@@ -624,7 +632,7 @@ class EndpointClientTest(unittest.TestCase):
             {
                 "authorization": "Bearer api-secret",
                 "content-type": "application/json",
-                "accept": "application/json",
+                "accept": "text/event-stream",
                 "x-modeldial-evaluation-id": "md-eval-endpoint-test",
             },
         )
@@ -633,6 +641,8 @@ class EndpointClientTest(unittest.TestCase):
         request = build_endpoint_request(target(), "2+2")
 
         self.assertEqual(request.url, "https://example.com/v1/chat/completions")
+        self.assertIs(request.body["stream"], True)
+        self.assertEqual(request.body["stream_options"], {"include_usage": True})
         self.assertEqual(request.body["reasoning_effort"], "high")
         self.assertNotIn("reasoning", request.body)
 
@@ -794,6 +804,71 @@ class EndpointClientTest(unittest.TestCase):
             {"exception_type": "IncompleteSSEStream"},
         )
 
+    def test_chat_stream_assembles_text_usage_and_response_id(self) -> None:
+        payload = execute_endpoint_request(
+            build_endpoint_request(target(scan_profile="default"), "2+2"),
+            "api-secret",
+            urlopen=lambda *_args, **_kwargs: FakeStreamingResponse([
+                b'data: {"id":"chat-stream","choices":[{"delta":{"role":"assistant","content":"2"}}]}\n',
+                b"\n",
+                b'data: {"id":"chat-stream","choices":[{"delta":{"content":"1"},"finish_reason":"stop"}]}\n',
+                b"\n",
+                b'data: {"id":"chat-stream","choices":[],"usage":{"prompt_tokens":10,"completion_tokens":2,"prompt_tokens_details":{"cached_tokens":4},"completion_tokens_details":{"reasoning_tokens":1}}}\n',
+                b"\n",
+                b"data: [DONE]\n",
+                b"\n",
+            ]),
+        )
+
+        result = parse_endpoint_response("openai_chat_completions", payload)
+
+        self.assertEqual(result.text, "21")
+        self.assertEqual(result.input_tokens, 10)
+        self.assertEqual(result.output_tokens, 2)
+        self.assertEqual(result.reasoning_tokens, 1)
+        self.assertEqual(result.cached_input_tokens, 4)
+        self.assertEqual(result.response_id, "chat-stream")
+
+    def test_chat_stream_disconnect_after_partial_output_is_network_error(self) -> None:
+        class DisconnectingResponse(FakeStreamingResponse):
+            def readline(self, amount: int = -1) -> bytes:
+                if self._index >= len(self._lines):
+                    raise RemoteDisconnected("proxy token=api-secret")
+                return super().readline(amount)
+
+        with self.assertRaises(EndpointError) as error:
+            execute_endpoint_request(
+                build_endpoint_request(target(scan_profile="default"), "2+2"),
+                "api-secret",
+                urlopen=lambda *_args, **_kwargs: DisconnectingResponse([
+                    b'data: {"id":"chat-stream","choices":[{"delta":{"content":"2"}}]}\n',
+                    b"\n",
+                ]),
+            )
+
+        self.assertEqual(error.exception.category, "network_error")
+        self.assertEqual(
+            error.exception.diagnostics,
+            {"exception_type": "RemoteDisconnected"},
+        )
+
+    def test_chat_stream_without_done_is_network_error(self) -> None:
+        with self.assertRaises(EndpointError) as error:
+            execute_endpoint_request(
+                build_endpoint_request(target(scan_profile="default"), "2+2"),
+                "api-secret",
+                urlopen=lambda *_args, **_kwargs: FakeStreamingResponse([
+                    b'data: {"id":"chat-stream","choices":[{"delta":{"content":"21"}}]}\n',
+                    b"\n",
+                ]),
+            )
+
+        self.assertEqual(error.exception.category, "network_error")
+        self.assertEqual(
+            error.exception.diagnostics,
+            {"exception_type": "IncompleteSSEStream"},
+        )
+
     def test_anthropic_messages_request_uses_native_shape(self) -> None:
         request = build_endpoint_request(
             target(
@@ -810,6 +885,7 @@ class EndpointClientTest(unittest.TestCase):
             "model": "claude-fable-5",
             "messages": [{"role": "user", "content": "2+2"}],
             "max_tokens": 16_384,
+            "stream": True,
         })
 
     def test_anthropic_messages_effort_uses_adaptive_thinking(self) -> None:
@@ -845,7 +921,14 @@ class EndpointClientTest(unittest.TestCase):
             captured["headers"] = {
                 key.lower(): value for key, value in request.header_items()
             }
-            return FakeResponse({})
+            return FakeStreamingResponse([
+                b"event: message_start\n",
+                b'data: {"type":"message_start","message":{"id":"msg-header","usage":{"input_tokens":1}}}\n',
+                b"\n",
+                b"event: message_stop\n",
+                b'data: {"type":"message_stop"}\n',
+                b"\n",
+            ])
 
         request = build_endpoint_request(
             target(api_format="anthropic_messages", scan_profile="default"),
@@ -862,9 +945,90 @@ class EndpointClientTest(unittest.TestCase):
             "x-api-key": "api-secret",
             "anthropic-version": "2023-06-01",
             "content-type": "application/json",
-            "accept": "application/json",
+            "accept": "text/event-stream",
             "x-modeldial-evaluation-id": "md-eval-anthropic",
         })
+
+    def test_anthropic_stream_assembles_text_usage_and_response_id(self) -> None:
+        payload = execute_endpoint_request(
+            build_endpoint_request(
+                target(api_format="anthropic_messages", scan_profile="default"),
+                "2+2",
+            ),
+            "api-secret",
+            urlopen=lambda *_args, **_kwargs: FakeStreamingResponse([
+                b"event: message_start\n",
+                b'data: {"type":"message_start","message":{"id":"msg-stream","usage":{"input_tokens":10,"cache_creation_input_tokens":2,"cache_read_input_tokens":4}}}\n',
+                b"\n",
+                b"event: content_block_start\n",
+                b'data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking","thinking":"hidden"}}\n',
+                b"\n",
+                b"event: content_block_start\n",
+                b'data: {"type":"content_block_start","index":1,"content_block":{"type":"text","text":"2"}}\n',
+                b"\n",
+                b"event: content_block_delta\n",
+                b'data: {"type":"content_block_delta","index":1,"delta":{"type":"text_delta","text":"1"}}\n',
+                b"\n",
+                b"event: message_delta\n",
+                b'data: {"type":"message_delta","usage":{"output_tokens":3}}\n',
+                b"\n",
+                b"event: message_stop\n",
+                b'data: {"type":"message_stop"}\n',
+                b"\n",
+            ]),
+        )
+
+        result = parse_endpoint_response("anthropic_messages", payload)
+
+        self.assertEqual(result.text, "21")
+        self.assertEqual(result.input_tokens, 16)
+        self.assertEqual(result.output_tokens, 3)
+        self.assertEqual(result.cached_input_tokens, 4)
+        self.assertEqual(result.cache_write_input_tokens, 2)
+        self.assertEqual(result.response_id, "msg-stream")
+
+    def test_anthropic_stream_error_is_categorized_without_message(self) -> None:
+        with self.assertRaises(EndpointError) as error:
+            execute_endpoint_request(
+                build_endpoint_request(
+                    target(api_format="anthropic_messages", scan_profile="default"),
+                    "2+2",
+                ),
+                "api-secret",
+                urlopen=lambda *_args, **_kwargs: FakeStreamingResponse([
+                    b"event: error\n",
+                    b'data: {"type":"error","error":{"type":"rate_limit_error","message":"token=api-secret"}}\n',
+                    b"\n",
+                ]),
+            )
+
+        self.assertEqual(error.exception.category, "rate_limited")
+        self.assertEqual(error.exception.diagnostics, {
+            "event_type": "error",
+            "error_code": "rate_limit_error",
+        })
+        self.assertNotIn("api-secret", str(error.exception.diagnostics))
+
+    def test_anthropic_stream_without_message_stop_is_network_error(self) -> None:
+        with self.assertRaises(EndpointError) as error:
+            execute_endpoint_request(
+                build_endpoint_request(
+                    target(api_format="anthropic_messages", scan_profile="default"),
+                    "2+2",
+                ),
+                "api-secret",
+                urlopen=lambda *_args, **_kwargs: FakeStreamingResponse([
+                    b"event: message_start\n",
+                    b'data: {"type":"message_start","message":{"id":"msg-stream"}}\n',
+                    b"\n",
+                ]),
+            )
+
+        self.assertEqual(error.exception.category, "network_error")
+        self.assertEqual(
+            error.exception.diagnostics,
+            {"exception_type": "IncompleteSSEStream"},
+        )
 
     def test_chat_fixture_is_normalized(self) -> None:
         payload = json.loads(

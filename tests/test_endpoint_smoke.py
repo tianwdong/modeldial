@@ -43,18 +43,12 @@ class _EndpointHandler(BaseHTTPRequestHandler):
             return
         length = int(self.headers.get("Content-Length") or "0")
         request = json.loads(self.rfile.read(length).decode("utf-8"))
+        if request.get("stream") is not True:
+            self.send_error(400)
+            return
         prompt = str(request["messages"][0]["content"])
         answer = self._answer_for(prompt)
-        self._send_json(
-            {
-                "choices": [{"message": {"role": "assistant", "content": answer}}],
-                "usage": {
-                    "prompt_tokens": 128,
-                    "completion_tokens": 32,
-                    "completion_tokens_details": {"reasoning_tokens": 24},
-                },
-            }
-        )
+        self._send_chat_stream(answer)
 
     def log_message(self, *_: object) -> None:
         return
@@ -83,6 +77,36 @@ class _EndpointHandler(BaseHTTPRequestHandler):
         encoded = json.dumps(payload).encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(encoded)))
+        self.end_headers()
+        self.wfile.write(encoded)
+
+    def _send_chat_stream(self, answer: str) -> None:
+        events = [
+            {
+                "id": "chatcmpl-smoke",
+                "choices": [{"delta": {"role": "assistant", "content": answer}}],
+            },
+            {
+                "id": "chatcmpl-smoke",
+                "choices": [{"delta": {}, "finish_reason": "stop"}],
+            },
+            {
+                "id": "chatcmpl-smoke",
+                "choices": [],
+                "usage": {
+                    "prompt_tokens": 128,
+                    "completion_tokens": 32,
+                    "completion_tokens_details": {"reasoning_tokens": 24},
+                },
+            },
+        ]
+        encoded = b"".join(
+            f"data: {json.dumps(event)}\n\n".encode("utf-8")
+            for event in events
+        ) + b"data: [DONE]\n\n"
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
         self.send_header("Content-Length", str(len(encoded)))
         self.end_headers()
         self.wfile.write(encoded)
