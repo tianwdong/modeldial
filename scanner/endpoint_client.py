@@ -38,6 +38,7 @@ MAX_ENDPOINT_RESPONSE_BYTES = 16 * 1024 * 1024
 MAX_MODEL_LIST_RESPONSE_BYTES = 4 * 1024 * 1024
 MAX_SSE_RESPONSE_BYTES = 32 * 1024 * 1024
 MAX_ISOLATED_WORKER_OUTPUT_BYTES = (MAX_SSE_RESPONSE_BYTES * 2) + (1024 * 1024)
+ENDPOINT_OUTPUT_TOKEN_LIMIT = 128 * 1024
 
 
 _SENSITIVE_REDIRECT_HEADERS = frozenset({"authorization", "x-api-key"})
@@ -175,6 +176,7 @@ def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointReque
         body: dict[str, object] = {
             "model": target.model_id,
             "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": ENDPOINT_OUTPUT_TOKEN_LIMIT,
             "stream": True,
             "stream_options": {"include_usage": True},
         }
@@ -202,6 +204,7 @@ def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointReque
         body = {
             "model": target.model_id,
             "input": prompt,
+            "max_output_tokens": ENDPOINT_OUTPUT_TOKEN_LIMIT,
             "store": False,
             "stream": True,
         }
@@ -221,7 +224,7 @@ def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointReque
         body = {
             "model": target.model_id,
             "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 16_384,
+            "max_tokens": ENDPOINT_OUTPUT_TOKEN_LIMIT,
             "stream": True,
         }
         if target.scan_profile != "default":

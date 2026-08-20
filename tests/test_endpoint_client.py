@@ -884,7 +884,7 @@ class EndpointClientTest(unittest.TestCase):
         self.assertEqual(request.body, {
             "model": "claude-fable-5",
             "messages": [{"role": "user", "content": "2+2"}],
-            "max_tokens": 16_384,
+            "max_tokens": 128 * 1024,
             "stream": True,
         })
 
@@ -900,6 +900,28 @@ class EndpointClientTest(unittest.TestCase):
 
         self.assertEqual(request.body["thinking"], {"type": "adaptive"})
         self.assertEqual(request.body["output_config"], {"effort": "high"})
+
+    def test_all_efforts_use_128k_output_budget_across_api_formats(self) -> None:
+        cases = (
+            ("openai_chat_completions", "max_tokens"),
+            ("openai_responses", "max_output_tokens"),
+            ("anthropic_messages", "max_tokens"),
+        )
+        efforts = ("default", "low", "medium", "high", "xhigh", "max")
+
+        for api_format, field in cases:
+            for effort in efforts:
+                with self.subTest(api_format=api_format, effort=effort):
+                    request = build_endpoint_request(
+                        target(
+                            model_id="claude-opus-4-8",
+                            api_format=api_format,
+                            scan_profile=effort,
+                        ),
+                        "2+2",
+                    )
+
+                    self.assertEqual(request.body[field], 128 * 1024)
 
     def test_anthropic_messages_rejects_unknown_effort(self) -> None:
         with self.assertRaises(EndpointError) as error:

@@ -1,8 +1,10 @@
 # ModelDial Roadmap
 
-最后更新：2026-08-14
+最后更新：2026-08-20
 
 ## 当前阶段
+
+自定义 endpoint 三种协议的所有 effort 档位现统一使用 `128K` 输出预算：`OpenAI Chat Completions` 发送 `max_tokens=131072`，`OpenAI Responses` 发送 `max_output_tokens=131072`，`Anthropic Messages` 发送 `max_tokens=131072`；该规则不再随 `default`、`low`、`medium`、`high`、`xhigh` 或 `max` 改变。三种协议乘六个档位的 `18` 组请求体回归、endpoint 定向测试 `54/54`、公开仓全量回归 `1482/1482`、架构基线 `11/11` 和完整 `./build.sh` 均通过，生成并验证本地 `build/modeldial-candidate.app`，现有 live App 未替换；验证过程没有发起真实模型调用。Cloudflare 生产部署身份与公共核心锁继续由私有仓独立维护。
 
 `v0.1.0-preview.15`／Build 114 已完成 unsigned preview 发布与真实应用内升级。本轮修复自动状态误用过期本机结果、来源浏览状态静默跳转，以及对比页隐藏历史实际切换累计的问题；GitHub／R2 资产、签名 preview appcast、Homebrew、官网和 Build 113 → 114 设置页升级均已验证。Sparkle 更新说明已从完整工程记录拆为独立的 590 bytes 用户变更摘要，实际弹窗只显示 4 条可见变化且无需滚动；完整验证、哈希和安装边界继续保留在仓库与 GitHub Release。
 
