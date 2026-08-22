@@ -39,6 +39,7 @@ MAX_MODEL_LIST_RESPONSE_BYTES = 4 * 1024 * 1024
 MAX_SSE_RESPONSE_BYTES = 32 * 1024 * 1024
 MAX_ISOLATED_WORKER_OUTPUT_BYTES = (MAX_SSE_RESPONSE_BYTES * 2) + (1024 * 1024)
 ENDPOINT_OUTPUT_TOKEN_LIMIT = 128 * 1024
+ENDPOINT_USER_AGENT = "ModelDial/EndpointClientV1"
 
 
 _SENSITIVE_REDIRECT_HEADERS = frozenset({"authorization", "x-api-key"})
@@ -510,11 +511,13 @@ def discover_model_catalog(
             "x-api-key": api_key,
             "anthropic-version": "2023-06-01",
             "Accept": "application/json",
+            "User-Agent": ENDPOINT_USER_AGENT,
         }
     else:
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Accept": "application/json",
+            "User-Agent": ENDPOINT_USER_AGENT,
         }
     request = Request(
         f"{base_url.rstrip('/')}/models",
@@ -961,6 +964,7 @@ def _request_headers(
             "anthropic-version": "2023-06-01",
             "Content-Type": "application/json",
             "Accept": "text/event-stream" if streaming else "application/json",
+            "User-Agent": ENDPOINT_USER_AGENT,
         }
     return {
         "Authorization": f"Bearer {api_key}",
@@ -968,6 +972,7 @@ def _request_headers(
         "Accept": (
             "text/event-stream" if streaming else "application/json"
         ),
+        "User-Agent": ENDPOINT_USER_AGENT,
     }
 
 

@@ -502,6 +502,7 @@ class EndpointClientTest(unittest.TestCase):
         def urlopen(request, **kwargs):  # type: ignore[no-untyped-def]
             captured["url"] = request.full_url
             captured["authorization"] = request.get_header("Authorization")
+            captured["user_agent"] = request.get_header("User-agent")
             return FakeResponse({"data": [{"id": "z-model"}, {"id": "a-model"}]})
 
         models = discover_models(
@@ -513,6 +514,7 @@ class EndpointClientTest(unittest.TestCase):
         self.assertEqual(models, ["z-model", "a-model"])
         self.assertEqual(captured["url"], "https://example.com/v1/models")
         self.assertEqual(captured["authorization"], "Bearer api-secret")
+        self.assertEqual(captured["user_agent"], "ModelDial/EndpointClientV1")
 
     def test_anthropic_model_discovery_uses_native_auth_headers(self) -> None:
         captured: dict[str, object] = {}
@@ -533,6 +535,10 @@ class EndpointClientTest(unittest.TestCase):
         self.assertEqual(models, ["claude-fable-5"])
         self.assertEqual(captured["headers"]["x-api-key"], "api-secret")
         self.assertEqual(captured["headers"]["anthropic-version"], "2023-06-01")
+        self.assertEqual(
+            captured["headers"]["user-agent"],
+            "ModelDial/EndpointClientV1",
+        )
         self.assertNotIn("authorization", captured["headers"])
 
     def test_model_discovery_extracts_openrouter_reasoning_efforts(self) -> None:
@@ -634,6 +640,7 @@ class EndpointClientTest(unittest.TestCase):
                 "content-type": "application/json",
                 "accept": "text/event-stream",
                 "x-modeldial-evaluation-id": "md-eval-endpoint-test",
+                "user-agent": "ModelDial/EndpointClientV1",
             },
         )
 
@@ -969,6 +976,7 @@ class EndpointClientTest(unittest.TestCase):
             "content-type": "application/json",
             "accept": "text/event-stream",
             "x-modeldial-evaluation-id": "md-eval-anthropic",
+            "user-agent": "ModelDial/EndpointClientV1",
         })
 
     def test_anthropic_stream_assembles_text_usage_and_response_id(self) -> None:
