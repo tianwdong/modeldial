@@ -435,6 +435,98 @@ class ReferenceSnapshotTests(unittest.TestCase):
 
         self.assertEqual(validated["retry_policy"]["schema_version"], 1)
 
+    def test_snapshot_validator_accepts_explicit_partial_publication(self) -> None:
+        snapshot = _first_party_snapshot_fixture()
+        planned_ids = list(snapshot["planned_configuration_ids"])
+        omitted_id = planned_ids[-1]
+        snapshot["entries"] = [
+            entry
+            for entry in snapshot["entries"]
+            if entry["model_configuration_id"] != omitted_id
+        ]
+        completed_ids = [
+            entry["model_configuration_id"] for entry in snapshot["entries"]
+        ]
+        planned_count = len(planned_ids)
+        completed_count = len(completed_ids)
+        snapshot.update(
+            {
+                "status": "complete",
+                "entry_count": completed_count,
+                "planned_configuration_ids": completed_ids,
+                "evaluation_configuration_ids": planned_ids,
+                "completed_configuration_ids": completed_ids,
+                "omitted_configurations": [
+                    {
+                        "model_configuration_id": omitted_id,
+                        "reason": "failed_after_retries",
+                        "failed_question_ids": [snapshot["question_ids"][-1]],
+                        "attempt_count": 6,
+                    }
+                ],
+                "publication_coverage": {
+                    "status": "partial",
+                    "planned_count": planned_count,
+                    "completed_count": completed_count,
+                    "failed_count": 1,
+                    "success_percent": round(
+                        completed_count * 100 / planned_count, 3
+                    ),
+                    "minimum_success_percent": 90,
+                    "maximum_failed_configurations": 5,
+                },
+            }
+        )
+        snapshot["batch_sha256"] = reference_snapshot_hash(snapshot)
+
+        validated = validate_reference_snapshot(snapshot)
+
+        self.assertEqual(validated["publication_coverage"]["status"], "partial")
+        self.assertEqual(validated["entry_count"], completed_count)
+
+    def test_snapshot_validator_rejects_partial_publication_below_threshold(self) -> None:
+        snapshot = _first_party_snapshot_fixture()
+        planned_ids = list(snapshot["planned_configuration_ids"])
+        keep_count = max(1, len(planned_ids) * 8 // 10)
+        snapshot["entries"] = snapshot["entries"][:keep_count]
+        completed_ids = [
+            entry["model_configuration_id"] for entry in snapshot["entries"]
+        ]
+        omitted_ids = planned_ids[keep_count:]
+        snapshot.update(
+            {
+                "status": "complete",
+                "entry_count": len(completed_ids),
+                "planned_configuration_ids": completed_ids,
+                "evaluation_configuration_ids": planned_ids,
+                "completed_configuration_ids": completed_ids,
+                "omitted_configurations": [
+                    {
+                        "model_configuration_id": configuration_id,
+                        "reason": "failed_after_retries",
+                        "failed_question_ids": [snapshot["question_ids"][-1]],
+                        "attempt_count": 6,
+                    }
+                    for configuration_id in omitted_ids
+                ],
+                "publication_coverage": {
+                    "status": "partial",
+                    "planned_count": len(planned_ids),
+                    "completed_count": len(completed_ids),
+                    "failed_count": len(omitted_ids),
+                    "success_percent": round(
+                        len(completed_ids) * 100 / len(planned_ids), 3
+                    ),
+                    "minimum_success_percent": 90,
+                    "maximum_failed_configurations": 5,
+                },
+            }
+        )
+        snapshot["batch_sha256"] = reference_snapshot_hash(snapshot)
+
+        with self.assertRaisesRegex(ValueError, "threshold"):
+            validate_reference_snapshot(snapshot)
+
     def test_snapshot_validator_rejects_malformed_grouped_execution_policy(
         self,
     ) -> None:

@@ -1,8 +1,16 @@
 # ModelDial Roadmap
 
-最后更新：2026-08-22
+最后更新：2026-08-24
 
 ## 当前阶段
+
+2026-08-24：为私有 Cloudflare Benchmark Suite v5 补齐公开仓唯一所有的 `HLE Deep-20 v2` 核心评分边界。新增受限 bundle 加载器、冻结 manifest／题目内容哈希校验、固定 prompt、严格单键 JSON parser，以及“仅 `completed_turn` 可得分、超时／无效格式／其他终态计错、每题 5 分且无部分分”的纯函数；公开仓只包含合成 fixture，不包含 HLE 题面、答案、模型选择或真实响应。HLE 与既有 Frontend v17 定向回归 `12/12` 通过，范围内 `git diff --check` 通过。当前只形成未提交的本地公共核心候选；私有消费者的内容锁、Container、R2 和生产部署仍由私有仓在获得单独授权后处理。
+
+2026-08-24：Frontend v17 题目 prompt 已明确禁止模型在作答过程中使用 tools、web search、network access、external files、shell commands、code execution、browsers、developer tools 或 iterative debugging，仅允许依据题面与内嵌 starter HTML 作答。Frontend 定向回归 `9/9` 与完整 `./build.sh` 通过，生成并验证本地 `build/modeldial-candidate.app`，现有 live App 未被替换；未触发模型调用、Cloudflare 部署或线上状态变更。提示词内容身份已更新，既有校准证据不能冒充新 prompt 结果。
+
+第一方参考快照消费者已在未提交工作树中支持部分发布证据：顶层发布事务仍保持 `status=complete` 以兼容旧 App，新增 `publication_coverage.status=partial`、原始评测配置、已发布配置和失败后遗漏配置字段；校验器要求完成率至少 `90%`、失败配置至多 `5` 个，并拒绝缺失、重复、低于阈值或证据不一致的快照。定向快照测试 `43/43`、公开仓全量回归 `1475/1475` 和完整 `./build.sh` 均通过，生成并验证本地 `build/modeldial-candidate.app`，现有 live App 未被替换。私有 Cloudflare overlay、Worker、Container 和官网消费者已在生产部署并完成健康与真实页面验收；公开 App 侧变更仍未 commit、未发布，私有 `modeldial-public-core.lock.json` 也保持旧公开提交未更新，当前生产 Container 通过旧公共校验器兼容读取新增证据。
+
+自定义 endpoint 的长响应传输已完成完整流式读取并进入公开 `main` 提交 `123a2f7ff79bc0c1cf129d7d9525fcd199efac9c`：`OpenAI Chat Completions` 发送 `stream=true` 和 `stream_options.include_usage=true`，`Anthropic Messages` 发送 `stream=true`，二者与既有 `OpenAI Responses` 共用有总量／单事件字节上限的 SSE 解析；Chat 会聚合增量文本与最终 usage，Anthropic 会按内容块索引聚合文本并合并累计 usage，流内错误、中途断连和缺失终止事件继续以隐私安全的类别失败。端点与本地 HTTP smoke `54/54`、公开仓全量回归 `1481/1481`、完整 `./build.sh`、双仓边界、私有 Runner／发布器 `63/63`、Cloudflare `58/58 + Runtime 1/1`、Linux／AMD64 镜像 health 与严格 dry-run 均通过。私有公共核心锁已绑定该提交，Cloudflare Worker v93 和 Container v39 已部署生产；部署未触发新评测或模型调用，也未改写 R2、Secret、Endpoint 数据、调度、DNS、Pages 或官网。现有 live App 未替换；公开工作树中另一组快照兼容改动仍保持未提交且未混入本次公开提交。
 
 自定义 endpoint 三种协议的所有 effort 档位现统一使用 `128K` 输出预算：`OpenAI Chat Completions` 发送 `max_tokens=131072`，`OpenAI Responses` 发送 `max_output_tokens=131072`，`Anthropic Messages` 发送 `max_tokens=131072`；该规则不再随 `default`、`low`、`medium`、`high`、`xhigh` 或 `max` 改变。三种协议乘六个档位的 `18` 组请求体回归、endpoint 定向测试 `54/54`、公开仓全量回归 `1482/1482`、架构基线 `11/11` 和完整 `./build.sh` 均通过，生成并验证本地 `build/modeldial-candidate.app`，现有 live App 未替换；验证过程没有发起真实模型调用。Cloudflare 生产部署身份与公共核心锁继续由私有仓独立维护。
 

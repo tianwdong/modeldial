@@ -5,7 +5,10 @@ import subprocess
 import tempfile
 import unittest
 
-from devtools.check_public_private_drift import _require_lock_commit_matches_head
+from devtools.check_public_private_drift import (
+    ALLOWED_CONTAINER_COPY_LINES,
+    _require_lock_commit_matches_head,
+)
 
 
 class PublicPrivateDriftTest(unittest.TestCase):
@@ -42,6 +45,16 @@ class PublicPrivateDriftTest(unittest.TestCase):
                 _require_lock_commit_matches_head(root, old_commit)
 
             _require_lock_commit_matches_head(root, current_head)
+
+    def test_fixed_playwright_runtime_comes_only_from_the_installer_stage(self) -> None:
+        self.assertIn(
+            "COPY --from=codex-installer /usr/local/lib/node_modules/@playwright /usr/local/lib/node_modules/@playwright",
+            ALLOWED_CONTAINER_COPY_LINES,
+        )
+        self.assertIn(
+            "COPY --from=codex-installer /ms-playwright /ms-playwright",
+            ALLOWED_CONTAINER_COPY_LINES,
+        )
 
 
 if __name__ == "__main__":

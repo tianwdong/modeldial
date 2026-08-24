@@ -384,8 +384,11 @@ def validate_reference_snapshot(
     if snapshot.get("kind") == "first_party_snapshot":
         if len(planned_configuration_ids) != len(set(planned_configuration_ids)):
             raise ValueError("first-party snapshot configuration manifest is duplicated")
-        if set(planned_configuration_ids) != seen_ids:
-            raise ValueError("first-party snapshot configuration manifest mismatch")
+        _validate_first_party_publication_coverage(
+            snapshot,
+            planned_configuration_ids=planned_configuration_ids,
+            published_configuration_ids=seen_ids,
+        )
 
     if snapshot.get("leaderboard_projection") is not None:
         _validate_reference_snapshot_leaderboard_projection(
@@ -398,6 +401,107 @@ def validate_reference_snapshot(
     if expected_hash != reference_snapshot_hash(snapshot):
         raise ValueError("reference snapshot batch hash mismatch")
     return snapshot
+
+
+def _validate_first_party_publication_coverage(
+    snapshot: Mapping[str, object],
+    *,
+    planned_configuration_ids: Sequence[object],
+    published_configuration_ids: set[str],
+) -> None:
+    planned_ids = [str(item) for item in planned_configuration_ids]
+    if set(planned_ids) != published_configuration_ids:
+        raise ValueError("first-party snapshot configuration manifest mismatch")
+    evaluation_ids = snapshot.get("evaluation_configuration_ids")
+    completed_ids = snapshot.get("completed_configuration_ids")
+    omitted = snapshot.get("omitted_configurations")
+    coverage = snapshot.get("publication_coverage")
+    if (
+        evaluation_ids is None
+        and completed_ids is None
+        and omitted is None
+        and coverage is None
+    ):
+        return
+    if (
+        not isinstance(evaluation_ids, list)
+        or not all(isinstance(item, str) and item for item in evaluation_ids)
+        or len(evaluation_ids) != len(set(evaluation_ids))
+        or not isinstance(completed_ids, list)
+        or not all(isinstance(item, str) and item for item in completed_ids)
+        or len(completed_ids) != len(set(completed_ids))
+        or set(completed_ids) != published_configuration_ids
+        or not isinstance(omitted, list)
+        or not all(isinstance(item, Mapping) for item in omitted)
+        or not isinstance(coverage, Mapping)
+    ):
+        raise ValueError("first-party snapshot publication coverage is invalid")
+    omitted_ids: list[str] = []
+    for item in omitted:
+        configuration_id = _required_text(item, "model_configuration_id")
+        if item.get("reason") != "failed_after_retries":
+            raise ValueError("first-party snapshot omission reason is invalid")
+        failed_question_ids = item.get("failed_question_ids")
+        attempt_count = item.get("attempt_count")
+        if (
+            not isinstance(failed_question_ids, list)
+            or not failed_question_ids
+            or not all(isinstance(value, str) and value for value in failed_question_ids)
+            or len(failed_question_ids) != len(set(failed_question_ids))
+            or any(value not in snapshot.get("question_ids", []) for value in failed_question_ids)
+            or not _is_positive_integer(attempt_count)
+        ):
+            raise ValueError("first-party snapshot omission evidence is invalid")
+        omitted_ids.append(configuration_id)
+    if len(omitted_ids) != len(set(omitted_ids)):
+        raise ValueError("first-party snapshot omission manifest is duplicated")
+    if set(evaluation_ids) != published_configuration_ids | set(omitted_ids):
+        raise ValueError("first-party snapshot configuration manifest mismatch")
+    if published_configuration_ids & set(omitted_ids):
+        raise ValueError("first-party snapshot publication coverage overlaps")
+
+    planned_count = len(evaluation_ids)
+    completed_count = len(completed_ids)
+    failed_count = len(omitted_ids)
+    expected_status = "partial" if failed_count else "complete"
+    expected_success_percent = round(completed_count * 100 / planned_count, 3)
+    coverage_planned_count = _non_negative_integer(
+        coverage.get("planned_count"),
+        "first-party snapshot planned count",
+    )
+    coverage_completed_count = _non_negative_integer(
+        coverage.get("completed_count"),
+        "first-party snapshot completed count",
+    )
+    coverage_failed_count = _non_negative_integer(
+        coverage.get("failed_count"),
+        "first-party snapshot failed count",
+    )
+    coverage_success_percent = _bounded_number(
+        coverage.get("success_percent"), 0, 100
+    )
+    minimum_success_percent = _non_negative_integer(
+        coverage.get("minimum_success_percent"),
+        "first-party snapshot minimum success percent",
+    )
+    maximum_failed_configurations = _non_negative_integer(
+        coverage.get("maximum_failed_configurations"),
+        "first-party snapshot maximum failed configurations",
+    )
+    if (
+        coverage.get("status") != expected_status
+        or coverage_planned_count != planned_count
+        or coverage_completed_count != completed_count
+        or coverage_failed_count != failed_count
+        or coverage_success_percent != expected_success_percent
+        or minimum_success_percent != 90
+        or maximum_failed_configurations != 5
+    ):
+        raise ValueError("first-party snapshot publication coverage is inconsistent")
+    if expected_status == "partial" and (
+        failed_count > 5 or completed_count * 100 < planned_count * 90
+    ):
+        raise ValueError("first-party snapshot partial publication threshold failed")
 
 
 def _validate_reference_snapshot_entry(entry: Mapping[str, object]) -> str:

@@ -1,0 +1,64 @@
+{
+  "schema_version": "frontend_visual_rubric_v2",
+  "candidate_id": "frontend-case-stream-explorer-v17",
+  "visual_points": 15,
+  "judge_model": "gpt-5.6-sol",
+  "judge_reasoning_effort": "max",
+  "checks": [
+    {
+      "id": "V03",
+      "max_points": 4,
+      "levels": {
+        "4": "Clear hierarchy and reading order at all three viewports with populated core content.",
+        "3": "Clear major regions with minor hierarchy loss or one cramped viewport.",
+        "2": "Core reading order is weakened by missing content, overlay, or a major viewport defect.",
+        "1": "Only a recognizable shell remains; multiple major regions are visually compromised.",
+        "0": "The page is unreadable or visually collapsed."
+      }
+    },
+    {
+      "id": "V04",
+      "max_points": 4,
+      "levels": {
+        "4": "Query, results, metadata, selection, saves, errors, and inspector are all demonstrated as one release-ready system.",
+        "3": "The product system is cohesive in demonstrated states, but representative state coverage is incomplete or minor affordances are weak.",
+        "2": "The system is recognizable but one major region or viewport does not integrate cleanly.",
+        "1": "Only the shell is cohesive; core triage content is missing or visibly conflicts.",
+        "0": "The required product system is not visually formed."
+      }
+    },
+    {
+      "id": "V05",
+      "max_points": 4,
+      "levels": {
+        "4": "Typography, spacing, density, borders, contrast, and state colors are coherent with no visible major defect.",
+        "3": "The visual system is coherent with minor truncation, density, hierarchy, or state differentiation weaknesses.",
+        "2": "The base style is consistent but a major readability or alignment defect is visible.",
+        "1": "Multiple visible defects materially damage legibility or state recognition.",
+        "0": "Visual styling is absent or unusable."
+      }
+    },
+    {
+      "id": "V06",
+      "max_points": 3,
+      "levels": {
+        "3": "Desktop, tablet, mobile, and the mobile inspector sheet are all deliberately composed and finished.",
+        "2": "The three default viewports are deliberate and usable, but one secondary state is unproven or minor crowding remains.",
+        "1": "The layout adapts structurally but retains visible clipping, overlay, or unfinished mobile composition.",
+        "0": "Tablet or mobile collapses into unusable clipped desktop content."
+      }
+    }
+  ],
+  "evidence_caps": [
+    {
+      "check_id": "V04",
+      "maximum_without_states": 3,
+      "required_states": ["selected_saving", "failure", "desktop_inspector"]
+    },
+    {
+      "check_id": "V06",
+      "maximum_without_states": 2,
+      "required_states": ["default_tablet", "default_mobile", "mobile_inspector"]
+    }
+  ]
+}

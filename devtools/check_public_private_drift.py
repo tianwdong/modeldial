@@ -29,6 +29,7 @@ PRIVATE_REQUIRED_PATHS = (
     "private_runtime/scanner/reference_snapshot_regrade.py",
     "private_runtime/public_core.py",
     "private_runtime/prepare_container_context.py",
+    "private_runtime/build_hle_restricted_bundle.py",
     "private_runtime/verify_public_core.py",
     "private_runtime/run_private_tests.py",
     "private_runtime/run_private_module.py",
@@ -44,6 +45,23 @@ LOCKED_PUBLIC_PATHS = (
     Path("devtools/__init__.py"),
     Path("devtools/pricing"),
 )
+
+ALLOWED_CONTAINER_COPY_LINES = {
+    "COPY --from=codex-installer /usr/local/lib/node_modules/@openai/codex /usr/local/lib/node_modules/@openai/codex",
+    "COPY --from=codex-installer /usr/local/lib/node_modules/@playwright /usr/local/lib/node_modules/@playwright",
+    "COPY --from=codex-installer /ms-playwright /ms-playwright",
+    "COPY --chown=modeldial:modeldial public/scanner /app/scanner",
+    "COPY --chown=modeldial:modeldial public/questions /app/questions",
+    "COPY --chown=modeldial:modeldial public/devtools/__init__.py /app/devtools/__init__.py",
+    "COPY --chown=modeldial:modeldial public/devtools/pricing /app/devtools/pricing",
+    "COPY --chown=modeldial:modeldial private_runtime/public_core.py /app/private_runtime/public_core.py",
+    "COPY --chown=modeldial:modeldial private_runtime/verify_public_core.py /app/private_runtime/verify_public_core.py",
+    "COPY --chown=modeldial:modeldial modeldial-public-core.lock.json /app/modeldial-public-core.lock.json",
+    "COPY --chown=modeldial:modeldial private_runtime/scanner/cloud_reference_runner.py /app/scanner/cloud_reference_runner.py",
+    "COPY --chown=modeldial:modeldial private_runtime/scanner/reference_snapshot_publish.py /app/scanner/reference_snapshot_publish.py",
+    "COPY --chown=modeldial:modeldial private_runtime/scanner/reference_snapshot_regrade.py /app/scanner/reference_snapshot_regrade.py",
+    "COPY --chown=modeldial:modeldial cloudflare/job-spec.json /app/cloudflare/job-spec.json",
+}
 
 
 def _arguments() -> argparse.Namespace:
@@ -190,27 +208,13 @@ def main() -> int:
     dockerfile_path = private_root / "Dockerfile.cloudflare"
     if dockerfile_path.is_file():
         dockerfile = dockerfile_path.read_text(encoding="utf-8")
-        allowed_copy_lines = {
-            "COPY --from=codex-installer /usr/local/lib/node_modules/@openai/codex /usr/local/lib/node_modules/@openai/codex",
-            "COPY --chown=modeldial:modeldial public/scanner /app/scanner",
-            "COPY --chown=modeldial:modeldial public/questions /app/questions",
-            "COPY --chown=modeldial:modeldial public/devtools/__init__.py /app/devtools/__init__.py",
-            "COPY --chown=modeldial:modeldial public/devtools/pricing /app/devtools/pricing",
-            "COPY --chown=modeldial:modeldial private_runtime/public_core.py /app/private_runtime/public_core.py",
-            "COPY --chown=modeldial:modeldial private_runtime/verify_public_core.py /app/private_runtime/verify_public_core.py",
-            "COPY --chown=modeldial:modeldial modeldial-public-core.lock.json /app/modeldial-public-core.lock.json",
-            "COPY --chown=modeldial:modeldial private_runtime/scanner/cloud_reference_runner.py /app/scanner/cloud_reference_runner.py",
-            "COPY --chown=modeldial:modeldial private_runtime/scanner/reference_snapshot_publish.py /app/scanner/reference_snapshot_publish.py",
-            "COPY --chown=modeldial:modeldial private_runtime/scanner/reference_snapshot_regrade.py /app/scanner/reference_snapshot_regrade.py",
-            "COPY --chown=modeldial:modeldial cloudflare/job-spec.json /app/cloudflare/job-spec.json",
-        }
         actual_copy_lines = {
             line.strip()
             for line in dockerfile.splitlines()
             if line.strip().upper().startswith(("COPY ", "ADD "))
         }
-        missing = allowed_copy_lines - actual_copy_lines
-        unexpected = actual_copy_lines - allowed_copy_lines
+        missing = ALLOWED_CONTAINER_COPY_LINES - actual_copy_lines
+        unexpected = actual_copy_lines - ALLOWED_CONTAINER_COPY_LINES
         for line in sorted(missing):
             problems.append(f"Container public-core assembly is missing: {line}")
         for line in sorted(unexpected):

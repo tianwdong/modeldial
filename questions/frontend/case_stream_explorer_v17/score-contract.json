@@ -1,0 +1,47 @@
+{
+  "schema_version":"frontend_score_contract_v17",
+  "candidate_id":"frontend-case-stream-explorer-v17",
+  "total_points":100,
+  "automated_points":85,
+  "visual_judge_points":15,
+  "dimensions":[
+    {"id":"query_state","points":23,"checks":[
+      {"id":"Q01","points":4,"mode":"playwright","description":"Injected cases, dynamic facets, metrics, and empty inspector render."},
+      {"id":"Q02","points":6,"mode":"playwright","description":"Tokenized Unicode-normalized search and empty recovery are correct."},
+      {"id":"Q03","points":6,"mode":"playwright","description":"Team/status facets and all deterministic sort modes compose."},
+      {"id":"Q04","points":7,"mode":"playwright","description":"Initial URL, canonical updates, unrelated params, and popstate restore view state."}
+    ]},
+    {"id":"virtual_keyboard","points":19,"checks":[
+      {"id":"L01","points":7,"mode":"playwright_geometry","description":"Spacer height, bounded render window, row height, and transforms are exact."},
+      {"id":"L02","points":6,"mode":"playwright_geometry","description":"Scrolling renders the correct overscanned slice without changing total geometry."},
+      {"id":"L03","points":6,"mode":"playwright_accessibility","description":"Arrow, Home, End, and page keys keep one active focused row visible with correct aria positions."}
+    ]},
+    {"id":"selection_async","points":28,"checks":[
+      {"id":"S01","points":7,"mode":"playwright_accessibility","description":"Shift range selection survives query, sort, scroll, and inspector transitions."},
+      {"id":"S02","points":7,"mode":"playwright","description":"Bulk optimistic update sends one independently revisioned save per selected case."},
+      {"id":"S03","points":7,"mode":"playwright","description":"Older CASE-005 response cannot overwrite newer intent."},
+      {"id":"S04","points":7,"mode":"playwright_accessibility","description":"Mixed rejection restores only CASE-013 with exact alert and keeps successful state."}
+    ]},
+    {"id":"responsive_layout","points":9,"checks":[
+      {"id":"R01","points":3,"mode":"playwright_geometry","description":"Desktop split view and document overflow."},
+      {"id":"R02","points":2,"mode":"playwright_geometry","description":"Tablet control wrapping and internal list scrolling."},
+      {"id":"R03","points":4,"mode":"playwright_accessibility","description":"Mobile facet strip, rows, full sheet, close, and focus restoration."}
+    ]},
+    {"id":"visual_completion","points":19,"checks":[
+      {"id":"V01","points":2,"mode":"computed_style","description":"Canvas, results, rows, and inspector use distinct surfaces."},
+      {"id":"V02","points":2,"mode":"computed_style","description":"Focus, active, selected, saving, status, and priority states differ."},
+      {"id":"V03","points":4,"mode":"visual_judge","description":"Hierarchy and data reading order work across viewports."},
+      {"id":"V04","points":4,"mode":"visual_judge","description":"Query, virtual list, selection, and inspector form one product system."},
+      {"id":"V05","points":4,"mode":"visual_judge","description":"Typography, spacing, density, contrast, and state colors are coherent."},
+      {"id":"V06","points":3,"mode":"visual_judge","description":"Responsive layouts show deliberate finished-product detail."}
+    ]},
+    {"id":"stability","points":2,"checks":[
+      {"id":"A01","points":2,"mode":"playwright","description":"Reduced-motion representative use emits no errors or external requests and keeps one live status."}
+    ]}
+  ],
+  "validity":{
+    "invalid_when":["app_shell_not_rendered","initial_fixture_not_rendered","uncaught_javascript_error"],
+    "qualified_requires":["Q01","Q02","Q03","Q04","L01","L02","L03","S01","S02","S03","S04"],
+    "ranking_policy":"Invalid outputs retain diagnostic evidence but rank as zero; partial valid outputs keep earned score without a cap."
+  }
+}

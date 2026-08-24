@@ -30,7 +30,7 @@ class V4QuestionPackTest(unittest.TestCase):
             100,
         )
 
-    def test_questions_directory_contains_only_the_current_catalog_pack(self) -> None:
+    def test_coding_questions_directory_contains_only_the_current_catalog_pack(self) -> None:
         questions_root = PROJECT_ROOT / "questions"
         catalog = json.loads(
             (questions_root / "catalog.json").read_text(encoding="utf-8")
@@ -40,11 +40,14 @@ class V4QuestionPackTest(unittest.TestCase):
             expected_files.add(str(question["prompt_path"]))
             expected_files.add(str(question["answer_path"]))
 
-        actual_files = {
-            path.relative_to(questions_root).as_posix()
-            for path in questions_root.rglob("*")
-            if path.is_file()
-        }
+        actual_files = set()
+        for path in questions_root.rglob("*"):
+            if not path.is_file():
+                continue
+            relative = path.relative_to(questions_root)
+            if relative.parts[0] == "frontend":
+                continue
+            actual_files.add(relative.as_posix())
 
         self.assertEqual(actual_files, expected_files)
         self.assertFalse((questions_root / "archive").exists())
