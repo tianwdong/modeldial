@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import hashlib
 import json
 import math
@@ -103,26 +104,27 @@ def build_update(
 
     previous_models = previous_snapshot["models"]
     reviewed_matches = normalized_policy["reviewed_matches"]
+    official_overrides = normalized_policy["official_overrides"]
     models: dict[str, dict[str, Any]] = {}
     warnings: list[str] = []
     fresh_count = 0
 
     for model_id in sorted(previous_models):
         previous_rate = previous_models[model_id]
-        matched_key, confidence, reason = _resolve_match(
-            model_id,
-            upstream_payload,
-            reviewed_matches,
-        )
         fresh_rate = None
-        if matched_key is not None:
-            try:
-                fresh_rate = _convert_upstream_rate(
-                    upstream_payload[matched_key],
-                    maximum_cost=normalized_policy["maximum_cost_per_token"],
-                )
-            except PricingUpdateError as exc:
-                warnings.append(f"{model_id}: {exc}")
+        provenance = None
+        try:
+            fresh_rate, provenance = _resolve_fresh_rate(
+                model_id,
+                upstream_payload,
+                normalized_policy["source_name"],
+                reviewed_matches,
+                official_overrides,
+                fetched_at=fetched_at,
+                maximum_cost=normalized_policy["maximum_cost_per_token"],
+            )
+        except PricingUpdateError as exc:
+            warnings.append(f"{model_id}: {exc}")
         if fresh_rate is None:
             models[model_id] = _preserve_stale_rate(
                 model_id,
@@ -130,47 +132,35 @@ def build_update(
                 previous_snapshot,
             )
             continue
-        fresh_rate["provenance"] = {
-            "source": normalized_policy["source_name"],
-            "matched_key": matched_key,
-            "fetched_at": fetched_at,
-            "stale": False,
-            "confidence": confidence,
-            "reason": reason,
-        }
+        fresh_rate["provenance"] = provenance
         models[model_id] = fresh_rate
         fresh_count += 1
 
     unpriced_requested: list[str] = []
+    known_model_ids = {model_id.casefold() for model_id in models}
     for model_id in sorted({item.strip() for item in requested_models if item.strip()}):
-        if model_id in models:
-            continue
-        matched_key, confidence, reason = _resolve_match(
-            model_id,
-            upstream_payload,
-            reviewed_matches,
-        )
-        if matched_key is None:
-            unpriced_requested.append(model_id)
+        if model_id.casefold() in known_model_ids:
             continue
         try:
-            fresh_rate = _convert_upstream_rate(
-                upstream_payload[matched_key],
+            fresh_rate, provenance = _resolve_fresh_rate(
+                model_id,
+                upstream_payload,
+                normalized_policy["source_name"],
+                reviewed_matches,
+                official_overrides,
+                fetched_at=fetched_at,
                 maximum_cost=normalized_policy["maximum_cost_per_token"],
             )
         except PricingUpdateError as exc:
             warnings.append(f"{model_id}: {exc}")
             unpriced_requested.append(model_id)
             continue
-        fresh_rate["provenance"] = {
-            "source": normalized_policy["source_name"],
-            "matched_key": matched_key,
-            "fetched_at": fetched_at,
-            "stale": False,
-            "confidence": confidence,
-            "reason": reason,
-        }
+        if fresh_rate is None:
+            unpriced_requested.append(model_id)
+            continue
+        fresh_rate["provenance"] = provenance
         models[model_id] = fresh_rate
+        known_model_ids.add(model_id.casefold())
         fresh_count += 1
 
     stale_count = sum(
@@ -191,6 +181,7 @@ def build_update(
                 "name": "ModelDial previous valid snapshot",
                 "snapshot_id": previous_snapshot["snapshot_id"],
             },
+            *_official_upstreams(official_overrides),
         ],
         "models": models,
         "aliases": deepcopy(previous_snapshot.get("aliases", {})),
@@ -365,6 +356,10 @@ def _validate_policy(policy: dict[str, Any]) -> dict[str, Any]:
         for local, upstream in reviewed.items()
     ):
         raise PricingUpdateError("policy reviewed matches are invalid")
+    result["official_overrides"] = _validate_official_overrides(
+        result.get("official_overrides", {}),
+        maximum_cost=maximum_cost,
+    )
     return result
 
 
@@ -445,6 +440,324 @@ def _resolve_match(
     if reviewed_key is not None and reviewed_key in upstream:
         return reviewed_key, "reviewed", "reviewed_alias"
     return None, None, None
+
+
+def _resolve_fresh_rate(
+    model_id: str,
+    upstream: dict[str, Any],
+    upstream_source_name: str,
+    reviewed_matches: dict[str, str],
+    official_overrides: dict[str, dict[str, Any]],
+    *,
+    fetched_at: str,
+    maximum_cost: float,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    official = official_overrides.get(model_id)
+    if official is not None:
+        rate, selection = _materialize_official_rate(
+            official,
+            fetched_at=fetched_at,
+            maximum_cost=maximum_cost,
+        )
+        reason = "official_override"
+        if selection is not None:
+            reason = f"official_{selection}"
+        return rate, {
+            "source": official["source_name"],
+            "source_url": official["source_url"],
+            "verified_at": official["verified_at"],
+            "matched_key": model_id,
+            "fetched_at": fetched_at,
+            "stale": False,
+            "confidence": "official",
+            "reason": reason,
+        }
+
+    matched_key, confidence, reason = _resolve_match(
+        model_id,
+        upstream,
+        reviewed_matches,
+    )
+    if matched_key is None:
+        return None, None
+    rate = _convert_upstream_rate(
+        upstream[matched_key],
+        maximum_cost=maximum_cost,
+    )
+    return rate, {
+        "source": upstream_source_name,
+        "matched_key": matched_key,
+        "fetched_at": fetched_at,
+        "stale": False,
+        "confidence": confidence,
+        "reason": reason,
+    }
+
+
+def _validate_official_overrides(
+    raw: Any,
+    *,
+    maximum_cost: float,
+) -> dict[str, dict[str, Any]]:
+    if not isinstance(raw, dict):
+        raise PricingUpdateError("policy official overrides must be an object")
+    normalized: dict[str, dict[str, Any]] = {}
+    for model_id, entry in raw.items():
+        if not isinstance(model_id, str) or not model_id or not isinstance(entry, dict):
+            raise PricingUpdateError("policy official override entry is invalid")
+        item = deepcopy(entry)
+        for key in ("source_name", "source_url", "verified_at"):
+            if not isinstance(item.get(key), str) or not item[key].strip():
+                raise PricingUpdateError(
+                    f"official override {model_id} {key} is required"
+                )
+        if not item["source_url"].startswith("https://"):
+            raise PricingUpdateError(
+                f"official override {model_id} source_url must use HTTPS"
+            )
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", item["verified_at"]):
+            raise PricingUpdateError(
+                f"official override {model_id} verified_at must be YYYY-MM-DD"
+            )
+        kinds = [key for key in ("rates", "schedule", "promotion") if key in item]
+        if len(kinds) != 1:
+            raise PricingUpdateError(
+                f"official override {model_id} must define exactly one price rule"
+            )
+        if kinds[0] == "rates":
+            item["rates"] = _validate_official_rates(
+                item["rates"],
+                model_id=model_id,
+                maximum_cost=maximum_cost,
+            )
+        elif kinds[0] == "schedule":
+            item["schedule"] = _validate_official_schedule(
+                item["schedule"],
+                model_id=model_id,
+                maximum_cost=maximum_cost,
+            )
+        else:
+            item["promotion"] = _validate_official_promotion(
+                item["promotion"],
+                model_id=model_id,
+                maximum_cost=maximum_cost,
+            )
+        normalized[model_id] = item
+    return normalized
+
+
+def _validate_official_schedule(
+    raw: Any,
+    *,
+    model_id: str,
+    maximum_cost: float,
+) -> dict[str, Any]:
+    if not isinstance(raw, dict) or raw.get("timezone") != "UTC":
+        raise PricingUpdateError(
+            f"official override {model_id} schedule timezone must be UTC"
+        )
+    weekdays = raw.get("weekdays")
+    if (
+        not isinstance(weekdays, list)
+        or not weekdays
+        or any(
+            not isinstance(day, int)
+            or isinstance(day, bool)
+            or day < 0
+            or day > 6
+            for day in weekdays
+        )
+        or len(set(weekdays)) != len(weekdays)
+    ):
+        raise PricingUpdateError(
+            f"official override {model_id} schedule weekdays are invalid"
+        )
+    intervals = raw.get("peak_intervals")
+    if not isinstance(intervals, list) or not intervals:
+        raise PricingUpdateError(
+            f"official override {model_id} peak intervals are required"
+        )
+    normalized_intervals: list[list[str]] = []
+    minute_intervals: list[tuple[int, int]] = []
+    for interval in intervals:
+        if (
+            not isinstance(interval, list)
+            or len(interval) != 2
+            or any(not isinstance(value, str) for value in interval)
+        ):
+            raise PricingUpdateError(
+                f"official override {model_id} peak interval is invalid"
+            )
+        start, end = interval
+        start_minute = _parse_utc_time(start, model_id=model_id)
+        end_minute = _parse_utc_time(end, model_id=model_id)
+        if start_minute >= end_minute:
+            raise PricingUpdateError(
+                f"official override {model_id} peak interval must not wrap"
+            )
+        minute_intervals.append((start_minute, end_minute))
+        normalized_intervals.append([start, end])
+    ordered = sorted(minute_intervals)
+    if any(current[0] < previous[1] for previous, current in zip(ordered, ordered[1:])):
+        raise PricingUpdateError(
+            f"official override {model_id} peak intervals overlap"
+        )
+    return {
+        "timezone": "UTC",
+        "weekdays": sorted(weekdays),
+        "peak_intervals": normalized_intervals,
+        "peak": _validate_official_rates(
+            raw.get("peak"),
+            model_id=model_id,
+            maximum_cost=maximum_cost,
+        ),
+        "off_peak": _validate_official_rates(
+            raw.get("off_peak"),
+            model_id=model_id,
+            maximum_cost=maximum_cost,
+        ),
+    }
+
+
+def _validate_official_rates(
+    raw: Any,
+    *,
+    model_id: str,
+    maximum_cost: float,
+) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise PricingUpdateError(f"official override {model_id} rates are required")
+    allowed = {
+        "input_per_token",
+        "output_per_token",
+        "cached_input_per_token",
+        "cache_write_input_per_token",
+        "reasoning_output_per_token",
+        "long_context",
+    }
+    unexpected = sorted(set(raw) - allowed)
+    if unexpected:
+        raise PricingUpdateError(
+            f"official override {model_id} has unknown rate fields: "
+            + ", ".join(unexpected)
+        )
+    result = deepcopy(raw)
+    _validate_rate(result, maximum_cost=maximum_cost)
+    if result["input_per_token"] == 0 and result["output_per_token"] == 0:
+        raise PricingUpdateError(
+            f"official override {model_id} has no positive token price"
+        )
+    return result
+
+
+def _validate_official_promotion(
+    raw: Any,
+    *,
+    model_id: str,
+    maximum_cost: float,
+) -> dict[str, Any]:
+    if not isinstance(raw, dict):
+        raise PricingUpdateError(
+            f"official override {model_id} promotion must be an object"
+        )
+    ends_at = raw.get("ends_at")
+    if not isinstance(ends_at, str):
+        raise PricingUpdateError(
+            f"official override {model_id} promotion ends_at is required"
+        )
+    _parse_utc_instant(ends_at)
+    return {
+        "ends_at": ends_at,
+        "rates": _validate_official_rates(
+            raw.get("rates"),
+            model_id=model_id,
+            maximum_cost=maximum_cost,
+        ),
+        "default_rates": _validate_official_rates(
+            raw.get("default_rates"),
+            model_id=model_id,
+            maximum_cost=maximum_cost,
+        ),
+    }
+
+
+def _materialize_official_rate(
+    entry: dict[str, Any],
+    *,
+    fetched_at: str,
+    maximum_cost: float,
+) -> tuple[dict[str, Any], str | None]:
+    rates = entry.get("rates")
+    if rates is not None:
+        result = deepcopy(rates)
+        _validate_rate(result, maximum_cost=maximum_cost)
+        return result, None
+
+    instant = _parse_utc_instant(fetched_at)
+    promotion = entry.get("promotion")
+    if promotion is not None:
+        is_active = instant < _parse_utc_instant(promotion["ends_at"])
+        result = deepcopy(
+            promotion["rates"] if is_active else promotion["default_rates"]
+        )
+        _validate_rate(result, maximum_cost=maximum_cost)
+        return result, "promotion_active" if is_active else "promotion_expired"
+
+    schedule = entry["schedule"]
+    minute = instant.hour * 60 + instant.minute
+    is_peak = instant.weekday() in schedule["weekdays"] and any(
+        _parse_utc_time(start, model_id="schedule")
+        <= minute
+        < _parse_utc_time(end, model_id="schedule")
+        for start, end in schedule["peak_intervals"]
+    )
+    period = "peak" if is_peak else "off_peak"
+    result = deepcopy(schedule[period])
+    _validate_rate(result, maximum_cost=maximum_cost)
+    return result, f"schedule_{period}"
+
+
+def _parse_utc_instant(raw: str) -> datetime:
+    if not isinstance(raw, str) or not raw:
+        raise PricingUpdateError("pricing fetched_at is required")
+    try:
+        instant = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise PricingUpdateError("pricing fetched_at must be ISO 8601") from exc
+    if instant.tzinfo is None:
+        raise PricingUpdateError("pricing fetched_at must include a timezone")
+    return instant.astimezone(timezone.utc)
+
+
+def _parse_utc_time(raw: str, *, model_id: str) -> int:
+    match = re.fullmatch(r"([01]\d|2[0-3]):([0-5]\d)", raw)
+    if match is None:
+        raise PricingUpdateError(
+            f"official override {model_id} time must be HH:MM"
+        )
+    return int(match.group(1)) * 60 + int(match.group(2))
+
+
+def _official_upstreams(
+    overrides: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    grouped: dict[tuple[str, str, str], list[str]] = {}
+    for model_id, entry in overrides.items():
+        identity = (
+            entry["source_name"],
+            entry["source_url"],
+            entry["verified_at"],
+        )
+        grouped.setdefault(identity, []).append(model_id)
+    return [
+        {
+            "name": source_name,
+            "url": source_url,
+            "verified_at": verified_at,
+            "models": sorted(models),
+        }
+        for (source_name, source_url, verified_at), models in sorted(grouped.items())
+    ]
 
 
 def _convert_upstream_rate(

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "source_name": "LiteLLM",
-  "source_url": "https://raw.githubusercontent.com/BerriAI/litellm/b45b4b73004261b47369d7d12c97d58b137a732e/model_prices_and_context_window.json",
-  "source_revision": "b45b4b73004261b47369d7d12c97d58b137a732e",
-  "source_sha256": "sha256:960279570fc4d2bdd56258a58ce30d124097cee61fdec6fdc483d4a057a4909b",
+  "source_url": "https://raw.githubusercontent.com/BerriAI/litellm/d8d384eada9d3b1b6c493ae86f94cadec3dac78e/model_prices_and_context_window.json",
+  "source_revision": "d8d384eada9d3b1b6c493ae86f94cadec3dac78e",
+  "source_sha256": "sha256:1299e5393495d50ff695d54a5280c1880646cc524e04ae8a88fb3f7f3998e3e6",
   "minimum_upstream_entry_count": 1000,
   "minimum_model_count": 30,
   "minimum_fresh_model_count": 15,
@@ -21,6 +21,101 @@
   "reviewed_matches": {
     "claude-sonnet-4": "claude-sonnet-4-20250514",
     "gemini-3-flash": "gemini-3-flash-preview",
-    "gemini-3.1-pro": "gemini-3.1-pro-preview"
+    "gemini-3.1-pro": "gemini-3.1-pro-preview",
+    "gemini-3.7-flash-high": "gemini/gemini-3.7-flash",
+    "grok-4.6": "xai/grok-4.6",
+    "minimax-m3": "minimax/MiniMax-M3",
+    "k3": "moonshot/kimi-k3",
+    "qwen3.8-max": "dashscope/qwen3.8-max"
+  },
+  "official_overrides": {
+    "deepseek-v4-flash": {
+      "source_name": "DeepSeek API pricing",
+      "source_url": "https://api-docs.deepseek.com/quick_start/pricing",
+      "verified_at": "2026-08-26",
+      "schedule": {
+        "timezone": "UTC",
+        "weekdays": [0, 1, 2, 3, 4],
+        "peak_intervals": [["01:00", "04:00"], ["06:00", "10:00"]],
+        "peak": {
+          "input_per_token": 0.00000044,
+          "cached_input_per_token": 0.000000014,
+          "output_per_token": 0.00000132
+        },
+        "off_peak": {
+          "input_per_token": 0.00000022,
+          "cached_input_per_token": 0.000000007,
+          "output_per_token": 0.00000066
+        }
+      }
+    },
+    "deepseek-v4-pro": {
+      "source_name": "DeepSeek API pricing",
+      "source_url": "https://api-docs.deepseek.com/quick_start/pricing",
+      "verified_at": "2026-08-26",
+      "schedule": {
+        "timezone": "UTC",
+        "weekdays": [0, 1, 2, 3, 4],
+        "peak_intervals": [["01:00", "04:00"], ["06:00", "10:00"]],
+        "peak": {
+          "input_per_token": 0.00000132,
+          "cached_input_per_token": 0.000000044,
+          "output_per_token": 0.00000396
+        },
+        "off_peak": {
+          "input_per_token": 0.00000066,
+          "cached_input_per_token": 0.000000022,
+          "output_per_token": 0.00000198
+        }
+      }
+    },
+    "deepseek-v4-flash-vision-exp": {
+      "source_name": "DeepSeek API pricing",
+      "source_url": "https://api-docs.deepseek.com/quick_start/pricing",
+      "verified_at": "2026-08-26",
+      "schedule": {
+        "timezone": "UTC",
+        "weekdays": [0, 1, 2, 3, 4],
+        "peak_intervals": [["01:00", "04:00"], ["06:00", "10:00"]],
+        "peak": {
+          "input_per_token": 0.00000044,
+          "cached_input_per_token": 0.000000014,
+          "output_per_token": 0.00000132
+        },
+        "off_peak": {
+          "input_per_token": 0.00000022,
+          "cached_input_per_token": 0.000000007,
+          "output_per_token": 0.00000066
+        }
+      }
+    },
+    "glm-5.3": {
+      "source_name": "Z.AI API pricing",
+      "source_url": "https://docs.z.ai/guides/overview/pricing",
+      "verified_at": "2026-08-26",
+      "rates": {
+        "input_per_token": 0.0000014,
+        "cached_input_per_token": 0.00000026,
+        "output_per_token": 0.0000044
+      }
+    },
+    "glm-5.3-flash": {
+      "source_name": "Z.AI API pricing",
+      "source_url": "https://docs.z.ai/guides/overview/pricing",
+      "verified_at": "2026-08-26",
+      "promotion": {
+        "ends_at": "2026-09-09T16:00:00Z",
+        "rates": {
+          "input_per_token": 0.000000075,
+          "cached_input_per_token": 0.000000015,
+          "output_per_token": 0.00000025
+        },
+        "default_rates": {
+          "input_per_token": 0.00000015,
+          "cached_input_per_token": 0.00000003,
+          "output_per_token": 0.0000005
+        }
+      }
+    }
   }
 }

@@ -80,6 +80,15 @@ def _policy(**overrides: object) -> dict[str, object]:
     return policy
 
 
+def _official_entry(**price_rule: object) -> dict[str, object]:
+    return {
+        "source_name": "Provider official pricing",
+        "source_url": "https://provider.example/pricing",
+        "verified_at": "2026-07-25",
+        **price_rule,
+    }
+
+
 class PricingUpdaterTest(unittest.TestCase):
     def test_policy_requires_commit_pinned_source_identity(self) -> None:
         with self.assertRaisesRegex(ValueError, "source_revision"):
@@ -235,6 +244,160 @@ class PricingUpdaterTest(unittest.TestCase):
         self.assertTrue(target["provenance"]["stale"])
         self.assertEqual(outcome.report["unpriced_requested_models"], ["brand-new"])
         self.assertNotIn("brand-new", candidate["models"])
+
+    def test_official_static_price_can_add_a_model_missing_from_litellm(self) -> None:
+        outcome = build_update(
+            _previous_snapshot(),
+            _upstream_payload(),
+            _policy(
+                official_overrides={
+                    "official-model": _official_entry(
+                        rates={
+                            "input_per_token": 0.5e-6,
+                            "cached_input_per_token": 0.1e-6,
+                            "output_per_token": 1.5e-6,
+                        }
+                    )
+                }
+            ),
+            fetched_at=FETCHED_AT,
+            requested_models=("official-model",),
+        )
+
+        candidate = outcome.candidate or {}
+        official = candidate["models"]["official-model"]
+        self.assertEqual(official["input_per_token"], 0.5e-6)
+        self.assertEqual(official["cached_input_per_token"], 0.1e-6)
+        self.assertEqual(official["output_per_token"], 1.5e-6)
+        self.assertEqual(official["provenance"]["confidence"], "official")
+        self.assertEqual(official["provenance"]["reason"], "official_override")
+        self.assertEqual(
+            official["provenance"]["source_url"],
+            "https://provider.example/pricing",
+        )
+        self.assertEqual(outcome.report["unpriced_requested_models"], [])
+
+    def test_requested_model_case_variant_does_not_create_duplicate_pricing(self) -> None:
+        outcome = build_update(
+            _previous_snapshot(),
+            _upstream_payload(),
+            _policy(
+                minimum_fresh_model_count=3,
+                reviewed_matches={
+                    "alias-model": "provider/alias-v2",
+                    "missing-model": "provider/alias-v2",
+                },
+            ),
+            fetched_at=FETCHED_AT,
+            requested_models=("MISSING-MODEL",),
+        )
+
+        candidate = outcome.candidate or {}
+        models = candidate["models"]
+        self.assertIn("missing-model", models)
+        self.assertNotIn("MISSING-MODEL", models)
+        self.assertEqual(models["missing-model"]["input_per_token"], 4e-6)
+        self.assertEqual(outcome.report["unpriced_requested_models"], [])
+
+    def test_official_weekday_schedule_overrides_incomplete_litellm_price(self) -> None:
+        policy = _policy(
+            official_overrides={
+                "exact-model": _official_entry(
+                    schedule={
+                        "timezone": "UTC",
+                        "weekdays": [0, 1, 2, 3, 4],
+                        "peak_intervals": [["01:00", "04:00"]],
+                        "peak": {
+                            "input_per_token": 8e-6,
+                            "output_per_token": 9e-6,
+                        },
+                        "off_peak": {
+                            "input_per_token": 4e-6,
+                            "output_per_token": 5e-6,
+                        },
+                    }
+                )
+            }
+        )
+
+        peak = build_update(
+            _previous_snapshot(),
+            _upstream_payload(),
+            policy,
+            fetched_at="2026-07-27T01:00:00Z",
+        ).candidate or {}
+        boundary = build_update(
+            _previous_snapshot(),
+            _upstream_payload(),
+            policy,
+            fetched_at="2026-07-27T04:00:00Z",
+        ).candidate or {}
+        weekend = build_update(
+            _previous_snapshot(),
+            _upstream_payload(),
+            policy,
+            fetched_at="2026-07-25T01:00:00Z",
+        ).candidate or {}
+
+        peak_rate = peak["models"]["exact-model"]
+        self.assertEqual(peak_rate["input_per_token"], 8e-6)
+        self.assertEqual(
+            peak_rate["provenance"]["reason"],
+            "official_schedule_peak",
+        )
+        for candidate in (boundary, weekend):
+            rate = candidate["models"]["exact-model"]
+            self.assertEqual(rate["input_per_token"], 4e-6)
+            self.assertEqual(
+                rate["provenance"]["reason"],
+                "official_schedule_off_peak",
+            )
+
+    def test_official_promotion_expires_into_default_price(self) -> None:
+        policy = _policy(
+            official_overrides={
+                "promo-model": _official_entry(
+                    promotion={
+                        "ends_at": "2026-09-09T16:00:00Z",
+                        "rates": {
+                            "input_per_token": 0.5e-6,
+                            "output_per_token": 1e-6,
+                        },
+                        "default_rates": {
+                            "input_per_token": 1e-6,
+                            "output_per_token": 2e-6,
+                        },
+                    }
+                )
+            }
+        )
+        promoted = build_update(
+            _previous_snapshot(),
+            _upstream_payload(),
+            policy,
+            fetched_at="2026-09-09T15:59:59Z",
+            requested_models=("promo-model",),
+        ).candidate or {}
+        expired = build_update(
+            promoted,
+            _upstream_payload(),
+            policy,
+            fetched_at="2026-09-09T16:00:00Z",
+        ).candidate or {}
+
+        promoted_rate = promoted["models"]["promo-model"]
+        expired_rate = expired["models"]["promo-model"]
+        self.assertEqual(promoted_rate["input_per_token"], 0.5e-6)
+        self.assertEqual(
+            promoted_rate["provenance"]["reason"],
+            "official_promotion_active",
+        )
+        self.assertEqual(expired_rate["input_per_token"], 1e-6)
+        self.assertEqual(
+            expired_rate["provenance"]["reason"],
+            "official_promotion_expired",
+        )
+        self.assertNotEqual(promoted["snapshot_id"], expired["snapshot_id"])
 
     def test_fetched_time_does_not_create_a_new_version_when_rates_are_unchanged(self) -> None:
         first = build_update(

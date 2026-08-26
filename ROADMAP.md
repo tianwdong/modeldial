@@ -1,8 +1,10 @@
 # ModelDial Roadmap
 
-最后更新：2026-08-24
+最后更新：2026-08-27
 
 ## 当前阶段
+
+2026-08-27：完成最新模型价格的公共核心更新。LiteLLM 来源固定到提交 `d8d384eada9d3b1b6c493ae86f94cadec3dac78e` 与原始文件 SHA-256 `1299e5393495d50ff695d54a5280c1880646cc524e04ae8a88fb3f7f3998e3e6`；新增 `grok-4.6`、`gemini-3.7-flash-high`、`MiniMax-M3`、`k3`、`qwen3.8-max` 的受审映射，并以官网规则覆盖 LiteLLM 尚未完整提供的 `GLM-5.3`、限时半价 `GLM-5.3-Flash` 和按 UTC 工作日时段变化的 DeepSeek V4 Flash／Pro／Vision 价格。更新器现支持固定官网价、周期时段价和带结束时间的促销价，官网规则优先于上游聚合数据，促销到期后自动恢复目录价；冻结快照更新为 `pricing-v1-2db5881e647a00cd9b1537918236db7b4696805a74f9ba897e97ee78eee8c80f`，共 `41` 个模型，其中 `26` 个为当前新鲜价格。`grok-4.6` 标准输入／缓存输入／输出价格为 `$2／$0.5／$6` 每百万 Token，单次输入超过 `200K` 时三项费率均翻倍；`GLM-5.3-Flash` 当前促销价为 `$0.075／$0.015／$0.25` 每百万 Token，促销结束时间冻结为 `2026-09-09T16:00:00Z`。价格更新、计费与本地冻结快照定向回归 `33／33` 通过，完整 `./build.sh` 生成并验证 `build/modeldial-candidate.app`，现有 live App 未替换。公开全量回归此前执行 `1500` 项，其中价格范围内发现并修复 `1` 个 DeepSeek 旧费率硬编码断言；余下 `5` 项为 `test_service` 读取本机真实 Grok 4.6 会话而非隔离 fixture 的既有测试隔离失败，本次未改服务／会话代码，也未把这 `5` 项写成通过。
 
 2026-08-24：为私有 Cloudflare Benchmark Suite v5 补齐公开仓唯一所有的 `HLE Deep-20 v2` 核心评分边界。新增受限 bundle 加载器、冻结 manifest／题目内容哈希校验、固定 prompt、严格单键 JSON parser，以及“仅 `completed_turn` 可得分、超时／无效格式／其他终态计错、每题 5 分且无部分分”的纯函数；公开仓只包含合成 fixture，不包含 HLE 题面、答案、模型选择或真实响应。HLE 与既有 Frontend v17 定向回归 `12/12` 通过，范围内 `git diff --check` 通过。当前只形成未提交的本地公共核心候选；私有消费者的内容锁、Container、R2 和生产部署仍由私有仓在获得单独授权后处理。
 

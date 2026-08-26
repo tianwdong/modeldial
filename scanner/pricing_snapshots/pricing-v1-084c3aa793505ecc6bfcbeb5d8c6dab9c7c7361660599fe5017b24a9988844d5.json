@@ -6,8 +6,8 @@
     "grok": "grok-4.5",
     "grok-latest": "grok-4.5"
   },
-  "content_hash": "2db5881e647a00cd9b1537918236db7b4696805a74f9ba897e97ee78eee8c80f",
-  "generated_at": "2026-08-26T15:32:46.098925Z",
+  "content_hash": "084c3aa793505ecc6bfcbeb5d8c6dab9c7c7361660599fe5017b24a9988844d5",
+  "generated_at": "2026-08-07T09:51:16.568293Z",
   "models": {
     "claude-sonnet-4": {
       "cache_write_input_per_token": 3.75e-06,
@@ -21,7 +21,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "claude-sonnet-4-20250514",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -40,7 +40,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "claude-sonnet-4-5",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -54,7 +54,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "claude-sonnet-4-6",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -67,7 +67,7 @@
       "output_per_token": 4.2e-07,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "deepseek-chat",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -80,7 +80,7 @@
       "output_per_token": 4.2e-07,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "deepseek-reasoner",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -88,48 +88,31 @@
       }
     },
     "deepseek-v4-flash": {
-      "cached_input_per_token": 7e-09,
-      "input_per_token": 2.2e-07,
-      "output_per_token": 6.6e-07,
+      "cache_write_input_per_token": 0.0,
+      "cached_input_per_token": 2.8e-09,
+      "input_per_token": 1.4e-07,
+      "output_per_token": 2.8e-07,
       "provenance": {
-        "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "confidence": "exact",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "deepseek-v4-flash",
-        "reason": "official_schedule_off_peak",
-        "source": "DeepSeek API pricing",
-        "source_url": "https://api-docs.deepseek.com/quick_start/pricing",
-        "stale": false,
-        "verified_at": "2026-08-26"
-      }
-    },
-    "deepseek-v4-flash-vision-exp": {
-      "cached_input_per_token": 7e-09,
-      "input_per_token": 2.2e-07,
-      "output_per_token": 6.6e-07,
-      "provenance": {
-        "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
-        "matched_key": "deepseek-v4-flash-vision-exp",
-        "reason": "official_schedule_off_peak",
-        "source": "DeepSeek API pricing",
-        "source_url": "https://api-docs.deepseek.com/quick_start/pricing",
-        "stale": false,
-        "verified_at": "2026-08-26"
+        "reason": "exact_model_id",
+        "source": "LiteLLM",
+        "stale": false
       }
     },
     "deepseek-v4-pro": {
-      "cached_input_per_token": 2.2e-08,
-      "input_per_token": 6.6e-07,
-      "output_per_token": 1.98e-06,
+      "cache_write_input_per_token": 0.0,
+      "cached_input_per_token": 3.625e-09,
+      "input_per_token": 4.35e-07,
+      "output_per_token": 8.7e-07,
       "provenance": {
-        "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "confidence": "exact",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "deepseek-v4-pro",
-        "reason": "official_schedule_off_peak",
-        "source": "DeepSeek API pricing",
-        "source_url": "https://api-docs.deepseek.com/quick_start/pricing",
-        "stale": false,
-        "verified_at": "2026-08-26"
+        "reason": "exact_model_id",
+        "source": "LiteLLM",
+        "stale": false
       }
     },
     "gemini-2.5-flash": {
@@ -138,7 +121,7 @@
       "output_per_token": 2.5e-06,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gemini-2.5-flash",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -157,7 +140,7 @@
       "output_per_token": 1e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gemini-2.5-pro",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -170,7 +153,7 @@
       "output_per_token": 3e-06,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gemini-3-flash-preview",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -184,7 +167,7 @@
       "output_per_token": 1.5e-06,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gemini-3.1-flash-lite",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -203,7 +186,7 @@
       "output_per_token": 1.2e-05,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gemini-3.1-pro-preview",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -216,27 +199,13 @@
       "output_per_token": 9e-06,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gemini-3.5-flash",
         "reason": "exact_model_id",
         "source": "LiteLLM",
         "stale": false
       },
       "reasoning_output_per_token": 9e-06
-    },
-    "gemini-3.7-flash-high": {
-      "cached_input_per_token": 7.5e-08,
-      "input_per_token": 7.5e-07,
-      "output_per_token": 3.75e-06,
-      "provenance": {
-        "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
-        "matched_key": "gemini/gemini-3.7-flash",
-        "reason": "reviewed_alias",
-        "source": "LiteLLM",
-        "stale": false
-      },
-      "reasoning_output_per_token": 3.75e-06
     },
     "glm-5": {
       "cache_write_input_per_token": 0,
@@ -280,36 +249,6 @@
         "stale": true
       }
     },
-    "glm-5.3": {
-      "cached_input_per_token": 2.6e-07,
-      "input_per_token": 1.4e-06,
-      "output_per_token": 4.4e-06,
-      "provenance": {
-        "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
-        "matched_key": "glm-5.3",
-        "reason": "official_override",
-        "source": "Z.AI API pricing",
-        "source_url": "https://docs.z.ai/guides/overview/pricing",
-        "stale": false,
-        "verified_at": "2026-08-26"
-      }
-    },
-    "glm-5.3-flash": {
-      "cached_input_per_token": 1.5e-08,
-      "input_per_token": 7.5e-08,
-      "output_per_token": 2.5e-07,
-      "provenance": {
-        "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
-        "matched_key": "glm-5.3-flash",
-        "reason": "official_promotion_active",
-        "source": "Z.AI API pricing",
-        "source_url": "https://docs.z.ai/guides/overview/pricing",
-        "stale": false,
-        "verified_at": "2026-08-26"
-      }
-    },
     "gpt-5.4": {
       "cached_input_per_token": 2.5e-07,
       "input_per_token": 2.5e-06,
@@ -321,7 +260,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gpt-5.4",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -339,7 +278,7 @@
       "output_per_token": 3e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gpt-5.5",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -358,7 +297,7 @@
       "output_per_token": 1.2e-06,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gpt-5.6-luna",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -366,18 +305,18 @@
       }
     },
     "gpt-5.6-sol": {
-      "cache_write_input_per_token": 5e-06,
-      "cached_input_per_token": 4e-07,
-      "input_per_token": 4e-06,
+      "cache_write_input_per_token": 6.25e-06,
+      "cached_input_per_token": 5e-07,
+      "input_per_token": 5e-06,
       "long_context": {
         "input_multiplier": 2.0,
         "output_multiplier": 1.5,
         "threshold_tokens": 272000
       },
-      "output_per_token": 2e-05,
+      "output_per_token": 3e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gpt-5.6-sol",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -396,7 +335,7 @@
       "output_per_token": 1.2e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-07T09:51:16.568293Z",
         "matched_key": "gpt-5.6-terra",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -419,37 +358,6 @@
         "reason": "upstream_missing_preserved",
         "source": "ModelDial previous snapshot",
         "stale": true
-      }
-    },
-    "grok-4.6": {
-      "cached_input_per_token": 5e-07,
-      "input_per_token": 2e-06,
-      "long_context": {
-        "input_multiplier": 2.0,
-        "output_multiplier": 2.0,
-        "threshold_tokens": 200000
-      },
-      "output_per_token": 6e-06,
-      "provenance": {
-        "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
-        "matched_key": "xai/grok-4.6",
-        "reason": "reviewed_alias",
-        "source": "LiteLLM",
-        "stale": false
-      }
-    },
-    "k3": {
-      "cached_input_per_token": 3e-07,
-      "input_per_token": 3e-06,
-      "output_per_token": 1.5e-05,
-      "provenance": {
-        "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
-        "matched_key": "moonshot/kimi-k3",
-        "reason": "reviewed_alias",
-        "source": "LiteLLM",
-        "stale": false
       }
     },
     "kimi-for-coding": {
@@ -601,66 +509,29 @@
     "minimax-m3": {
       "cached_input_per_token": 6e-08,
       "input_per_token": 3e-07,
-      "long_context": {
-        "input_multiplier": 2.0,
-        "output_multiplier": 2.0,
-        "threshold_tokens": 512000
-      },
       "output_per_token": 1.2e-06,
       "provenance": {
-        "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
-        "matched_key": "minimax/MiniMax-M3",
-        "reason": "reviewed_alias",
-        "source": "LiteLLM",
-        "stale": false
-      }
-    },
-    "qwen3.8-max": {
-      "cached_input_per_token": 2.5e-07,
-      "input_per_token": 2e-06,
-      "output_per_token": 6e-06,
-      "provenance": {
-        "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
-        "matched_key": "dashscope/qwen3.8-max",
-        "reason": "reviewed_alias",
-        "source": "LiteLLM",
-        "stale": false
+        "confidence": "curated",
+        "fetched_at": "2026-07-24T00:00:00Z",
+        "matched_key": "minimax-m3",
+        "reason": "upstream_missing_preserved",
+        "source": "ModelDial previous snapshot",
+        "stale": true
       }
     }
   },
   "schema_version": 1,
-  "snapshot_id": "pricing-v1-2db5881e647a00cd9b1537918236db7b4696805a74f9ba897e97ee78eee8c80f",
+  "snapshot_id": "pricing-v1-084c3aa793505ecc6bfcbeb5d8c6dab9c7c7361660599fe5017b24a9988844d5",
   "upstreams": [
     {
       "name": "LiteLLM",
-      "revision": "d8d384eada9d3b1b6c493ae86f94cadec3dac78e",
-      "sha256": "sha256:1299e5393495d50ff695d54a5280c1880646cc524e04ae8a88fb3f7f3998e3e6",
-      "url": "https://raw.githubusercontent.com/BerriAI/litellm/d8d384eada9d3b1b6c493ae86f94cadec3dac78e/model_prices_and_context_window.json"
+      "revision": "b45b4b73004261b47369d7d12c97d58b137a732e",
+      "sha256": "sha256:960279570fc4d2bdd56258a58ce30d124097cee61fdec6fdc483d4a057a4909b",
+      "url": "https://raw.githubusercontent.com/BerriAI/litellm/b45b4b73004261b47369d7d12c97d58b137a732e/model_prices_and_context_window.json"
     },
     {
       "name": "ModelDial previous valid snapshot",
-      "snapshot_id": "pricing-v1-084c3aa793505ecc6bfcbeb5d8c6dab9c7c7361660599fe5017b24a9988844d5"
-    },
-    {
-      "models": [
-        "deepseek-v4-flash",
-        "deepseek-v4-flash-vision-exp",
-        "deepseek-v4-pro"
-      ],
-      "name": "DeepSeek API pricing",
-      "url": "https://api-docs.deepseek.com/quick_start/pricing",
-      "verified_at": "2026-08-26"
-    },
-    {
-      "models": [
-        "glm-5.3",
-        "glm-5.3-flash"
-      ],
-      "name": "Z.AI API pricing",
-      "url": "https://docs.z.ai/guides/overview/pricing",
-      "verified_at": "2026-08-26"
+      "snapshot_id": "pricing-v1-879bc0a00c291f1ac75f7ae3b19ba969edbb307c679c813df5bb464c6c7e4512"
     }
   ]
 }

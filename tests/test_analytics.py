@@ -14,6 +14,7 @@ from scanner.analytics import (
     _semantic_item_score,
     build_dashboard_summary,
 )
+from scanner.costing import estimate_reference_cost
 from scanner.models import (
     AppConfig,
     ConnectionConfig,
@@ -991,7 +992,16 @@ class AnalyticsTest(unittest.TestCase):
         self.assertEqual(rows[grok_id]["estimated_cost_usd"], 0.00032)
         self.assertEqual(rows[grok_id]["cost_coverage"], "complete")
         self.assertEqual(rows[grok_id]["elapsed_seconds"], 12)
-        self.assertEqual(rows[deepseek_id]["estimated_cost_usd"], 0.00002)
+        current_deepseek_cost = estimate_reference_cost(
+            "deepseek-v4-flash",
+            input_tokens=100,
+            cached_input_tokens=0,
+            output_tokens=20,
+        )
+        self.assertEqual(
+            rows[deepseek_id]["estimated_cost_usd"],
+            round(current_deepseek_cost.usd or 0, 6),
+        )
         self.assertEqual(rows[deepseek_id]["cost_coverage"], "complete")
 
     def test_scan_budget_uses_full_run_wall_clock_time_when_tasks_overlap(self) -> None:

@@ -46,3 +46,9 @@ The update policy only permits an identical upstream key or an entry in
 last valid price with `stale: true`; missing requested models remain unpriced.
 The candidate version changes only when normalized pricing content or its
 provenance changes, not merely because the check time changed.
+
+When LiteLLM is missing a newly released price or cannot represent an official
+time-dependent price, `official_overrides` may supply a reviewed primary-source
+rate. Overrides support fixed rates, recurring UTC weekday intervals, and a
+single end-dated promotion with explicit post-promotion rates. The selected
+rate and its official URL are frozen into each execution snapshot.

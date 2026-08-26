@@ -90,6 +90,19 @@ class CostingTest(unittest.TestCase):
             100_000 * 2e-6 * 2 + 200_000 * 0.2e-6 * 2 + 1_000 * 12e-6 * 1.5,
         )
 
+    def test_grok_4_6_doubles_rates_above_200k_input_tokens(self) -> None:
+        estimate = estimate_reference_cost(
+            "grok-4.6",
+            input_tokens=250_000,
+            cached_input_tokens=100_000,
+            output_tokens=2_000,
+        )
+
+        self.assertAlmostEqual(
+            estimate.usd or 0,
+            150_000 * 2e-6 * 2 + 100_000 * 0.5e-6 * 2 + 2_000 * 6e-6 * 2,
+        )
+
     def test_estimate_prices_cache_writes_separately(self) -> None:
         estimate = estimate_reference_cost(
             "gpt-5.6-terra",
@@ -130,11 +143,19 @@ class CostingTest(unittest.TestCase):
         cases = {
             "claude-sonnet-4-6": (3e-6, 0.3e-6, 15e-6),
             "gemini-2.5-flash": (0.3e-6, 0.03e-6, 2.5e-6),
-            "deepseek-v4-flash": (0.14e-6, 0.0028e-6, 0.28e-6),
+            "deepseek-v4-flash": (0.22e-6, 0.007e-6, 0.66e-6),
+            "deepseek-v4-flash-vision-exp": (0.22e-6, 0.007e-6, 0.66e-6),
+            "gemini-3.7-flash-high": (0.75e-6, 0.075e-6, 3.75e-6),
             "grok-4.5": (2e-6, 0.5e-6, 6e-6),
+            "grok-4.6": (2e-6, 0.5e-6, 6e-6),
             "kimi-for-coding": (0.95e-6, 0.15e-6, 4e-6),
+            "k3": (3e-6, 0.3e-6, 15e-6),
             "glm-5.2": (1e-6, 0.2e-6, 3.2e-6),
+            "glm-5.3": (1.4e-6, 0.26e-6, 4.4e-6),
+            "glm-5.3-flash": (0.075e-6, 0.015e-6, 0.25e-6),
             "MiniMax-M2.5": (0.3e-6, 0.03e-6, 1.2e-6),
+            "MiniMax-M3": (0.3e-6, 0.06e-6, 1.2e-6),
+            "qwen3.8-max": (2e-6, 0.25e-6, 6e-6),
         }
 
         for model, rates in cases.items():
