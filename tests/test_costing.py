@@ -155,6 +155,7 @@ class CostingTest(unittest.TestCase):
             "glm-5.3-flash": (0.075e-6, 0.015e-6, 0.25e-6),
             "MiniMax-M2.5": (0.3e-6, 0.03e-6, 1.2e-6),
             "MiniMax-M3": (0.3e-6, 0.06e-6, 1.2e-6),
+            "qwen3.8-flash": (0.16e-6, 0.16e-6, 0.47e-6),
             "qwen3.8-max": (2e-6, 0.25e-6, 6e-6),
         }
 

@@ -6,8 +6,8 @@
     "grok": "grok-4.5",
     "grok-latest": "grok-4.5"
   },
-  "content_hash": "2db5881e647a00cd9b1537918236db7b4696805a74f9ba897e97ee78eee8c80f",
-  "generated_at": "2026-08-26T15:32:46.098925Z",
+  "content_hash": "215171a10c40b779272f3d8ba44ac6e60bfd8b1f6928f84f000688e25a8bcdcf",
+  "generated_at": "2026-08-27T14:00:16.065881Z",
   "models": {
     "claude-sonnet-4": {
       "cache_write_input_per_token": 3.75e-06,
@@ -21,7 +21,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "claude-sonnet-4-20250514",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -40,7 +40,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "claude-sonnet-4-5",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -54,7 +54,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "claude-sonnet-4-6",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -67,7 +67,7 @@
       "output_per_token": 4.2e-07,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "deepseek-chat",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -80,7 +80,7 @@
       "output_per_token": 4.2e-07,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "deepseek-reasoner",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -93,7 +93,7 @@
       "output_per_token": 6.6e-07,
       "provenance": {
         "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "deepseek-v4-flash",
         "reason": "official_schedule_off_peak",
         "source": "DeepSeek API pricing",
@@ -108,7 +108,7 @@
       "output_per_token": 6.6e-07,
       "provenance": {
         "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "deepseek-v4-flash-vision-exp",
         "reason": "official_schedule_off_peak",
         "source": "DeepSeek API pricing",
@@ -123,7 +123,7 @@
       "output_per_token": 1.98e-06,
       "provenance": {
         "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "deepseek-v4-pro",
         "reason": "official_schedule_off_peak",
         "source": "DeepSeek API pricing",
@@ -138,7 +138,7 @@
       "output_per_token": 2.5e-06,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gemini-2.5-flash",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -157,7 +157,7 @@
       "output_per_token": 1e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gemini-2.5-pro",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -170,7 +170,7 @@
       "output_per_token": 3e-06,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gemini-3-flash-preview",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -184,7 +184,7 @@
       "output_per_token": 1.5e-06,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gemini-3.1-flash-lite",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -203,7 +203,7 @@
       "output_per_token": 1.2e-05,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gemini-3.1-pro-preview",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -216,7 +216,7 @@
       "output_per_token": 9e-06,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gemini-3.5-flash",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -230,7 +230,7 @@
       "output_per_token": 3.75e-06,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gemini/gemini-3.7-flash",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -286,7 +286,7 @@
       "output_per_token": 4.4e-06,
       "provenance": {
         "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "glm-5.3",
         "reason": "official_override",
         "source": "Z.AI API pricing",
@@ -301,7 +301,7 @@
       "output_per_token": 2.5e-07,
       "provenance": {
         "confidence": "official",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "glm-5.3-flash",
         "reason": "official_promotion_active",
         "source": "Z.AI API pricing",
@@ -321,7 +321,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gpt-5.4",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -339,7 +339,7 @@
       "output_per_token": 3e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gpt-5.5",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -358,7 +358,7 @@
       "output_per_token": 1.2e-06,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gpt-5.6-luna",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -377,7 +377,7 @@
       "output_per_token": 2e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gpt-5.6-sol",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -396,7 +396,7 @@
       "output_per_token": 1.2e-05,
       "provenance": {
         "confidence": "exact",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "gpt-5.6-terra",
         "reason": "exact_model_id",
         "source": "LiteLLM",
@@ -432,7 +432,7 @@
       "output_per_token": 6e-06,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "xai/grok-4.6",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -445,7 +445,7 @@
       "output_per_token": 1.5e-05,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "moonshot/kimi-k3",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -609,11 +609,25 @@
       "output_per_token": 1.2e-06,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "minimax/MiniMax-M3",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
         "stale": false
+      }
+    },
+    "qwen3.8-flash": {
+      "input_per_token": 1.6e-07,
+      "output_per_token": 4.7e-07,
+      "provenance": {
+        "confidence": "official",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
+        "matched_key": "qwen3.8-flash",
+        "reason": "official_override",
+        "source": "Qwen official announcement",
+        "source_url": "https://qwen.ai/blog?id=qwen3.8-flash-next",
+        "stale": false,
+        "verified_at": "2026-08-27"
       }
     },
     "qwen3.8-max": {
@@ -622,7 +636,7 @@
       "output_per_token": 6e-06,
       "provenance": {
         "confidence": "reviewed",
-        "fetched_at": "2026-08-26T15:32:46.098925Z",
+        "fetched_at": "2026-08-27T14:00:16.065881Z",
         "matched_key": "dashscope/qwen3.8-max",
         "reason": "reviewed_alias",
         "source": "LiteLLM",
@@ -631,7 +645,7 @@
     }
   },
   "schema_version": 1,
-  "snapshot_id": "pricing-v1-2db5881e647a00cd9b1537918236db7b4696805a74f9ba897e97ee78eee8c80f",
+  "snapshot_id": "pricing-v1-215171a10c40b779272f3d8ba44ac6e60bfd8b1f6928f84f000688e25a8bcdcf",
   "upstreams": [
     {
       "name": "LiteLLM",
@@ -641,7 +655,7 @@
     },
     {
       "name": "ModelDial previous valid snapshot",
-      "snapshot_id": "pricing-v1-084c3aa793505ecc6bfcbeb5d8c6dab9c7c7361660599fe5017b24a9988844d5"
+      "snapshot_id": "pricing-v1-2db5881e647a00cd9b1537918236db7b4696805a74f9ba897e97ee78eee8c80f"
     },
     {
       "models": [
@@ -652,6 +666,14 @@
       "name": "DeepSeek API pricing",
       "url": "https://api-docs.deepseek.com/quick_start/pricing",
       "verified_at": "2026-08-26"
+    },
+    {
+      "models": [
+        "qwen3.8-flash"
+      ],
+      "name": "Qwen official announcement",
+      "url": "https://qwen.ai/blog?id=qwen3.8-flash-next",
+      "verified_at": "2026-08-27"
     },
     {
       "models": [

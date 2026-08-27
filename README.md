@@ -95,7 +95,7 @@ macOS 原生菜单栏 App 是唯一产品运行入口；仓库中的 scanner、�
 - 配置、扫描历史、运行状态和有限的会话元数据保存在本机。
 - API Key 保存在 macOS Keychain，不会写入扫描历史。
 - 评测题目和模型回复只会经过你选择的本地 CLI 或模型服务；这些服务各自适用其条款和隐私政策。
-- App 不内置遥测，也不上传会话正文或本机评测结果。品牌预览包只读取公开的第一方 Radar 快照；源码构建只有显式配置兼容的快照地址时才会访问远端榜单。
+- App 不内置遥测，也不上传会话正文或本机评测结果。品牌预览包只读取公开的第一方 Radar 快照；源码构建只有显式配置兼容的快照地址时才会访问远端榜单。新运行会读取第一方只读价格目录并把有效版本冻结到本机，目录不可用时回退 last-good／内置价格，不会阻断扫描或改写历史费用。
 
 更多边界见 [PRIVACY.md](PRIVACY.md) 和 [公开架构边界](docs/architecture.md)。官网、Cloudflare Worker、远端评测运行器和快照发布服务不属于本仓库，也不是 App 的运行入口。
 
@@ -110,7 +110,9 @@ MODELDIAL_REFERENCE_SNAPSHOT_URL=https://reference.modeldial.com/reference-snaps
 open build/modeldial-candidate.app
 ```
 
-上面的命令启用官方 Radar。若只需要完全离线的源码构建，直接运行 `./build.sh`；远端参考快照地址默认为空。
+上面的命令启用官方 Radar。直接运行 `./build.sh` 时，远端参考榜单地址默认为空；价格目录是独立的只读数据源，可通过 `MODELDIAL_PRICING_CATALOG_URL=""` 显式关闭并使用本机 last-good／内置快照。
+
+当前价格与 App 二进制已经解耦：维护侧发布新的内容寻址价格快照后，新扫描会自动采用，App 无需重新构建。源码运行可用 `MODELDIAL_PRICING_CATALOG_URL` 指定兼容目录；完整协议和历史冻结边界见 [价格目录 ADR](docs/adr/2026-08-27-remote-pricing-catalog.md)。
 
 `build.sh` 会构建 Swift App、冻结 Python 后端并运行 snapshot smoke。完成过一次完整构建后，只修改 Swift 或资源时可以使用 `./build-dev.sh`；修改 `scanner/`、`scripts/` 或 `questions/` 后必须重新运行 `./build.sh`。完整供应链门禁见 [发布清单](docs/release-checklist.md)。
 

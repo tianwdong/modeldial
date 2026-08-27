@@ -8,7 +8,8 @@ macOS App (Swift)
        └─ scanner (Python)
             ├─ local CLI / configured model endpoint
             ├─ local history and runtime state
-            └─ versioned reference-snapshot reader
+            ├─ versioned reference-snapshot reader
+            └─ versioned pricing-catalog reader and local freeze
 
 Private service, not in this repository
   ├─ official website
@@ -22,10 +23,11 @@ Private service, not in this repository
 - App snapshot、refresh snapshot 和 runtime event 的版本化 DTO 与 fixture。
 - 本地扫描、重试、历史持久化、评分与展示投影。
 - 参考榜单 JSON 的下载、校验、缓存和降级读取逻辑。
+- 内容寻址价格目录的生成、下载、校验、last-good 回退和运行级冻结逻辑。
 
 ## Source ownership
 
-本仓库是上述公开 App 和本地核心的唯一源码主仓。私有服务通过固定 commit、内容哈希和版本化 DTO／fixture 消费公开合同，不再保存 `Sources／Resources／scanner／scripts／questions／tests／devtools` 副本。Cloudflare 构建前从锁定 commit 导出公共 scanner、题包和价格更新器，并只把这些公共文件、三个私有 overlay、锁文件和任务规范放入独立的最小 Docker build context；镜像内再次校验内容哈希。`devtools/check_public_private_drift.py` 同时验证公共路径唯一性、提交与内容锁、公共核心工作树状态，以及 Docker `COPY` 白名单。
+本仓库是上述公开 App 和本地核心的唯一源码主仓。私有服务通过固定 commit、内容哈希和版本化 DTO／fixture 消费公开合同，不再保存 `Sources／Resources／scanner／scripts／questions／tests／devtools` 副本。Cloudflare 构建前从锁定 commit 导出公共 scanner、题包、价格目录读取器和维护侧更新器，并只把这些公共文件、三个私有 overlay、锁文件和任务规范放入独立的最小 Docker build context；镜像内再次校验内容哈希。App 冻结后端只包含价格目录读取器和内置回退快照，不复制维护侧更新器／policy。`devtools/check_public_private_drift.py` 同时验证公共路径唯一性、提交与内容锁、公共核心工作树状态，以及 Docker `COPY` 白名单。
 
 ## Private implementation
 

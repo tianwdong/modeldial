@@ -13,6 +13,8 @@ import tempfile
 from typing import Any
 from urllib.request import Request, urlopen
 
+from scanner.costing import pricing_snapshot_content_hash
+
 
 _LONG_CONTEXT_INPUT = re.compile(r"input_cost_per_token_above_(\d+)k_tokens")
 _TEXT_MODES = {"chat", "completion", "responses"}
@@ -919,33 +921,7 @@ def _number(value: Any, name: str) -> float:
 
 
 def _content_hash(snapshot: dict[str, Any]) -> str:
-    models = deepcopy(snapshot.get("models", {}))
-    if isinstance(models, dict):
-        for rate in models.values():
-            if not isinstance(rate, dict):
-                continue
-            provenance = rate.get("provenance")
-            if isinstance(provenance, dict):
-                provenance.pop("fetched_at", None)
-    semantic = {
-        "schema_version": snapshot.get("schema_version"),
-        "models": models,
-        "aliases": deepcopy(snapshot.get("aliases", {})),
-        "upstreams": [
-            deepcopy(upstream)
-            for upstream in snapshot.get("upstreams", [])
-            if isinstance(upstream, dict)
-            and upstream.get("revision")
-            and upstream.get("sha256")
-        ],
-    }
-    encoded = json.dumps(
-        semantic,
-        ensure_ascii=True,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return pricing_snapshot_content_hash(snapshot)
 
 
 def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:

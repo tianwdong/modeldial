@@ -13,6 +13,10 @@ from scanner.costing import (
     install_pricing_snapshot,
 )
 from scanner.local_pricing import prepare_local_pricing_snapshot
+from scanner.pricing_catalog import (
+    DownloadedPricingCatalog,
+    PricingCatalogDownloadError,
+)
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -34,23 +38,6 @@ def _snapshot(snapshot_id: str, input_rate: float) -> dict[str, object]:
     }
 
 
-def _policy() -> dict[str, object]:
-    source_revision = "a" * 40
-    return {
-        "schema_version": 1,
-        "source_name": "test",
-        "source_url": f"https://example.test/{source_revision}/prices.json",
-        "source_revision": source_revision,
-        "source_sha256": "sha256:" + "b" * 64,
-        "minimum_upstream_entry_count": 1,
-        "minimum_model_count": 1,
-        "minimum_fresh_model_count": 1,
-        "maximum_cost_per_token": 0.001,
-        "required_priceable_prefixes": ["gpt-"],
-        "reviewed_matches": {},
-    }
-
-
 class LocalPricingTest(unittest.TestCase):
     def setUp(self) -> None:
         self.addCleanup(
@@ -58,54 +45,36 @@ class LocalPricingTest(unittest.TestCase):
             ROOT / "scanner" / "pricing_snapshot.json",
         )
 
-    def test_new_run_refreshes_once_and_freezes_its_snapshot(self) -> None:
+    def test_disabled_catalog_freezes_baked_snapshot_once(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             backend = root / "backend"
             data_root = root / "data"
             (backend / "scanner").mkdir(parents=True)
-            (backend / "devtools" / "pricing").mkdir(parents=True)
             (backend / "scanner" / "pricing_snapshot.json").write_text(
                 json.dumps(_snapshot("pricing-v1-baked", 1e-6)),
                 encoding="utf-8",
             )
-            (backend / "devtools" / "pricing" / "policy.json").write_text(
-                json.dumps(_policy()),
-                encoding="utf-8",
-            )
-            calls = 0
-
-            def fetch(_policy_payload):  # type: ignore[no-untyped-def]
-                nonlocal calls
-                calls += 1
-                return {
-                    "gpt-5.6-luna": {
-                        "mode": "chat",
-                        "input_cost_per_token": 0.2e-6,
-                        "cache_read_input_token_cost": 0.02e-6,
-                        "cache_creation_input_token_cost": 0.25e-6,
-                        "output_cost_per_token": 1.2e-6,
-                    }
-                }
 
             first = prepare_local_pricing_snapshot(
                 backend_root=backend,
                 data_root=data_root,
                 scope_id="run-local-1",
                 refresh=True,
-                fetch_upstream=fetch,
+                catalog_url="",
             )
             second = prepare_local_pricing_snapshot(
                 backend_root=backend,
                 data_root=data_root,
                 scope_id="run-local-1",
                 refresh=True,
-                fetch_upstream=fetch,
+                catalog_url="",
             )
 
-            self.assertEqual(first["status"], "applied")
+            self.assertEqual(first["status"], "failed")
+            self.assertEqual(first["errors"], ["not_configured"])
+            self.assertTrue(first["fallback_used"])
             self.assertEqual(second["status"], "reused")
-            self.assertEqual(calls, 1)
             self.assertTrue((data_root / "pricing" / "current.json").is_file())
             self.assertTrue(
                 (data_root / "pricing" / "runs" / "run-local-1.json").is_file()
@@ -116,7 +85,7 @@ class LocalPricingTest(unittest.TestCase):
                 cached_input_tokens=0,
                 output_tokens=100,
             )
-            self.assertAlmostEqual(estimate.usd or 0, 1000 * 0.2e-6 + 100 * 1.2e-6)
+            self.assertAlmostEqual(estimate.usd or 0, 1000 * 1e-6 + 100 * 6e-6)
 
     def test_resume_restores_historical_snapshot_without_fetching(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -140,7 +109,7 @@ class LocalPricingTest(unittest.TestCase):
                 scope_id="run-local-legacy",
                 historical_snapshot_ids=("pricing-v1-legacy",),
                 refresh=False,
-                fetch_upstream=lambda _policy_payload: self.fail("must not fetch"),
+                catalog_url="",
             )
 
             self.assertEqual(report["status"], "historical_reused")
@@ -152,35 +121,86 @@ class LocalPricingTest(unittest.TestCase):
             )
             self.assertAlmostEqual(estimate.usd or 0, 0.001)
 
-    def test_new_run_keeps_baked_snapshot_when_refresh_fails(self) -> None:
+    def test_new_run_downloads_catalog_and_freezes_remote_snapshot(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
             backend = root / "backend"
             data_root = root / "data"
             (backend / "scanner").mkdir(parents=True)
-            (backend / "devtools" / "pricing").mkdir(parents=True)
             (backend / "scanner" / "pricing_snapshot.json").write_text(
                 json.dumps(_snapshot("pricing-v1-baked", 1e-6)),
                 encoding="utf-8",
             )
-            (backend / "devtools" / "pricing" / "policy.json").write_text(
-                json.dumps(_policy()),
+            remote = _snapshot("pricing-v1-remote", 0.2e-6)
+            calls = 0
+
+            def fetch(url: str) -> DownloadedPricingCatalog:
+                nonlocal calls
+                calls += 1
+                self.assertEqual(url, "https://pricing.example.test/v1")
+                return DownloadedPricingCatalog(
+                    manifest={"snapshot_id": remote["snapshot_id"]},
+                    snapshot=remote,
+                )
+
+            first = prepare_local_pricing_snapshot(
+                backend_root=backend,
+                data_root=data_root,
+                scope_id="run-remote-1",
+                refresh=True,
+                catalog_url="https://pricing.example.test/v1",
+                fetch_catalog=fetch,
+            )
+            second = prepare_local_pricing_snapshot(
+                backend_root=backend,
+                data_root=data_root,
+                scope_id="run-remote-1",
+                refresh=True,
+                catalog_url="https://pricing.example.test/v1",
+                fetch_catalog=fetch,
+            )
+
+            self.assertEqual(first["status"], "applied")
+            self.assertEqual(first["source"], "pricing_catalog")
+            self.assertEqual(second["status"], "reused")
+            self.assertEqual(calls, 1)
+            self.assertTrue(
+                (data_root / "pricing" / "snapshots" / "pricing-v1-remote.json").is_file()
+            )
+            estimate = estimate_reference_cost(
+                "gpt-5.6-luna",
+                input_tokens=1000,
+                cached_input_tokens=0,
+                output_tokens=0,
+            )
+            self.assertAlmostEqual(estimate.usd or 0, 0.0002)
+
+    def test_catalog_failure_keeps_last_valid_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            backend = root / "backend"
+            data_root = root / "data"
+            (backend / "scanner").mkdir(parents=True)
+            (backend / "scanner" / "pricing_snapshot.json").write_text(
+                json.dumps(_snapshot("pricing-v1-baked", 1e-6)),
                 encoding="utf-8",
             )
 
-            def fail_fetch(_policy_payload):  # type: ignore[no-untyped-def]
-                raise OSError("offline")
+            def fail(_url: str) -> DownloadedPricingCatalog:
+                raise PricingCatalogDownloadError("unavailable")
 
             report = prepare_local_pricing_snapshot(
                 backend_root=backend,
                 data_root=data_root,
-                scope_id="run-local-fallback",
+                scope_id="run-remote-fallback",
                 refresh=True,
-                fetch_upstream=fail_fetch,
+                catalog_url="https://pricing.example.test/v1",
+                fetch_catalog=fail,
             )
 
             self.assertEqual(report["status"], "failed")
             self.assertTrue(report["fallback_used"])
+            self.assertEqual(report["errors"], ["unavailable"])
             estimate = estimate_reference_cost(
                 "gpt-5.6-luna",
                 input_tokens=1000,

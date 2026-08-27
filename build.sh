@@ -348,11 +348,6 @@ for script_name in "${RUNTIME_SCRIPT_NAMES[@]}"; do
   cp "scripts/$script_name" "$BACKEND_DIR/scripts/$script_name"
 done
 cp -R "questions" "$BACKEND_DIR/questions"
-mkdir -p "$BACKEND_DIR/devtools/pricing"
-cp "devtools/__init__.py" "$BACKEND_DIR/devtools/__init__.py"
-cp "devtools/pricing/__init__.py" "$BACKEND_DIR/devtools/pricing/__init__.py"
-cp "devtools/pricing/updater.py" "$BACKEND_DIR/devtools/pricing/updater.py"
-cp "devtools/pricing/policy.json" "$BACKEND_DIR/devtools/pricing/policy.json"
 python_runtime_env "$PYINSTALLER_PYTHON" -m PyInstaller \
   --noconfirm \
   --clean \
@@ -360,8 +355,8 @@ python_runtime_env "$PYINSTALLER_PYTHON" -m PyInstaller \
   --noupx \
   --name "modeldial-backend" \
   --paths "$(pwd)" \
+  --exclude-module "devtools" \
   --hidden-import "unittest" \
-  --hidden-import "devtools.pricing.updater" \
   --hidden-import "ssl" \
   --hidden-import "hashlib" \
   --hidden-import "compression.zstd" \

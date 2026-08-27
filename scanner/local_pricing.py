@@ -2,12 +2,17 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
-import os
 from pathlib import Path
 import re
 from typing import Any, Callable, Iterable
 
 from .costing import install_pricing_snapshot, validate_pricing_snapshot
+from .pricing_catalog import (
+    DownloadedPricingCatalog,
+    PricingCatalogDownloadError,
+    configured_pricing_catalog_url,
+    download_pricing_catalog,
+)
 
 
 LOCAL_PRICING_REPORT_SCHEMA_VERSION = 1
@@ -21,15 +26,9 @@ def prepare_local_pricing_snapshot(
     scope_id: str,
     historical_snapshot_ids: Iterable[str] = (),
     refresh: bool,
-    fetch_upstream: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+    catalog_url: str | None = None,
+    fetch_catalog: Callable[[str], DownloadedPricingCatalog] | None = None,
 ) -> dict[str, object]:
-    from devtools.pricing.updater import (
-        execute_update,
-        fetch_upstream_json,
-        load_json_object,
-        record_failed_update,
-    )
-
     normalized_scope_id = scope_id.strip()
     if not _SAFE_SCOPE_ID.fullmatch(normalized_scope_id):
         raise ValueError("local pricing scope identity is invalid")
@@ -65,14 +64,14 @@ def prepare_local_pricing_snapshot(
             pricing_root=pricing_root,
             current_snapshot_path=current_snapshot_path,
             baked_snapshot_path=baked_snapshot_path,
-            load_json_object=load_json_object,
+            load_json_object=_load_json_object,
             validate_snapshot=validate_pricing_snapshot,
         )
         if source_path is None:
             raise ValueError(
                 "historical pricing snapshot is unavailable; start a new run"
             )
-        snapshot = load_json_object(source_path)
+        snapshot = _load_json_object(source_path)
         _write_json_atomic(run_snapshot_path, snapshot)
         snapshot_id = install_pricing_snapshot(run_snapshot_path)
         report = {
@@ -93,7 +92,7 @@ def prepare_local_pricing_snapshot(
     )
     if base_snapshot_path is None:
         raise ValueError("no validated local pricing snapshot is available")
-    base_snapshot = load_json_object(base_snapshot_path)
+    base_snapshot = _load_json_object(base_snapshot_path)
 
     if not refresh:
         _write_json_atomic(run_snapshot_path, base_snapshot)
@@ -112,41 +111,39 @@ def prepare_local_pricing_snapshot(
 
     pricing_root.mkdir(parents=True, exist_ok=True)
     working_path = pricing_root / f".{normalized_scope_id}.working.json"
-    candidate_path = pricing_root / f".{normalized_scope_id}.candidate.json"
     _write_json_atomic(working_path, base_snapshot)
     fetched_at = _utc_now()
-    policy_path = Path(
-        os.environ.get(
-            "MODELDIAL_PRICING_POLICY",
-            str(backend_root / "devtools" / "pricing" / "policy.json"),
-        )
-    )
     try:
-        try:
-            policy = load_json_object(policy_path)
-            upstream = (
-                fetch_upstream(policy)
-                if fetch_upstream is not None
-                else fetch_upstream_json(policy, timeout_seconds=10.0)
-            )
-            report = execute_update(
-                snapshot_path=working_path,
-                upstream_payload=upstream,
-                policy=policy,
-                fetched_at=fetched_at,
-                candidate_path=candidate_path,
-                report_path=report_path,
-                apply=True,
-            )
-        except Exception as error:
-            report = record_failed_update(
-                snapshot_path=working_path,
-                report_path=report_path,
-                fetched_at=fetched_at,
-                error=error,
-            )
+        configured_catalog_url = configured_pricing_catalog_url(catalog_url)
+        if configured_catalog_url:
+            try:
+                downloaded = (
+                    fetch_catalog(configured_catalog_url)
+                    if fetch_catalog is not None
+                    else download_pricing_catalog(base_url=configured_catalog_url)
+                )
+                _write_json_atomic(working_path, downloaded.snapshot)
+                report = {
+                    "schema_version": LOCAL_PRICING_REPORT_SCHEMA_VERSION,
+                    "checked_at": fetched_at,
+                    "status": "applied",
+                    "source": "pricing_catalog",
+                    "catalog_url": configured_catalog_url,
+                    "snapshot_id": downloaded.snapshot["snapshot_id"],
+                    "errors": [],
+                    "warnings": [],
+                }
+            except PricingCatalogDownloadError as error:
+                report = _catalog_failure_report(fetched_at, error.code)
+            except (OSError, TypeError, ValueError) as error:
+                report = _catalog_failure_report(
+                    fetched_at,
+                    type(error).__name__,
+                )
+        else:
+            report = _catalog_failure_report(fetched_at, "not_configured")
 
-        effective_snapshot = load_json_object(working_path)
+        effective_snapshot = _load_json_object(working_path)
         _write_json_atomic(current_snapshot_path, effective_snapshot)
         snapshot_id = str(effective_snapshot.get("snapshot_id") or "")
         if not _SAFE_SCOPE_ID.fullmatch(snapshot_id):
@@ -164,7 +161,6 @@ def prepare_local_pricing_snapshot(
         return report
     finally:
         working_path.unlink(missing_ok=True)
-        candidate_path.unlink(missing_ok=True)
 
 
 def _resolve_snapshot_path(
@@ -220,6 +216,27 @@ def _optional_json_mapping(path: Path) -> dict[str, object] | None:
     except (OSError, json.JSONDecodeError):
         return None
     return payload if isinstance(payload, dict) else None
+
+
+def _load_json_object(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError(f"JSON file must contain an object: {path}")
+    return payload
+
+
+def _catalog_failure_report(
+    checked_at: str,
+    code: str,
+) -> dict[str, object]:
+    return {
+        "schema_version": LOCAL_PRICING_REPORT_SCHEMA_VERSION,
+        "checked_at": checked_at,
+        "status": "failed",
+        "source": "pricing_catalog",
+        "errors": [code],
+        "warnings": [],
+    }
 
 
 def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:

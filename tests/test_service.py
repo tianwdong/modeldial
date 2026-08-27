@@ -1273,6 +1273,7 @@ class MonitorServiceTest(unittest.TestCase):
                     effort="high",
                     detected_at="2026-07-15T02:10:01Z",
                 ),
+                active_session_detector=lambda: (),
             )
 
             with patch("scanner.monitor_state_projection.build_dashboard_summary", return_value={}) as build:
@@ -1315,6 +1316,7 @@ class MonitorServiceTest(unittest.TestCase):
                     effort="high",
                     detected_at="2026-07-15T02:10:01Z",
                 ),
+                active_session_detector=lambda: (),
             )
 
             with patch("scanner.monitor_state_projection.build_dashboard_summary", return_value={}) as build:
@@ -1365,6 +1367,7 @@ class MonitorServiceTest(unittest.TestCase):
                         ),
                     ),
                 ),
+                active_session_detector=lambda: (),
             )
 
             with patch("scanner.monitor_state_projection.build_dashboard_summary", return_value={}) as build:
@@ -1408,6 +1411,7 @@ class MonitorServiceTest(unittest.TestCase):
                         effort=effort,
                         detected_at="2026-07-17T07:41:24Z",
                     ),
+                    active_session_detector=lambda: (),
                 )
 
                 with patch("scanner.monitor_state_projection.build_dashboard_summary", return_value={}) as build:

@@ -116,6 +116,15 @@
           "output_per_token": 0.0000005
         }
       }
+    },
+    "qwen3.8-flash": {
+      "source_name": "Qwen official announcement",
+      "source_url": "https://qwen.ai/blog?id=qwen3.8-flash-next",
+      "verified_at": "2026-08-27",
+      "rates": {
+        "input_per_token": 0.00000016,
+        "output_per_token": 0.00000047
+      }
     }
   }
 }

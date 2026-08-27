@@ -516,24 +516,26 @@ class PricingUpdaterTest(unittest.TestCase):
             installed = json.loads(snapshot_path.read_text(encoding="utf-8"))
             self.assertEqual(installed["snapshot_id"], applied["snapshot_id"])
 
-    def test_app_bundle_copies_only_the_validated_runtime_updater(self) -> None:
+    def test_app_bundle_excludes_pricing_maintenance_tooling(self) -> None:
         root = Path(__file__).resolve().parent.parent
         build_source = (root / "build.sh").read_text(encoding="utf-8")
 
         self.assertNotIn('cp -R "devtools"', build_source)
-        self.assertIn(
+        self.assertNotIn(
             'cp "devtools/pricing/updater.py" "$BACKEND_DIR/devtools/pricing/updater.py"',
             build_source,
         )
-        self.assertIn(
+        self.assertNotIn(
             'cp "devtools/pricing/policy.json" "$BACKEND_DIR/devtools/pricing/policy.json"',
             build_source,
         )
-        self.assertIn(
+        self.assertNotIn(
             '--hidden-import "devtools.pricing.updater"',
             build_source,
         )
+        self.assertIn('--exclude-module "devtools"', build_source)
         self.assertTrue((root / "scanner" / "local_pricing.py").exists())
+        self.assertTrue((root / "scanner" / "pricing_catalog.py").exists())
         self.assertFalse((root / "scripts" / "update_pricing_snapshot.py").exists())
 
     def test_cli_can_run_directly_with_an_offline_source(self) -> None:

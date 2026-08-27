@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from copy import deepcopy
+import hashlib
 import json
+import math
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from threading import RLock
-from typing import Mapping
+from typing import Any, Mapping
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,12 @@ def _pricing_snapshot_path() -> Path:
 
 def _load_pricing_snapshot(path: Path) -> tuple[str, dict[str, _Rates], dict[str, str]]:
     payload = json.loads(path.read_text(encoding="utf-8"))
+    return _parse_pricing_snapshot(payload)
+
+
+def _parse_pricing_snapshot(
+    payload: object,
+) -> tuple[str, dict[str, _Rates], dict[str, str]]:
     if not isinstance(payload, dict) or payload.get("schema_version") != 1:
         raise ValueError("unsupported pricing snapshot schema")
     snapshot_id = payload.get("snapshot_id")
@@ -113,6 +122,44 @@ def _load_pricing_snapshot(path: Path) -> tuple[str, dict[str, _Rates], dict[str
     return snapshot_id, rates, aliases
 
 
+def validate_pricing_snapshot_payload(payload: Mapping[str, object]) -> str:
+    snapshot_id, _, _ = _parse_pricing_snapshot(dict(payload))
+    return snapshot_id
+
+
+def pricing_snapshot_content_hash(snapshot: Mapping[str, object]) -> str:
+    models = deepcopy(snapshot.get("models", {}))
+    if isinstance(models, dict):
+        for rate in models.values():
+            if not isinstance(rate, dict):
+                continue
+            provenance = rate.get("provenance")
+            if isinstance(provenance, dict):
+                provenance.pop("fetched_at", None)
+    upstreams = snapshot.get("upstreams", [])
+    semantic: dict[str, Any] = {
+        "schema_version": snapshot.get("schema_version"),
+        "models": models,
+        "aliases": deepcopy(snapshot.get("aliases", {})),
+        "upstreams": [
+            deepcopy(upstream)
+            for upstream in upstreams
+            if isinstance(upstream, Mapping)
+            and upstream.get("revision")
+            and upstream.get("sha256")
+        ]
+        if isinstance(upstreams, list)
+        else [],
+    }
+    encoded = json.dumps(
+        semantic,
+        ensure_ascii=True,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _nonnegative_float(
     payload: dict[str, object],
     key: str,
@@ -130,8 +177,8 @@ def _optional_nonnegative_float(value: object) -> float | None:
     if value is None:
         return None
     parsed = float(value)
-    if parsed < 0:
-        raise ValueError("pricing values cannot be negative")
+    if not math.isfinite(parsed) or parsed < 0:
+        raise ValueError("pricing values must be finite and nonnegative")
     return parsed
 
 

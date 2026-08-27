@@ -48,9 +48,12 @@ content, credentials or copied provider prompts.
 
 ## Pricing snapshots
 
-The pricing updater and its policy are public code. The checked-in snapshots
-under `scanner/` record provenance for each model entry, including the source,
-matched key, fetch time and whether a previous local value was preserved.
+The pricing updater, catalog builder, reader and policy are public code. The
+checked-in fallback snapshot under `scanner/` and every published immutable
+catalog snapshot record provenance for each model entry, including the source,
+matched key, fetch time and whether a previous local value was preserved. The
+App bundle contains the catalog reader and a fallback snapshot, but does not
+contain the upstream updater or its maintenance policy.
 
 The current policy identifies LiteLLM's public model-price file as an upstream
 source and pins a full Git commit plus the SHA-256 of the exact raw file. Both
@@ -61,6 +64,12 @@ license and redistribution terms, retain the immutable revision, source hash,
 URL, and attribution, and remove or replace an entry if its terms do not permit
 bundling. Reference costs are estimates for comparison and are not provider
 invoices.
+
+The first-party catalog publishes a small `current.json` pointer plus an
+immutable `snapshots/pricing-v1-<content-sha256>.json` object. New runs may use a
+new validated snapshot without rebuilding the App, while every completed run
+keeps its original `pricing_snapshot_id`. Website or Radar publication must not
+reprice historical results with the latest catalog.
 
 ## Provider names, logos and trademarks
 
