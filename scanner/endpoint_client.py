@@ -169,7 +169,12 @@ class EndpointError(RuntimeError):
         super().__init__(f"endpoint request failed: {category}{detail}")
 
 
-def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointRequest:
+def build_endpoint_request(
+    target: EndpointTarget,
+    prompt: str,
+    *,
+    streaming: bool = True,
+) -> EndpointRequest:
     if not target.base_url:
         raise EndpointError("protocol_mismatch")
     base_url = target.base_url.rstrip("/")
@@ -178,9 +183,10 @@ def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointReque
             "model": target.model_id,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": ENDPOINT_OUTPUT_TOKEN_LIMIT,
-            "stream": True,
-            "stream_options": {"include_usage": True},
+            "stream": streaming,
         }
+        if streaming:
+            body["stream_options"] = {"include_usage": True}
         catalog_efforts = resolve_model_reasoning_efforts(
             model_id=target.model_id,
             base_url=target.base_url,
@@ -207,7 +213,7 @@ def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointReque
             "input": prompt,
             "max_output_tokens": ENDPOINT_OUTPUT_TOKEN_LIMIT,
             "store": False,
-            "stream": True,
+            "stream": streaming,
         }
         if target.scan_profile not in {"default", "codex_default"}:
             body["reasoning"] = {"effort": target.scan_profile}
@@ -226,7 +232,7 @@ def build_endpoint_request(target: EndpointTarget, prompt: str) -> EndpointReque
             "model": target.model_id,
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": ENDPOINT_OUTPUT_TOKEN_LIMIT,
-            "stream": True,
+            "stream": streaming,
         }
         if target.scan_profile != "default":
             body["thinking"] = {"type": "adaptive"}
@@ -377,9 +383,10 @@ def run_endpoint_request(
     *,
     timeout_seconds: float = 300,
     evaluation_id: str | None = None,
+    streaming: bool = True,
     urlopen=default_urlopen,
 ) -> EndpointResult:
-    request = build_endpoint_request(target, prompt)
+    request = build_endpoint_request(target, prompt, streaming=streaming)
     payload = execute_endpoint_request(
         request,
         api_key,
@@ -400,8 +407,9 @@ def run_endpoint_request_isolated(
     *,
     timeout_seconds: float = 300,
     evaluation_id: str | None = None,
+    streaming: bool = True,
 ) -> EndpointResult:
-    request = build_endpoint_request(target, prompt)
+    request = build_endpoint_request(target, prompt, streaming=streaming)
     worker_input = json.dumps(
         {
             "request": {

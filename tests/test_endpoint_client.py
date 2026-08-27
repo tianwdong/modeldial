@@ -398,6 +398,7 @@ class EndpointClientTest(unittest.TestCase):
             ),
             "Reply with only OK.",
             "api-secret",
+            streaming=False,
         )
 
         process_input = json.loads(run.call_args.kwargs["input"])
@@ -405,6 +406,7 @@ class EndpointClientTest(unittest.TestCase):
             process_input["request"]["api_format"],
             "anthropic_messages",
         )
+        self.assertIs(process_input["request"]["body"]["stream"], False)
         self.assertEqual(result.text, "OK")
 
     @patch("scanner.endpoint_client.subprocess.run")
@@ -894,6 +896,21 @@ class EndpointClientTest(unittest.TestCase):
             "max_tokens": 128_000,
             "stream": True,
         })
+
+    def test_anthropic_messages_request_can_disable_streaming(self) -> None:
+        request = build_endpoint_request(
+            target(
+                model_id="claude-fable-5",
+                api_format="anthropic_messages",
+                scan_profile="high",
+            ),
+            "2+2",
+            streaming=False,
+        )
+
+        self.assertIs(request.body["stream"], False)
+        self.assertEqual(request.body["thinking"], {"type": "adaptive"})
+        self.assertEqual(request.body["output_config"], {"effort": "high"})
 
     def test_anthropic_messages_effort_uses_adaptive_thinking(self) -> None:
         request = build_endpoint_request(
