@@ -2313,11 +2313,6 @@ final class AppSessionStore: ObservableObject {
     }
 
     private func remoteOnlyRecommendationSnapshot() -> RecommendationSnapshot? {
-        let activeSessions = snapshot?.config.recommendation.activeModelSessions ?? []
-        let hasActiveUserSession = activeSessions.contains {
-            $0.isEvaluationSession != true
-        } || (activeSessions.isEmpty
-            && (snapshot?.config.recommendation.detectedActiveSessionCount ?? 0) > 0)
         let portfolio = snapshot?.recommendationPortfolioV2
         let decision = portfolio?.representativeDecision
         let hasValidDecision = decision.map { decision in
@@ -2347,7 +2342,6 @@ final class AppSessionStore: ObservableObject {
             || hasNonActionableStatus
         guard !preservesLocalDecision,
               requiresRemoteOnly,
-              !hasActiveUserSession,
               let latest = snapshot?.referenceSnapshotFeed.trustedLatest else {
             return nil
         }

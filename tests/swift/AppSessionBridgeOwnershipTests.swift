@@ -2210,6 +2210,68 @@ private func verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdent
 }
 
 @MainActor
+private func verifyUnmappedActiveSessionsKeepOfficialRecommendationVisible() throws {
+    let remoteCandidateID = "cloudflare-reference:gpt-5.6-sol:max"
+    let snapshot = try decodedSnapshot(historyCount: 1) { payload in
+        var config = payload["config"] as! [String: Any]
+        var recommendation = config["recommendation"] as! [String: Any]
+        recommendation["current_model_detection_status"] = "active_mixed"
+        recommendation["detected_active_session_count"] = 2
+        recommendation["active_model_sessions"] = [[
+            "id": "active-grok-session",
+            "source": "grok",
+            "workspace_name": "fixture-workspace",
+            "model": "grok-4.6",
+            "effort": "high",
+            "is_evaluation_session": false,
+        ]]
+        recommendation["active_configuration_sessions"] = [[
+            "candidate_id": NSNull(),
+            "mapping_status": "unmapped",
+            "is_currently_producing": true,
+        ]]
+        config["recommendation"] = recommendation
+        payload["config"] = config
+
+        var portfolio = payload["recommendation_portfolio_v2"] as! [String: Any]
+        portfolio["source_mode"] = "auto"
+        portfolio["resolved_data_source"] = NSNull()
+        portfolio["source_resolution_reason"] = "current_unmapped"
+        portfolio["status"] = "needs_test"
+        portfolio["unmapped_active_session_count"] = 1
+        payload["recommendation_portfolio_v2"] = portfolio
+
+        payload["reference_snapshot_feed"] = referenceFeedPayload(
+            entries: [
+                referenceEntryPayload(
+                    id: remoteCandidateID,
+                    model: "gpt-5.6-sol",
+                    score: 87,
+                    providerID: "codex",
+                    effort: "max"
+                ),
+            ],
+            leaderboardOrder: [remoteCandidateID],
+            recommendedID: remoteCandidateID
+        )
+    }
+    let store = makeStore(
+        gateway: StubBridgeGateway(patchResult: .failure(.unexpectedCall)),
+        initialSnapshot: snapshot
+    )
+
+    expect(
+        store.glancePresentation.state == .remoteOnlyRecommendation,
+        "unmapped active user sessions must not suppress a trusted official recommendation"
+    )
+    expect(
+        store.glancePresentation.peekLeftPrimary == "gpt-5.6-sol"
+            && store.glancePresentation.peekLeftSecondary == "暂无本地对比",
+        "the fallback must name the official recommendation without implying a local comparison"
+    )
+}
+
+@MainActor
 private func verifyAmbiguousRemoteIdentityFailsClosed() throws {
     let currentID = "local:shared-high"
     let candidateID = "local:shared-high-alt"
@@ -3272,6 +3334,7 @@ private enum AppSessionBridgeOwnershipTestMain {
             try verifyAutoSourceUsesPortfolioResolvedOfficialIdentity()
             try verifyRadarSourceCanBeBrowsedWithoutCurrentConfiguration()
             try verifyAutoSourceFallsBackToRemoteProjectionAndMatchesCanonicalIdentity()
+            try verifyUnmappedActiveSessionsKeepOfficialRecommendationVisible()
             try verifyAmbiguousRemoteIdentityFailsClosed()
             try await verifySuccessfulPatchPublishesExactlyOnce()
             try await verifyFailedPatchDoesNotPolluteSnapshot()
