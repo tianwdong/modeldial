@@ -1034,6 +1034,36 @@ class EndpointClientTest(unittest.TestCase):
         self.assertEqual(result.cache_write_input_tokens, 2)
         self.assertEqual(result.response_id, "msg-stream")
 
+    def test_anthropic_stream_refusal_is_categorized(self) -> None:
+        payload = execute_endpoint_request(
+            build_endpoint_request(
+                target(api_format="anthropic_messages", scan_profile="default"),
+                "2+2",
+            ),
+            "api-secret",
+            urlopen=lambda *_args, **_kwargs: FakeStreamingResponse([
+                b"event: message_start\n",
+                b'data: {"type":"message_start","message":{"id":"msg-refusal","usage":{"input_tokens":10}}}\n',
+                b"\n",
+                b"event: message_delta\n",
+                b'data: {"type":"message_delta","delta":{"stop_reason":"refusal","stop_details":{"category":"content_policy_violation","explanation":"sensitive detail"}},"usage":{"output_tokens":0}}\n',
+                b"\n",
+                b"event: message_stop\n",
+                b'data: {"type":"message_stop"}\n',
+                b"\n",
+            ]),
+        )
+
+        with self.assertRaises(EndpointError) as error:
+            parse_endpoint_response("anthropic_messages", payload)
+
+        self.assertEqual(error.exception.category, "model_refusal")
+        self.assertEqual(error.exception.diagnostics, {
+            "stop_reason": "refusal",
+            "refusal_category": "content_policy_violation",
+        })
+        self.assertNotIn("sensitive detail", str(error.exception.diagnostics))
+
     def test_anthropic_stream_error_is_categorized_without_message(self) -> None:
         with self.assertRaises(EndpointError) as error:
             execute_endpoint_request(
@@ -1119,6 +1149,27 @@ class EndpointClientTest(unittest.TestCase):
         self.assertEqual(result.output_tokens, 32)
         self.assertIsNone(result.reasoning_tokens)
         self.assertEqual(result.response_id, "msg-test")
+
+    def test_anthropic_messages_refusal_is_categorized(self) -> None:
+        with self.assertRaises(EndpointError) as error:
+            parse_endpoint_response("anthropic_messages", {
+                "id": "msg-refusal",
+                "type": "message",
+                "content": [],
+                "stop_reason": "refusal",
+                "stop_details": {
+                    "category": "content_policy_violation",
+                    "explanation": "sensitive detail",
+                },
+                "usage": {"input_tokens": 128, "output_tokens": 0},
+            })
+
+        self.assertEqual(error.exception.category, "model_refusal")
+        self.assertEqual(error.exception.diagnostics, {
+            "stop_reason": "refusal",
+            "refusal_category": "content_policy_violation",
+        })
+        self.assertNotIn("sensitive detail", str(error.exception.diagnostics))
 
     def test_http_error_is_categorized_without_response_body(self) -> None:
         def urlopen(*_: object, **__: object) -> FakeResponse:

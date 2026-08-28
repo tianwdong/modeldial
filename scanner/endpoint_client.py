@@ -352,6 +352,12 @@ def parse_endpoint_response(
             response_id=_optional_str(payload.get("id")),
         )
     if api_format == "anthropic_messages":
+        refusal_diagnostics = _anthropic_refusal_diagnostics(payload)
+        if refusal_diagnostics is not None:
+            raise EndpointError(
+                "model_refusal",
+                diagnostics=refusal_diagnostics,
+            )
         usage = _dict(payload.get("usage"))
         input_parts = [
             _int(usage.get("input_tokens")),
@@ -860,6 +866,8 @@ def _read_anthropic_messages_sse(
     response_id: str | None = None
     text_parts: dict[int, list[str]] = {}
     usage: dict[str, object] = {}
+    stop_reason: str | None = None
+    stop_details: dict[str, object] = {}
     completed = False
 
     for event_type, event in _iter_sse_events(
@@ -875,6 +883,10 @@ def _read_anthropic_messages_sse(
             message = _dict(event.get("message"))
             response_id = _optional_str(message.get("id")) or response_id
             usage.update(_dict(message.get("usage")))
+            stop_reason = _optional_str(message.get("stop_reason")) or stop_reason
+            message_stop_details = _dict(message.get("stop_details"))
+            if message_stop_details:
+                stop_details = message_stop_details
         elif event_type == "content_block_start":
             index = _int(event.get("index"))
             content_block = _dict(event.get("content_block"))
@@ -890,6 +902,11 @@ def _read_anthropic_messages_sse(
                     str(delta.get("text") or "")
                 )
         elif event_type == "message_delta":
+            delta = _dict(event.get("delta"))
+            stop_reason = _optional_str(delta.get("stop_reason")) or stop_reason
+            delta_stop_details = _dict(delta.get("stop_details"))
+            if delta_stop_details:
+                stop_details = delta_stop_details
             usage.update(_dict(event.get("usage")))
         elif event_type == "message_stop":
             completed = True
@@ -907,6 +924,10 @@ def _read_anthropic_messages_sse(
     }
     if response_id is not None:
         payload["id"] = response_id
+    if stop_reason is not None:
+        payload["stop_reason"] = stop_reason
+    if stop_details:
+        payload["stop_details"] = stop_details
     return payload
 
 
@@ -958,6 +979,20 @@ def _anthropic_text(payload: dict[str, object]) -> str:
     if not text:
         raise EndpointError("invalid_response")
     return text
+
+
+def _anthropic_refusal_diagnostics(
+    payload: dict[str, object],
+) -> dict[str, object] | None:
+    if _optional_str(payload.get("stop_reason")) != "refusal":
+        return None
+    diagnostics: dict[str, object] = {"stop_reason": "refusal"}
+    refusal_category = _optional_str(
+        _dict(payload.get("stop_details")).get("category")
+    )
+    if refusal_category:
+        diagnostics["refusal_category"] = refusal_category[:160]
+    return diagnostics
 
 
 def _request_headers(

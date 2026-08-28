@@ -659,6 +659,56 @@ class RunnerTest(unittest.TestCase):
         self.assertNotIn("example.com", str(result.execution_trace))
         self.assertNotIn("api-secret", str(result.execution_trace))
 
+    @patch("scanner.runner.SecretStore")
+    @patch("scanner.runner.run_endpoint_request_isolated")
+    def test_live_api_runner_preserves_model_refusal_category(
+        self,
+        endpoint_request_mock,  # type: ignore[no-untyped-def]
+        secret_store_mock,  # type: ignore[no-untyped-def]
+    ) -> None:
+        endpoint_request_mock.side_effect = EndpointError(
+            "model_refusal",
+            diagnostics={
+                "stop_reason": "refusal",
+                "refusal_category": "content_policy_violation",
+            },
+        )
+        secret_store_mock.return_value.resolve.return_value = "api-secret"
+        api_target = ResolvedScanTarget(
+            candidate_id="api-1:claude-fable-5:xhigh",
+            source_id="custom_endpoint",
+            connection_id="api-1",
+            model_id="claude-fable-5",
+            scan_profile="xhigh",
+            display_name="Claude Fable 5 XHigh",
+            connection_mode="api",
+            api_format="anthropic_messages",
+            provider_preset="anthropic",
+            base_url="https://example.com/v1",
+            api_key_ref="keychain:com.modeldial.api-key:api-1",
+        )
+
+        result = run_target(
+            api_target,
+            self.QUESTION,
+            use_mock_results=False,
+            run_id="run-api-refusal",
+            phase="scan",
+        )
+
+        self.assertFalse(result.answer_ok)
+        self.assertEqual(
+            result.execution_trace["endpoint_error_category"],
+            "model_refusal",
+        )
+        self.assertEqual(
+            result.execution_trace["endpoint_diagnostics"],
+            {
+                "stop_reason": "refusal",
+                "refusal_category": "content_policy_violation",
+            },
+        )
+
     @patch("scanner.runner.run_grok_build_prompt")
     def test_live_grok_build_runner_uses_local_cli_and_observed_cost(
         self,
