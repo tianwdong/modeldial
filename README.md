@@ -4,7 +4,7 @@
   <p><strong>用真实 coding 评测，选出更适合当前任务的模型配置。</strong></p>
   <p>比较完整的 <code>model + effort + route</code>，直接看到质量、速度、Token 与参考费用。</p>
   <p>
-    <strong><a href="https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.15">下载 macOS preview.15</a></strong>
+    <strong><a href="https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.16">下载 macOS preview.16</a></strong>
     · <a href="https://modeldial.com">官网</a>
     · <a href="https://modeldial.com/radar">官方 Radar</a>
     · <a href="https://github.com/tianwdong/modeldial">GitHub</a>
@@ -14,7 +14,7 @@
 </div>
 
 > [!CAUTION]
-> `preview.15` 在保留嵌套签名修复的基础上，进一步加固了全新用户的首次启动：不误导入历史数据、不凭空创建 `~/.codex`，并优先刷新官方 Radar。本版仍未经过 Apple 签名和公证；请阅读下方安装边界，首次打开时不要关闭或绕过 Gatekeeper。
+> `preview.16` 将价格目录从 App 二进制中分离，后续价格更新无需重新构建 App；同时补入 Qwen3.8-Flash 官方价格，并改进长响应与 Anthropic endpoint 兼容性。本版仍未经过 Apple 签名和公证；请阅读下方安装边界，首次打开时不要关闭或绕过 Gatekeeper。
 
 <p align="center">
   <img src="docs/media/modeldial-demo-zh.gif" alt="ModelDial 胶囊展开、官方 Radar 与配置对比演示" width="840">
@@ -30,7 +30,7 @@
 
 ## 下载并安装
 
-**最近公开版本：[`v0.1.0-preview.15`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.15)**
+**最近公开版本：[`v0.1.0-preview.16`](https://github.com/tianwdong/modeldial/releases/tag/v0.1.0-preview.16)**
 
 系统要求：macOS 13 或更高版本、Apple Silicon。Intel Mac 当前不支持。
 
@@ -42,23 +42,23 @@
 brew install --cask tianwdong/tap/modeldial
 ```
 
-这是由 ModelDial 维护的个人 Tap，不是官方 `homebrew/cask`。Cask 下载与 GitHub Release 完全相同的 `preview.15` DMG，并固定其 SHA-256；App 后续仍通过已签名的 Sparkle 预览通道更新。
+这是由 ModelDial 维护的个人 Tap，不是官方 `homebrew/cask`。Cask 下载与 GitHub Release 完全相同的 `preview.16` DMG，并固定其 SHA-256；App 后续仍通过已签名的 Sparkle 预览通道更新。
 
 当前预览包尚未经过 Apple 签名和公证。为了让 App 及其内嵌 Sparkle helper 正常启动，Cask 安装后会仅对安装目标中的 `modeldial.app`（默认 `/Applications/modeldial.app`）递归移除 `com.apple.quarantine`；该动作不使用 `sudo`，不会关闭 Gatekeeper，也不会修改系统级安全设置。执行安装命令即表示接受这一临时预览策略；Cask 源码可在 [`tianwdong/homebrew-tap`](https://github.com/tianwdong/homebrew-tap) 审查。
 
 ### DMG
 
-下载 [`modeldial-0.1.0-preview.15-macos-arm64.dmg`](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.15/modeldial-0.1.0-preview.15-macos-arm64.dmg)。如需校验，同时下载 [`SHA256SUMS`](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.15/SHA256SUMS)。
+下载 [`modeldial-0.1.0-preview.16-macos-arm64.dmg`](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.16/modeldial-0.1.0-preview.16-macos-arm64.dmg)。如需校验，同时下载 [`SHA256SUMS`](https://github.com/tianwdong/modeldial/releases/download/v0.1.0-preview.16/SHA256SUMS)。
 
 1. 打开 DMG，把 `modeldial.app` 拖到 `Applications`，推出 DMG 后从 `Applications` 启动。
 2. 点击菜单栏顶部的 ModelDial 胶囊，直接浏览官方 Radar；无需先接入模型或运行扫描。
 3. 如需自己的对比证据，再进入「评测 → 模型接入」，导入 provider 或新增兼容 endpoint。
 
 > [!IMPORTANT]
-> `v0.1.0-preview.15` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。手动安装 DMG 时，若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；无需自行运行 `xattr`／`spctl`，也不要关闭 Gatekeeper。上方 Homebrew Cask 是透明披露的独立例外，只会自动移除已安装 `modeldial.app` 的 quarantine 属性。
+> `v0.1.0-preview.16` 是 unsigned／unnotarized 预览包，没有 Developer ID 签名或 Apple notarization。手动安装 DMG 时，若 macOS 阻止首次打开，请前往“系统设置 → 隐私与安全性 → 仍要打开”确认该 App；无需自行运行 `xattr`／`spctl`，也不要关闭 Gatekeeper。上方 Homebrew Cask 是透明披露的独立例外，只会自动移除已安装 `modeldial.app` 的 quarantine 属性。
 
 > [!NOTE]
-> `preview.7` 起已启用独立的 Sparkle 预览更新通道。能够正常打开 `preview.7`～`preview.11` 的用户可在“设置 → 软件更新”升级；若 `preview.11` 无法启动，请使用上方 DMG 或 Homebrew 覆盖安装 `preview.15`。`preview.6` 及更早版本的更新器不可用，需要手动安装。校验下载文件时，在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
+> `preview.7` 起已启用独立的 Sparkle 预览更新通道。能够正常打开 `preview.7`～`preview.11` 的用户可在“设置 → 软件更新”升级；若 `preview.11` 无法启动，请使用上方 DMG 或 Homebrew 覆盖安装 `preview.16`。`preview.6` 及更早版本的更新器不可用，需要手动安装。校验下载文件时，在资产目录运行 `shasum -a 256 -c SHA256SUMS`。
 
 ## 它解决什么
 
@@ -143,7 +143,7 @@ git diff --check
 - [Benchmark 与数据发布策略](docs/benchmark-and-data-policy.md)：题包、答案 fixture、价格快照和 provider 资产。
 - [公开内容来源审计](docs/open-source-content-audit.md)：上游来源、attribution 和题包检索留痕。
 - [发布清单](docs/release-checklist.md)：源码候选和二进制发行的独立门槛。
-- [当前预览发布说明](docs/releases/v0.1.0-preview.15.md)：安装步骤、验证与限制。
+- [当前预览发布说明](docs/releases/v0.1.0-preview.16.md)：安装步骤、验证与限制。
 - [安全策略](SECURITY.md)：私密漏洞报告渠道。
 
 ## 参与贡献与许可证
