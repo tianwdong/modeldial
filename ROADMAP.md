@@ -1,8 +1,10 @@
 # ModelDial Roadmap
 
-最后更新：2026-08-27
+最后更新：2026-08-28
 
 ## 当前阶段
+
+2026-08-28：`v0.1.0-preview.16`／Build 115 已完成公开发布。annotated tag 精确指向发行包源码提交 `1cba503bafad722e77a994c4d5341135f54d97ba`；GitHub prerelease 与 R2 的 DMG／ZIP／SBOM／`SHA256SUMS` 大小、SHA-256 和公开字节完全一致，签名 preview appcast 精确引用不可变 ZIP。Homebrew Cask 已更新并通过两轮隔离安装、卸载和重装；官网 Pages deployment `c8c653e2-c9da-4ca4-bc6c-0cca312dd040` 已上线，正式域名和不可变地址均回读 preview.16 下载入口、价格 pointer、不可变快照和官网 API。`qwen3.8-flash` 官方每百万输入／输出 Token `$0.16／$0.47` 已在 42 模型价格目录生效。隔离 Sparkle 验收从 Build 114 自动发现、EdDSA 验签并安装 Build 115，重新打开后显示“当前已是最新版本”；更新后 358 项 bundle 内容与公开 ZIP 一致，`/Applications/modeldial.app` 保持 Build 114 未被覆盖。分发严格在线检查通过；已发布版本不可覆盖门禁同步扩展至 `preview.16`。仍未完成的边界是 Developer ID、Apple 公证、stapling 和独立干净 Mac 的 Gatekeeper／App Translocation 验收。
 
 2026-08-27：完成价格目录与 App 二进制解耦的本地候选。公共核心新增内容寻址目录协议（`current.json` + 不可变 `snapshots/pricing-v1-<sha256>.json`）、维护侧生成器，以及 App／远端运行器共用的 HTTPS、同源跳转、大小、schema、原始 SHA-256、语义内容哈希、provenance 和费率范围校验；新运行会把有效版本保存为 last-good、不可变归档和运行级冻结副本，目录关闭或失败时回退 last-good／内置快照，历史运行不按新价格重算。App 冻结包已移除 `devtools` 价格抓取器和 policy，只保留目录读取器与内置快照；官网候选的 `public/data/pricing/` 是 App、远端运行器和官网只读 API 的同一目录事实，不扩大现有 Reference Worker 的公开路由。价格目录／本地冻结／更新器／计费定向回归 `39／39`、私有旧锁回退与当前公共工作树远端目录组合回归 `4／4`、网站价格和数据合同、定向 ESLint、双 TypeScript、Next 正式构建、Pages 离线构建及价格产物回读通过；完整 `./build.sh` 生成并验证 `build/modeldial-candidate.app`，live App 未替换。测试夹具已显式隔离本机活跃模型会话，公共全量回归 `1508／1508` 通过。发布元数据已升至 `v0.1.0-preview.16` 对应 Build `115`；功能改动提交为 `e763060da691fd4807ff62473091afb16c9c3949`，精确发行包源码提交为 `1cba503bafad722e77a994c4d5341135f54d97ba`。fresh DMG／ZIP／SBOM／`SHA256SUMS` 已生成，包内源码身份、60 个 Mach-O／65 条架构记录、深层 ad-hoc 签名和冻结后端 schema v2 smoke 通过。网站全局 `npm run check` 仍被既有 `output/deploy-score-format-20260827/` 压缩归档的 ESLint 错误阻断，Pages 全局静态合同另有既有离线 seed Agent profile 断言失败，本次未删除归档或修改相邻逻辑。目录候选已生成，第一方 `/data/pricing/current.json` 线上回读仍为 `404`；私有公共核心锁与 Container 身份只完成本地候选对齐和验证，Pages、新价格生产 Container、App 及其他远端分发面均未更新。
 
@@ -30,17 +32,17 @@
 
 远程评测的跨连接公平并发公共实现已经进入 `main`：执行内核同时保留整轮全局硬上限和每个 `connection_id` 的独立上限，并按连接轮转分配可用槽位，避免单一厂商先占满整轮并发。未提供分组上限的旧 App 配置和调用仍走原执行路径；Cloudflare 运行与生产配置继续由私有运行仓维护，不属于本 App 发布。
 
-公开仓库能够独立测试和构建 App；unsigned preview 与完成 Developer ID／Apple notarization 的正式发行仍是两个分开的发布门槛。当前公开安装入口为 `v0.1.0-preview.15`／Build 114，二进制精确对应源码提交 `82470dd02b06107a1d2d7059b78a5669d4cb93d7`。annotated tag、GitHub prerelease、GitHub／R2 四项资产、签名 preview appcast、Homebrew Cask、双语 README 和官网入口均已发布并完成公开回读。历史公开源码根仍保持单一无父 `main`；正式签名二进制、stable appcast、正式 stable Homebrew Cask 和干净机器 Gatekeeper 验收仍未完成。
+公开仓库能够独立测试和构建 App；unsigned preview 与完成 Developer ID／Apple notarization 的正式发行仍是两个分开的发布门槛。当前公开安装入口为 `v0.1.0-preview.16`／Build 115，二进制精确对应源码提交 `1cba503bafad722e77a994c4d5341135f54d97ba`。annotated tag、GitHub prerelease、GitHub／R2 四项资产、签名 preview appcast、Homebrew Cask、双语 README 和官网入口均已发布并完成公开回读。历史公开源码根仍保持单一无父 `main`；正式签名二进制、stable appcast、正式 stable Homebrew Cask 和干净机器 Gatekeeper 验收仍未完成。
 
-已发布版本不可覆盖门禁当前覆盖至 `preview.15`：默认打包标签会在任何构建或产物写入前直接拒绝重复打包已发布版本。分发校验继续覆盖 GitHub、R2、appcast、Homebrew、官网和不可变 Pages 地址，并新增 Sparkle 更新说明的唯一载荷、HTTPS、签名、声明长度、1～5 条用户变化、1600 bytes 上限和工程细节排除门禁。
+已发布版本不可覆盖门禁当前覆盖至 `preview.16`：默认打包标签会在任何构建或产物写入前直接拒绝重复打包已发布版本。分发校验继续覆盖 GitHub、R2、appcast、Homebrew、官网和不可变 Pages 地址，并新增 Sparkle 更新说明的唯一载荷、HTTPS、签名、声明长度、1～5 条用户变化、1600 bytes 上限和工程细节排除门禁。
 
 `preview.13` 延续 unsigned ad-hoc 无 hardened runtime、无证书 Authority 和无 Team ID 的签名策略，并新增首次启动、损坏状态恢复、官方 Radar 优先刷新、无 `~/.codex` 探测和 quarantine 打包门禁。完整回归 `1448/1448` 通过；Build 112 的 60 个 Mach-O、DMG、Sparkle ZIP、SBOM、冻结后端和仿 App Translocation 空环境均已验证。GitHub 与 R2 三项发行文件逐字节一致，preview appcast 与 enclosure 的 Ed25519 验签通过，stable appcast 保持未发布。
 
-真实设置页升级已连续覆盖 Build 110 → 111 → 112 → 113 → 114。最新一轮从 Build 113 发现、下载、Ed25519 验签、安装并重启到 Build 114；再次检查显示“当前已是最新版本”。安装 bundle 与发布 ZIP 一致，83 个稳定配置／历史／Radar 缓存／Secrets／运行证据文件保持不变。这组本机结果仍不能替代正常 Library Validation／App Translocation 环境下的干净受保护 Mac 验收。
+真实设置页升级已连续覆盖 Build 110 → 111 → 112 → 113 → 114 → 115。最新一轮在隔离 App／数据目录中从 Build 114 自动发现 preview.16，appcast 与更新包 EdDSA 验签通过，退出临时宿主后完成安装并重新打开 Build 115；再次检查显示“当前已是最新版本”。更新后的 358 项 bundle 内容与发布 ZIP 一致，`/Applications` 中的 Build 114 保持不变。这组本机结果仍不能替代正常 Library Validation／App Translocation 环境下的干净受保护 Mac 验收。
 
-不付费 `v0.1.0-preview.1`～`v0.1.0-preview.15` 均已作为 GitHub prerelease 公开；当前 README、官网、appcast、Homebrew 和直接下载入口均已切换到 `preview.15`。版本化 DMG／ZIP／SHA-256／SBOM 已在 GitHub 与 R2 完成公开回下载和逐字节核对。Gatekeeper 开启的独立机器“仍要打开”人工放行仍未完成。
+不付费 `v0.1.0-preview.1`～`v0.1.0-preview.16` 均已作为 GitHub prerelease 公开；当前 README、官网、appcast、Homebrew 和直接下载入口均已切换到 `preview.16`。版本化 DMG／ZIP／SHA-256／SBOM 已在 GitHub 与 R2 完成公开回下载和逐字节核对。Gatekeeper 开启的独立机器“仍要打开”人工放行仍未完成。
 
-签名前个人 Homebrew Tap 已发布到 `tianwdong/homebrew-tap`，当前 Cask 固定 `preview.15` GitHub DMG 和 SHA-256；Ruby 语法、style、strict audit，以及隔离目录中的两轮安装、卸载、重装、版本／架构、quarantine 和深层签名检查均通过。测试使用独立 App 目录和单 Cask trust，未覆盖当时 `/Applications` 中的 App，Homebrew formula 清单在两轮前后保持一致。
+签名前个人 Homebrew Tap 已发布到 `tianwdong/homebrew-tap`，当前 Cask 固定 `preview.16` GitHub DMG 和 SHA-256；Ruby 语法、style，以及隔离目录中的两轮安装、卸载、重装、版本／架构、quarantine 和深层签名检查均通过。测试使用独立 App 目录，未覆盖 `/Applications` 中的 Build 114，Homebrew formula／cask 清单在两轮前后恢复一致。
 
 针对 `preview.1` 遗漏官方 Radar 地址、无 Provider 时被模型设置空状态阻断、开发 seed 可能进入官网展示以及未发布 appcast 仍显示为已配置的问题，`v0.1.0-preview.2` 已在源码提交 `a20d14e` 上完成修复与 Build 101 打包；tag、GitHub prerelease、4 个资产和公开下载复验均已完成。它仍是 unsigned／unnotarized 预览版，不等于正式 `v0.1.0`。
 
