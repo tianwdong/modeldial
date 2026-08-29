@@ -124,6 +124,15 @@ class FrontendEvaluationTests(unittest.TestCase):
         self.assertNotIn("{{STARTER_HTML}}", package.prompt)
         self.assertIn("<!doctype html>", package.prompt.lower())
 
+    def test_v17_browser_scorer_uses_prompt_contract_not_hidden_dom_hooks(self) -> None:
+        source = (_package().browser_score_script).read_text(encoding="utf-8")
+
+        self.assertIn('getAttribute("aria-posinset")', source)
+        self.assertIn("[data-open='${id}']", source)
+        self.assertIn('filter({hasText:/^P[0-3]$/})', source)
+        self.assertNotIn('after.focused===before.id', source)
+        self.assertNotIn('getAttribute("data-saving")==="true"', source)
+
     def test_normalize_frontend_html_recovers_common_response_wrappers(self) -> None:
         fenced, fenced_format = normalize_frontend_html(
             "```html\n<!doctype html><html><body>ok</body></html>\n```"
