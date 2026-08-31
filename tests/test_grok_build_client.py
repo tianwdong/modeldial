@@ -80,8 +80,9 @@ class GrokBuildClientTest(unittest.TestCase):
         self.assertIn("--no-memory", command)
         self.assertIn("--disable-web-search", command)
         self.assertIn("--no-subagents", command)
-        self.assertIn("--sandbox", command)
-        self.assertIn("read-only", command)
+        self.assertNotIn("--sandbox", command)
+        self.assertEqual(command[command.index("--tools") + 1], "")
+        self.assertEqual(command[command.index("--deny") + 1], "MCPTool")
         self.assertIn("--permission-mode", command)
         self.assertIn("dontAsk", command)
         self.assertIn("--reasoning-effort", command)
@@ -129,7 +130,7 @@ class GrokBuildClientTest(unittest.TestCase):
         "scanner.grok_build_client.resolve_grok_build_executable",
         return_value="/opt/homebrew/bin/grok",
     )
-    def test_run_fails_closed_when_nested_sandbox_is_unavailable(
+    def test_run_does_not_retry_when_tool_free_cli_fails(
         self,
         resolve_mock,  # type: ignore[no-untyped-def]
     ) -> None:
@@ -142,9 +143,9 @@ class GrokBuildClientTest(unittest.TestCase):
                     command,
                     1,
                     stdout='{"type":"error","message":"FS_PERMISSION_DENIED"}',
-                    stderr="sandbox initialization failed: Operation not permitted",
+                    stderr="runtime startup failed",
                 )
-            raise AssertionError("sandbox failure must not trigger an unsandboxed retry")
+            raise AssertionError("CLI failure must not trigger a retry")
 
         with self.assertRaises(GrokBuildError) as error:
             run_grok_build_prompt(
@@ -155,7 +156,9 @@ class GrokBuildClientTest(unittest.TestCase):
             )
 
         self.assertEqual(len(calls), 1)
-        self.assertIn("--sandbox", calls[0])
+        self.assertNotIn("--sandbox", calls[0])
+        self.assertEqual(calls[0][calls[0].index("--tools") + 1], "")
+        self.assertEqual(calls[0][calls[0].index("--deny") + 1], "MCPTool")
         effort_index = calls[0].index("--reasoning-effort")
         self.assertEqual(calls[0][effort_index + 1], "high")
         self.assertEqual(error.exception.category, "runtime_error")

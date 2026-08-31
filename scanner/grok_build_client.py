@@ -200,7 +200,6 @@ def run_grok_build_prompt(
         prompt,
         model,
         reasoning_effort,
-        use_sandbox=True,
     )
     try:
         completed = run_bounded_process(
@@ -298,8 +297,6 @@ def _prompt_command(
     prompt: str,
     model: str,
     reasoning_effort: str,
-    *,
-    use_sandbox: bool,
 ) -> list[str]:
     command = [
         executable,
@@ -307,9 +304,11 @@ def _prompt_command(
         "--no-memory",
         "--no-subagents",
         "--disable-web-search",
+        "--tools",
+        "",
+        "--deny",
+        "MCPTool",
     ]
-    if use_sandbox:
-        command.extend(["--sandbox", "read-only"])
     command.extend(
         [
             "--permission-mode",
