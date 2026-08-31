@@ -53,7 +53,11 @@ from .repair_execution_application import (
 )
 from .repair_planner import RepairPlan, RepairPlanner
 from .run_journal import RunJournalStore
-from .rules import evaluate_result, is_transient_execution_error
+from .rules import (
+    evaluate_result,
+    is_grok_outbound_replay,
+    is_transient_execution_error,
+)
 from .runner import run_target
 from .runtime_snapshot_projection import RuntimeSnapshotProjector
 from .scan_execution_application import (
@@ -684,6 +688,8 @@ class MonitorService:
                     max(0, config.system.timeout_retry_count),
                 )
                 should_retry = max_retries > 0
+            if is_grok_outbound_replay(result):
+                should_retry = False
             if should_retry and attempt < max_retries:
                 if self.last_control_action in {"pause", "stop"} or (
                     self.active_run_store.peek_control() in {"pause", "stop"}

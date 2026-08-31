@@ -5179,6 +5179,61 @@ class MonitorServiceTest(unittest.TestCase):
             self.assertGreaterEqual(retry_sleep.call_args.args[0], 12.0)
             self.assertLessEqual(retry_sleep.call_args.args[0], 18.0)
 
+    def test_grok_outbound_replay_does_not_retry_frozen_failures(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            config_store = ConfigStore(Path(temp_dir) / "config.json")
+            history_store = HistoryStore(Path(temp_dir) / "history.jsonl")
+            config = config_store.load()
+            _set_enabled_candidates(config, {"gpt-5.4 / medium"})
+            config.system.max_concurrent_targets = 1
+            config.system.timeout_retry_count = 1
+            config_store.save(config)
+            runner_calls: list[str] = []
+
+            def replay_runner(target, question, use_mock_results, **kwargs):  # type: ignore[no-untyped-def]
+                runner_calls.append(question.id)
+                return ScanResult(
+                    candidate_id=target.candidate_id,
+                    run_id=kwargs["run_id"],
+                    model=target.model,
+                    effort=target.effort,
+                    phase=kwargs["phase"],
+                    question_id=question.id,
+                    question_title=question.title,
+                    grader_kind=question.grader.kind,
+                    attempt_index=kwargs["attempt_index"],
+                    started_at="2026-08-31T11:11:18+00:00",
+                    elapsed_seconds=1802.0,
+                    source_mode="live",
+                    answer_ok=False,
+                    answer_preview="ERROR: Grok relay model execution failed",
+                    input_tokens=None,
+                    output_tokens=None,
+                    reasoning_tokens=None,
+                    reasoning_tokens_supported=True,
+                    error_message="grok_relay_timeout",
+                    execution_trace={
+                        "correlation_mode": "grok_outbound_replay",
+                        "terminal_state": "timeout_without_completed_turn",
+                        "relay_error_code": "timeout",
+                    },
+                )
+
+            service = MonitorService(
+                config_store=config_store,
+                history_store=history_store,
+                active_run_store=ActiveRunStore(Path(temp_dir) / "active_run.json"),
+                runner=replay_runner,
+            )
+
+            with patch("scanner.service.time.sleep") as retry_sleep:
+                results = service.run_enabled_targets()
+
+            self.assertEqual(runner_calls, list(DEFAULT_QUESTION_IDS))
+            self.assertEqual(len(results), DEFAULT_EVALUATION_COUNT)
+            self.assertEqual(results[0].retry_index, 0)
+            retry_sleep.assert_not_called()
+
     def test_circuit_breaker_keeps_inflight_candidate_running(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             config_store = ConfigStore(Path(temp_dir) / "config.json")

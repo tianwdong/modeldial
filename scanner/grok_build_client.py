@@ -25,6 +25,11 @@ from .process_environment import build_child_environment
 GROK_BUILD_LOGIN_TIMEOUT_SECONDS = 10
 GROK_BUILD_EXEC_TIMEOUT_SECONDS = 300
 GROK_BUILD_OUTPUT_LIMIT_BYTES = DEFAULT_SUBPROCESS_OUTPUT_LIMIT_BYTES
+GROK_BUILD_EVAL_SYSTEM_PROMPT = (
+    "You are answering one frozen benchmark item. "
+    "Do not use tools, files, shell, MCP, or web search. "
+    "Follow the user prompt exactly and return only the requested output."
+)
 CommandRunner = Callable[..., subprocess.CompletedProcess[str]]
 
 
@@ -308,6 +313,11 @@ def _prompt_command(
         "",
         "--deny",
         "MCPTool",
+        "--verbatim",
+        "--max-turns",
+        "1",
+        "--system-prompt-override",
+        GROK_BUILD_EVAL_SYSTEM_PROMPT,
     ]
     command.extend(
         [

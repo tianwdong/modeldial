@@ -16,9 +16,20 @@ TRANSIENT_ENDPOINT_ERROR_CATEGORIES = frozenset(
 TRANSIENT_PROCESS_TERMINAL_STATES = frozenset({"timeout_without_completed_turn"})
 
 
+def is_grok_outbound_replay(result: ScanResult) -> bool:
+    return (
+        str(result.execution_trace.get("correlation_mode") or "")
+        .strip()
+        .lower()
+        == "grok_outbound_replay"
+    )
+
+
 def is_transient_execution_error(result: ScanResult) -> bool:
     if not result.error_message:
         return False
+    if is_grok_outbound_replay(result):
+        return True
     terminal_state = str(
         result.execution_trace.get("terminal_state") or ""
     ).strip().lower()

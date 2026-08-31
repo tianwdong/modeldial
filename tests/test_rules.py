@@ -3,7 +3,11 @@ from __future__ import annotations
 import unittest
 
 from scanner.models import AppConfig, ScanResult
-from scanner.rules import evaluate_result, is_transient_execution_error
+from scanner.rules import (
+    evaluate_result,
+    is_grok_outbound_replay,
+    is_transient_execution_error,
+)
 
 
 class RulesTest(unittest.TestCase):
@@ -45,6 +49,29 @@ class RulesTest(unittest.TestCase):
         )
 
         self.assertFalse(is_transient_execution_error(result))
+
+    def test_grok_outbound_replay_failure_is_transient(self) -> None:
+        result = ScanResult(
+            model="grok-4.6",
+            effort="xhigh",
+            started_at="2026-08-31T11:11:18Z",
+            elapsed_seconds=1802.0,
+            source_mode="live",
+            answer_ok=False,
+            answer_preview="ERROR: Grok relay model execution failed",
+            input_tokens=None,
+            output_tokens=None,
+            reasoning_tokens=None,
+            error_message="grok_relay_model_failure",
+            execution_trace={
+                "correlation_mode": "grok_outbound_replay",
+                "terminal_state": "relay_terminal_failure",
+                "relay_error_code": "timeout",
+            },
+        )
+
+        self.assertTrue(is_grok_outbound_replay(result))
+        self.assertTrue(is_transient_execution_error(result))
 
     def test_codex_timeout_without_completed_turn_is_transient(self) -> None:
         result = ScanResult(

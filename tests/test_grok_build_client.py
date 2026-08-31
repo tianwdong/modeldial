@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from scanner.bounded_subprocess import BoundedSubprocessOutputError
 from scanner.grok_build_client import (
+    GROK_BUILD_EVAL_SYSTEM_PROMPT,
     GrokBuildError,
     check_grok_build_login,
     run_grok_build_prompt,
@@ -83,6 +84,12 @@ class GrokBuildClientTest(unittest.TestCase):
         self.assertNotIn("--sandbox", command)
         self.assertEqual(command[command.index("--tools") + 1], "")
         self.assertEqual(command[command.index("--deny") + 1], "MCPTool")
+        self.assertIn("--verbatim", command)
+        self.assertEqual(command[command.index("--max-turns") + 1], "1")
+        self.assertEqual(
+            command[command.index("--system-prompt-override") + 1],
+            GROK_BUILD_EVAL_SYSTEM_PROMPT,
+        )
         self.assertIn("--permission-mode", command)
         self.assertIn("dontAsk", command)
         self.assertIn("--reasoning-effort", command)
@@ -159,6 +166,12 @@ class GrokBuildClientTest(unittest.TestCase):
         self.assertNotIn("--sandbox", calls[0])
         self.assertEqual(calls[0][calls[0].index("--tools") + 1], "")
         self.assertEqual(calls[0][calls[0].index("--deny") + 1], "MCPTool")
+        self.assertIn("--verbatim", calls[0])
+        self.assertEqual(calls[0][calls[0].index("--max-turns") + 1], "1")
+        self.assertEqual(
+            calls[0][calls[0].index("--system-prompt-override") + 1],
+            GROK_BUILD_EVAL_SYSTEM_PROMPT,
+        )
         effort_index = calls[0].index("--reasoning-effort")
         self.assertEqual(calls[0][effort_index + 1], "high")
         self.assertEqual(error.exception.category, "runtime_error")

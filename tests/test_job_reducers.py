@@ -12,17 +12,19 @@ def result(
     final_status: str = "pass",
     reasoning_tokens: int | None = 100,
     endpoint_error_category: str | None = None,
+    correlation_mode: str | None = None,
 ):
+    trace: dict[str, object] = {}
+    if endpoint_error_category:
+        trace["endpoint_error_category"] = endpoint_error_category
+    if correlation_mode:
+        trace["correlation_mode"] = correlation_mode
     return SimpleNamespace(
         error_message=error_message,
         final_status=final_status,
         reasoning_tokens=reasoning_tokens,
         flags=["hard_error"] if error_message else [],
-        execution_trace=(
-            {"endpoint_error_category": endpoint_error_category}
-            if endpoint_error_category
-            else {}
-        ),
+        execution_trace=trace,
     )
 
 
@@ -134,6 +136,37 @@ class ScanJobReducerTests(unittest.TestCase):
             )
 
         self.assertEqual(reducer.hard_error_count, 3)
+        self.assertEqual(reducer.consecutive_hard_errors, 0)
+        self.assertFalse(reducer.circuit_open)
+        self.assertTrue(reducer.can_start())
+        self.assertIsNone(runtime["last_error"])
+
+    def test_grok_outbound_replay_timeouts_do_not_open_global_circuit(self) -> None:
+        runtime: dict[str, object] = {"last_error": None}
+        entries = [{"candidate_id": "a", "status": "pending"}]
+        reducer = ScanJobReducer(
+            runtime_state=runtime,
+            run_entries=entries,
+            candidate_ids=["a"],
+            attempts_per_target=3,
+            result_buckets={},
+            completed_steps=set(),
+            circuit_breaker_threshold=3,
+        )
+
+        for index in range(1, 4):
+            reducer.job_finished(
+                candidate_id="a",
+                job_key=("a", "scan", f"q{index}"),
+                result=result(
+                    error_message="grok_relay_model_failure",
+                    final_status="warn",
+                    reasoning_tokens=None,
+                    correlation_mode="grok_outbound_replay",
+                ),  # type: ignore[arg-type]
+            )
+
+        self.assertEqual(reducer.hard_error_count, 0)
         self.assertEqual(reducer.consecutive_hard_errors, 0)
         self.assertFalse(reducer.circuit_open)
         self.assertTrue(reducer.can_start())

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .legacy_scan_compat import SCAN_PHASE
 from .models import ScanResult
-from .rules import is_transient_execution_error
+from .rules import is_grok_outbound_replay, is_transient_execution_error
 
 
 class ScanJobReducer:
@@ -35,7 +35,9 @@ class ScanJobReducer:
             item for bucket in result_buckets.values() for item in bucket
         ]
         self.hard_error_count = sum(
-            1 for item in existing_results if item.error_message
+            1
+            for item in existing_results
+            if item.error_message and not is_grok_outbound_replay(item)
         )
         self.consecutive_hard_errors = 0
         self.circuit_open = False
@@ -127,7 +129,7 @@ class ScanJobReducer:
         self.refresh_entry(candidate_id)
 
     def _record_run_health(self, result: ScanResult) -> None:
-        if result.error_message:
+        if result.error_message and not is_grok_outbound_replay(result):
             self.hard_error_count += 1
         if result.error_message and not is_transient_execution_error(result):
             self.consecutive_hard_errors += 1
