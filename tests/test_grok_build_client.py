@@ -191,6 +191,35 @@ class GrokBuildClientTest(unittest.TestCase):
         "scanner.grok_build_client.resolve_grok_build_executable",
         return_value="/opt/homebrew/bin/grok",
     )
+    def test_run_forwards_grok_4_6_xhigh_reasoning_effort(
+        self,
+        resolve_mock,  # type: ignore[no-untyped-def]
+    ) -> None:
+        calls: list[list[str]] = []
+
+        def runner(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            calls.append(command)
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout='{"text":"OK","usage":{}}',
+                stderr="",
+            )
+
+        run_grok_build_prompt(
+            "Reply with only OK.",
+            "grok-4.6",
+            "xhigh",
+            runner=runner,
+        )
+
+        effort_index = calls[0].index("--reasoning-effort")
+        self.assertEqual(calls[0][effort_index + 1], "xhigh")
+
+    @patch(
+        "scanner.grok_build_client.resolve_grok_build_executable",
+        return_value="/opt/homebrew/bin/grok",
+    )
     def test_run_rejects_nonzero_exit_without_leaking_stderr(
         self,
         resolve_mock,  # type: ignore[no-untyped-def]

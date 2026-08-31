@@ -14,7 +14,11 @@ from .bounded_subprocess import (
     DEFAULT_SUBPROCESS_OUTPUT_LIMIT_BYTES,
     run_bounded_process,
 )
-from .models import GROK_BUILD_4_5_REASONING_EFFORTS
+from .models import (
+    GROK_BUILD_4_5_REASONING_EFFORTS,
+    GROK_BUILD_4_6_MODEL_ID,
+    GROK_BUILD_4_6_REASONING_EFFORTS,
+)
 from .process_environment import build_child_environment
 
 
@@ -159,10 +163,15 @@ def run_grok_build_prompt(
     reasoning_effort = scan_profile.strip().lower()
     if reasoning_effort == "default":
         reasoning_effort = "high"
-    if reasoning_effort not in GROK_BUILD_4_5_REASONING_EFFORTS:
+    supported_reasoning_efforts = (
+        GROK_BUILD_4_6_REASONING_EFFORTS
+        if model == GROK_BUILD_4_6_MODEL_ID
+        else GROK_BUILD_4_5_REASONING_EFFORTS
+    )
+    if reasoning_effort not in supported_reasoning_efforts:
         raise GrokBuildError(
             "unsupported_reasoning_effort",
-            "Grok 4.5 仅支持 low、medium、high 三档推理强度。",
+            "该 Grok 模型不支持此推理强度。",
             _execution_trace(
                 started_at_utc=None,
                 timeout_seconds=bounded_timeout_seconds,
