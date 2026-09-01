@@ -1,8 +1,25 @@
 # ModelDial Roadmap
 
-最后更新：2026-08-28
+最后更新：2026-09-02
 
 ## 当前阶段
+
+2026-09-02：经用户明确授权，完成 Q3 CI 审计证书题的正式替换与发布。题包由
+`coding-fast-v4.10` 升至 `coding-fast-v4.11`，Q3 使用 `ci_adversarial_audit_certificate_v4`，
+prompt SHA-256 为 `46244d090d4f7495662d3faafbc5aaa899c667361a403458a27609f17c6805da`；正式
+源码提交为 `85331b5366d21628b46e8025215fca9daaf1dd6b`。干净 worktree 公共全量回归
+`1517／1517`（另有 `2` 项跳过）、架构基线 `11／11`、`./build.sh` 与 App 包内字节回读通过；
+私有边界／Runner／发布器 `118／118`，Cloudflare Vitest `144／144`、Runtime `18／18`，
+Linux／AMD64 Container build、本地 `/health` 和 strict immediate dry-run 均通过。生产
+Worker Version 为 `63f64230-5224-4011-9640-1946f9731f43`，Container 为 v87／
+`sha256:7313150f1795aaa028d35f8c6db769418599147f18ac24f5976b1fb1e91ed8df`，健康状态为
+`healthy=1／failed=0／starting=0`；回滚点为 Worker `457062c2-4177-4859-9f67-c86cfb0116a7`
+与 Container v86／`sha256:6bd3f6c3ab47e70f261088b108820acc824dcf9a1057c529985802077f848ecf`。
+17 个 Secret 名称完整，queued／running／paused Workflow 均为空，Reference／Benchmark 四份公开
+快照哈希部署前后不变。GitHub `origin/main` 已由 `c5b4391b3d8894772e0cb0c52de2d1af4a15c1ff`
+推进到 Q3 源码提交 `85331b5366d21628b46e8025215fca9daaf1dd6b`，同时发布本地已上线但
+先前未推送的 5 个修复提交。本次未启动评测、未调用模型、未改写榜单或 R2／D1，
+未修改 Secret 值、Endpoint、评测配置、排期、DNS 或 WAF。
 
 2026-08-28：完成 Anthropic Messages 模型拒答误判的本地修复候选，尚未部署。非流式响应和 SSE 现在都会识别官方 `stop_reason=refusal`，将其保存为独立的 `model_refusal` 终态，并只保留 `stop_reason` 与受限 `refusal_category` 诊断，不保存上游 explanation；隔离 endpoint worker 和 runner execution trace 会继续传递该类别，不再把合法 `HTTP 200 + content=[]` 拒答压成 `invalid_response`。模型拒答不是瞬时传输故障，不会触发自动重试或模型替换。Endpoint／runner 定向回归 `85／85`、公开全量回归 `1511／1511` 通过，完整 `./build.sh` 已生成并验证 `build/modeldial-candidate.app`，现有 live App 未替换；未发起真实模型请求，私有公共核心锁、Container 与生产环境均未更新。
 
