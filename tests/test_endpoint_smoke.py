@@ -68,6 +68,7 @@ class _EndpointHandler(BaseHTTPRequestHandler):
                 "constructing compact scenarios that expose incorrect audit",
                 "designing compact regression scenarios",
                 "designing regression tests for a function named `run_scan`",
+                "A CI planner upgrade has produced inconsistent audit cards",
             )
         ):
             return "{}"

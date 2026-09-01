@@ -19,7 +19,7 @@ class V4QuestionPackTest(unittest.TestCase):
         self.bank = QuestionBank(PROJECT_ROOT / "questions").load()
 
     def test_current_pack_is_five_native_twenty_point_questions(self) -> None:
-        self.assertEqual(self.bank.metadata.question_pack_version, "coding-fast-v4.10")
+        self.assertEqual(self.bank.metadata.question_pack_version, "coding-fast-v4.11")
         self.assertEqual(self.bank.question_count, 5)
         self.assertEqual(
             [question.grader.payload["max_score"] for question in self.bank.questions],
@@ -76,7 +76,7 @@ class V4QuestionPackTest(unittest.TestCase):
                 ),
                 "03_ci_optimality_certificate": (
                     "ci_adversarial_audit",
-                    "ci_adversarial_audit_v2",
+                    "ci_adversarial_audit_certificate_v4",
                     20,
                 ),
                 "04_transaction_regression_design": (

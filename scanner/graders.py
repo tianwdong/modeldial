@@ -1218,12 +1218,21 @@ def _grade_ci_adversarial_audit(
     grader: dict[str, object],
 ) -> GradeResult:
     test_suite = str(grader.get("test_suite") or "")
-    if test_suite not in {"ci_adversarial_audit_v1", "ci_adversarial_audit_v2"}:
+    if test_suite not in {
+        "ci_adversarial_audit_v1",
+        "ci_adversarial_audit_v2",
+        "ci_adversarial_audit_certificate_v4",
+    }:
         raise ValueError("unknown_test_suite")
 
-    from .ci_adversarial_audit_grader import grade_response
+    if test_suite == "ci_adversarial_audit_certificate_v4":
+        from .ci_adversarial_audit_certificate_grader import grade_response
 
-    payload = grade_response(text, test_suite)
+        payload = grade_response(text)
+    else:
+        from .ci_adversarial_audit_grader import grade_response
+
+        payload = grade_response(text, test_suite)
     score = int(payload["score"])
     max_score = int(payload["max_score"])
     pass_threshold = int(grader.get("pass_threshold", max_score))
@@ -1263,6 +1272,7 @@ def _grade_ci_adversarial_audit(
             "killed_by_test": payload.get("killed_by_test", {}),
             "scenario_count": payload.get("scenario_count", 0),
             "facets": payload.get("categories", {}),
+            "certificate_facets": payload.get("certificate_facets", []),
             "score_details": payload.get("score_details", []),
             "failure_summary": failure_summary,
         },

@@ -1099,6 +1099,83 @@ new
         self.assertTrue(result.ok)
         self.assertEqual((result.score, result.max_score), (10, 10))
 
+    def test_ci_adversarial_audit_certificate_v4_scores_and_gates_certificates(self) -> None:
+        fixture = (
+            Path(__file__).parent
+            / "fixtures"
+            / "ci_adversarial_audit_certificate_v4.json"
+        )
+        payload = json.loads(fixture.read_text(encoding="utf-8"))
+        grader = {
+            "kind": "ci_adversarial_audit",
+            "test_suite": "ci_adversarial_audit_certificate_v4",
+            "pass_threshold": 20,
+            "max_score": 20,
+        }
+
+        reference = grade_answer(json.dumps(payload), grader)
+        self.assertTrue(reference.ok)
+        self.assertEqual((reference.score, reference.max_score), (20, 20))
+        self.assertEqual(reference.diagnostics["status"], "passed")
+        self.assertEqual(
+            reference.diagnostics["facets"]["certificate"],
+            {"label": "基准计算", "passed": 6, "total": 6},
+        )
+        self.assertTrue(
+            all(
+                all(report["facets"].values())
+                for report in reference.diagnostics["certificate_facets"]
+            )
+        )
+
+        wrong_dirty = json.loads(fixture.read_text(encoding="utf-8"))
+        for scenario in wrong_dirty["scenarios"]:
+            scenario["certificate"]["dirty"] = []
+        dirty_result = grade_answer(json.dumps(wrong_dirty), grader)
+        self.assertEqual(dirty_result.score, 15)
+        self.assertEqual(
+            set(dirty_result.diagnostics["survived_mutants"]),
+            {
+                "direct_public_export",
+                "upstream_propagation_gate",
+                "dependency_requires_all_exports",
+                "private_change_exports",
+                "certificate_propagation",
+            },
+        )
+
+        wrong_failure = json.loads(fixture.read_text(encoding="utf-8"))
+        wrong_failure["scenarios"][0]["certificate"]["plans"]["two_job_equal"][
+            "failures"
+        ]["W2"] = 0
+        failure_result = grade_answer(json.dumps(wrong_failure), grader)
+        self.assertEqual(failure_result.score, 18)
+        self.assertEqual(
+            set(failure_result.diagnostics["survived_mutants"]),
+            {"critical_lexicographic_tie", "certificate_fallback"},
+        )
+
+        missing_certificate = json.loads(fixture.read_text(encoding="utf-8"))
+        missing_certificate["scenarios"][0].pop("certificate")
+        single_scenario = {"scenarios": payload["scenarios"][:1]}
+        oversized = json.loads(fixture.read_text(encoding="utf-8"))
+        for index in range(2):
+            oversized["scenarios"][0]["jobs"].append(
+                {
+                    "id": f"overflow_{index}",
+                    "duration": 1,
+                    "environment": "unit",
+                    "priority": 0,
+                    "covers": ["X"],
+                    "requires": [],
+                }
+            )
+        for invalid in (missing_certificate, single_scenario, oversized):
+            with self.subTest(invalid=invalid):
+                result = grade_answer(json.dumps(invalid), grader)
+                self.assertEqual((result.score, result.max_score), (0, 20))
+                self.assertEqual(result.diagnostics["status"], "invalid_schema")
+
     def test_scalar_cross_loop_flight_patch_scores_ten_contracts(self) -> None:
         patch_text = (
             Path(__file__).parent / "fixtures" / "scalar_cross_loop_flight_reference.patch"

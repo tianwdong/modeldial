@@ -160,7 +160,10 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(question.grader.kind, "ci_adversarial_audit")
         self.assertTrue(result.answer_ok)
         self.assertIn('"scenarios"', result.answer_preview)
-        self.assertEqual(result.scorer_reason, "ci_adversarial_audit_v2 20/20")
+        self.assertEqual(
+            result.scorer_reason,
+            "ci_adversarial_audit_certificate_v4 20/20",
+        )
         self.assertEqual(result.scorer_diagnostics["semantic_passed"], 20)
 
     @patch("scanner.codex_runtime.os.access", return_value=True)

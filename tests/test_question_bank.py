@@ -34,7 +34,7 @@ class QuestionBankTest(unittest.TestCase):
     def test_builtin_question_pack_contains_five_peer_questions(self) -> None:
         bank = QuestionBank(Path("questions")).load()
 
-        self.assertEqual(bank.metadata.question_pack_version, "coding-fast-v4.10")
+        self.assertEqual(bank.metadata.question_pack_version, "coding-fast-v4.11")
         self.assertEqual(
             bank.enabled_question_ids,
             [
@@ -89,15 +89,21 @@ class QuestionBankTest(unittest.TestCase):
         self.assertEqual(q2.grader.payload["pass_threshold"], 20)
         q3 = by_id["03_ci_optimality_certificate"]
         self.assertEqual(q3.title, "CI Adversarial Audit")
-        self.assertIn("constructing compact scenarios", q3.prompt)
-        self.assertIn("Create up to 2 compact scenarios", q3.prompt)
-        self.assertIn('"scenarios"', q3.prompt)
+        self.assertIn("small reproduction bundle", q3.prompt)
+        self.assertIn('"certificate"', q3.prompt)
+        self.assertIn("Return exactly 2 scenarios", q3.prompt)
+        self.assertIn("complete ordered list", q3.prompt)
+        self.assertIn("key named `scenarios`", q3.prompt)
         self.assertNotIn('"counterfactuals"', q3.prompt)
+        self.assertNotIn("The grader checks 20", q3.prompt)
         self.assertEqual(q3.capability_id, "ci_plan_audit")
         self.assertEqual(q3.capability_label, "方案审计")
         self.assertEqual(q3.detail_label, "对抗场景")
         self.assertEqual(q3.grader.kind, "ci_adversarial_audit")
-        self.assertEqual(q3.grader.payload["test_suite"], "ci_adversarial_audit_v2")
+        self.assertEqual(
+            q3.grader.payload["test_suite"],
+            "ci_adversarial_audit_certificate_v4",
+        )
         self.assertEqual(q3.grader.payload["max_score"], 20)
         self.assertEqual(q3.grader.payload["pass_threshold"], 20)
         self.assertIn("mutation-testing", q3.tags)
@@ -404,13 +410,14 @@ class QuestionBankTest(unittest.TestCase):
         self.assertEqual(result_02.max_score, 20)
 
         result_03 = grade_answer(
-            (Path(__file__).parent / "fixtures" / "ci_adversarial_audit.json").read_text(
-                encoding="utf-8"
-            ),
+            (
+                Path(__file__).parent
+                / "fixtures"
+                / "ci_adversarial_audit_certificate_v4.json"
+            ).read_text(encoding="utf-8"),
             by_id["03_ci_optimality_certificate"].grader.payload,
         )
-        self.assertGreater(result_03.score or 0, 0)
-        self.assertEqual(result_03.max_score, 20)
+        self.assertEqual((result_03.score, result_03.max_score), (20, 20))
 
         result_04 = grade_answer(
             (Path(__file__).parent / "fixtures" / "transaction_regression_design.json").read_text(

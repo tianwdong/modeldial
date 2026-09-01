@@ -1,0 +1,175 @@
+{
+  "scenarios": [
+    {
+      "name": "batched_locked_tiebreaks",
+      "modules": [
+        {"id": "X", "deps": [], "propagates": false, "weight": 14},
+        {"id": "Y", "deps": ["X"], "propagates": true, "weight": 20}
+      ],
+      "changes": {"X": "private"},
+      "jobs": [
+        {"id": "R", "duration": 2, "environment": "build", "priority": 6, "covers": ["X"], "requires": []},
+        {"id": "B", "duration": 2, "environment": "unit", "priority": -2, "covers": ["X"], "requires": []},
+        {"id": "W1", "duration": 1, "environment": "aux", "priority": 1, "covers": ["X"], "requires": []},
+        {"id": "W2", "duration": 1, "environment": "aux", "priority": 0, "covers": ["Y"], "requires": []},
+        {"id": "C", "duration": 1, "environment": "deploy", "priority": 10, "covers": ["X"], "requires": ["R"]}
+      ],
+      "plans": {
+        "full_schedule": ["C", "W2", "W1", "B", "R"],
+        "a_single": ["R"],
+        "b_single": ["B"],
+        "r_expensive": ["R"],
+        "two_job_equal": ["W2", "W1"]
+      },
+      "setup_costs": {"build": 5, "unit": 1, "aux": 1, "deploy": 8},
+      "workers": 3,
+      "certificate": {
+        "dirty": ["X"],
+        "plans": {
+          "full_schedule": {
+            "normal": 14,
+            "fallback": 14,
+            "critical": "B",
+            "cost": 22,
+            "makespan": 3,
+            "failures": {"C": 14, "W2": 14, "W1": 14, "B": 14, "R": 14},
+            "dispatch": [
+              {"time": 0, "jobs": ["R", "W1", "B"]},
+              {"time": 1, "jobs": ["W2"]},
+              {"time": 2, "jobs": ["C"]}
+            ]
+          },
+          "a_single": {
+            "normal": 14,
+            "fallback": 0,
+            "critical": "R",
+            "cost": 7,
+            "makespan": 2,
+            "failures": {"R": 0},
+            "dispatch": [{"time": 0, "jobs": ["R"]}]
+          },
+          "b_single": {
+            "normal": 14,
+            "fallback": 0,
+            "critical": "B",
+            "cost": 3,
+            "makespan": 2,
+            "failures": {"B": 0},
+            "dispatch": [{"time": 0, "jobs": ["B"]}]
+          },
+          "r_expensive": {
+            "normal": 14,
+            "fallback": 0,
+            "critical": "R",
+            "cost": 7,
+            "makespan": 2,
+            "failures": {"R": 0},
+            "dispatch": [{"time": 0, "jobs": ["R"]}]
+          },
+          "two_job_equal": {
+            "normal": 14,
+            "fallback": 0,
+            "critical": "W1",
+            "cost": 3,
+            "makespan": 2,
+            "failures": {"W2": 14, "W1": 0},
+            "dispatch": [
+              {"time": 0, "jobs": ["W1"]},
+              {"time": 1, "jobs": ["W2"]}
+            ]
+          }
+        },
+        "ranking": ["full_schedule", "b_single", "two_job_equal", "a_single", "r_expensive"]
+      }
+    },
+    {
+      "name": "propagation_fallback_matrix",
+      "modules": [
+        {"id": "Z", "deps": [], "propagates": true, "weight": 7},
+        {"id": "A", "deps": ["Z"], "propagates": true, "weight": 19},
+        {"id": "Y", "deps": [], "propagates": false, "weight": 3},
+        {"id": "B", "deps": ["Y"], "propagates": true, "weight": 5},
+        {"id": "X", "deps": ["B"], "propagates": false, "weight": 7},
+        {"id": "C", "deps": ["X"], "propagates": true, "weight": 17},
+        {"id": "W", "deps": ["B"], "propagates": true, "weight": 8},
+        {"id": "D", "deps": ["X", "W"], "propagates": true, "weight": 10}
+      ],
+      "changes": {"Z": "private", "Y": "public"},
+      "jobs": [
+        {"id": "Z_root", "duration": 1, "environment": "unit", "priority": 0, "covers": ["Z", "A"], "requires": []},
+        {"id": "Z_mid", "duration": 2, "environment": "unit", "priority": 0, "covers": ["Y", "Z"], "requires": ["Z_root"]},
+        {"id": "Z_leaf", "duration": 1, "environment": "gpu", "priority": 0, "covers": ["B"], "requires": ["Z_mid"]},
+        {"id": "A_root", "duration": 1, "environment": "integration", "priority": 0, "covers": ["X", "C"], "requires": []},
+        {"id": "B_alt", "duration": 2, "environment": "alt", "priority": 0, "covers": ["Z", "A", "Y", "B", "X", "C", "W", "D"], "requires": []}
+      ],
+      "plans": {
+        "cascade": ["Z_root", "Z_mid", "A_root", "Z_leaf"],
+        "aa_raw_first": ["Z_leaf", "A_root", "Z_mid", "Z_root"],
+        "zz_sorted_first": ["B_alt"],
+        "wide_single": ["B_alt"],
+        "tiny_fast": ["Z_root"]
+      },
+      "setup_costs": {"unit": 0, "gpu": 8, "integration": 0, "alt": 4},
+      "workers": 2,
+      "certificate": {
+        "dirty": ["Z", "Y", "B", "X", "W", "D"],
+        "plans": {
+          "cascade": {
+            "normal": 22,
+            "fallback": 7,
+            "critical": "Z_root",
+            "cost": 13,
+            "makespan": 4,
+            "failures": {"Z_root": 7, "Z_mid": 14, "A_root": 15, "Z_leaf": 17},
+            "dispatch": [
+              {"time": 0, "jobs": ["A_root", "Z_root"]},
+              {"time": 1, "jobs": ["Z_mid"]},
+              {"time": 3, "jobs": ["Z_leaf"]}
+            ]
+          },
+          "aa_raw_first": {
+            "normal": 22,
+            "fallback": 7,
+            "critical": "Z_root",
+            "cost": 13,
+            "makespan": 4,
+            "failures": {"Z_leaf": 17, "A_root": 15, "Z_mid": 14, "Z_root": 7},
+            "dispatch": [
+              {"time": 0, "jobs": ["A_root", "Z_root"]},
+              {"time": 1, "jobs": ["Z_mid"]},
+              {"time": 3, "jobs": ["Z_leaf"]}
+            ]
+          },
+          "zz_sorted_first": {
+            "normal": 40,
+            "fallback": 0,
+            "critical": "B_alt",
+            "cost": 6,
+            "makespan": 2,
+            "failures": {"B_alt": 0},
+            "dispatch": [{"time": 0, "jobs": ["B_alt"]}]
+          },
+          "wide_single": {
+            "normal": 40,
+            "fallback": 0,
+            "critical": "B_alt",
+            "cost": 6,
+            "makespan": 2,
+            "failures": {"B_alt": 0},
+            "dispatch": [{"time": 0, "jobs": ["B_alt"]}]
+          },
+          "tiny_fast": {
+            "normal": 7,
+            "fallback": 0,
+            "critical": "Z_root",
+            "cost": 1,
+            "makespan": 1,
+            "failures": {"Z_root": 0},
+            "dispatch": [{"time": 0, "jobs": ["Z_root"]}]
+          }
+        },
+        "ranking": ["cascade", "aa_raw_first", "zz_sorted_first", "wide_single", "tiny_fast"]
+      }
+    }
+  ]
+}
