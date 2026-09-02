@@ -1,8 +1,49 @@
 # ModelDial Roadmap
 
-最后更新：2026-09-02
+最后更新：2026-09-03
 
 ## 当前阶段
+
+2026-09-03（Q5 v28 正式固化与 Cloudflare 发布）：经用户明确批准，将冻结候选
+`q5_compact_propagation_certificate_v28` 固化为 `coding-fast-v4.12` 的正式 Q5
+`Cache Propagation Certificate`。模型可见 prompt 为 `9,113` 字节，SHA-256 为
+`52a7471776065b74c732b919a26c77d7e4f8145163ee53662f466d1cb3d4717b`；独立正式评分器
+SHA-256 为 `e70b7d7ffb81bd6fd63ff3cf2182daa9551b3be7221e5bafa8e921aa101c6a08`，满分答案
+`20／20`。结构／格式错误在正式 dispatch 中保持 unscored，不再伪装成可比较的 `0` 分；旧
+`coding-fast-v4.10` 合成演示快照同时冻结自己的五题语义，不再读取当前 catalog 而失去可重现性。
+
+候选到正式评分器在 reference、乱序 reference、5 个 interaction mutation、6 个 audit mutation
+及 5 份真实模型原始答卷上逐字段等价；真实 High 答卷为 Luna `10／20、11／20`，Sol
+`14／20、13／20`，Opus 5 `13／20`。原预注册 strong-model certificate-gap 门槛没有被改写为
+通过；用户在复盘整体答对／答错分布后明确接受该梯度并批准正式化，本次未在批准后修改评分字节。
+公共源码提交为 `c792e91`，合成演示修复后精确部署身份为
+`9c556bcbb3dddee24f981a0d24fa2decff47c305`，已由 GitHub `origin/main` 回读确认。
+
+最终干净提交公共全量回归 `1532／1532`（另 `2` 项条件跳过），`./build.sh`、冻结后端 smoke、
+60 个 Mach-O／65 条架构记录、深层 ad-hoc 签名和 Designated Requirement 均通过；App 包内
+Q5 prompt 回读仍为 `9,113` 字节及同一 SHA-256。Container manifest 相比 v89 只新增独立 Q5
+grader，并修改 Q5 prompt／answer／catalog、analytics、grader dispatch 与 runner；没有混入 Q1、
+Endpoint、价格或私有 overlay。双仓边界通过，私有边界／Runner／发布器 `121／121`、Cloudflare
+Vitest `148／148`、Runtime `18／18`、Linux／AMD64 build、镜像内锁与 v4.12 合同、`/health`
+smoke、strict immediate dry-run 均通过。
+
+生产 Worker 现为 v203／Version `1fc60788-4bce-46f2-bfac-dd595befcc08`／`100%` 流量，脚本
+ETag 继续为 `5e7ed4c34a1931c398984a513fbd9b16f86bc59b6d247f880db174f12ea66378`；Container
+由 v89 升至 v90／`sha256:ea329db5f269db417eccc1b3d9e633dd1d633d28345f6a2cd55b834dd0ecf339`，
+最终 `healthy=1／failed=0／starting=0／active=0`。首次 registry 登录 EOF 时 Worker v202 已上传、
+Container 仍为 v89，但 Workflow 为空；registry 恢复后重试并收敛到 v203／v90。正式域
+`/health=200`、未授权管理接口 `401`，17 个 Secret 名称完整，queued／running／paused Workflow
+均为空；Reference index／latest 与 Benchmark index／latest SHA-256 部署前后保持
+`3dfc098ef522cbc85a47b21758cc06a6ade6e1c05a03efa53e99ec83b118d2b9`、
+`fd9d7b9f3b9e30b7a0c5bd6af3207d273525ec8dece1377230c23c0203ae28e9`、
+`da88e4f6afdd63a1e97e547cdb6d31018ebd42d3c0ee59ce396df41ef69ff7ca`、
+`ca8eb1e67315c873c2c505ec191ecfc19f1e4bb46302cf8cd2df08a111345ac5`。本机的
+`workers.dev` DNS 被解析到非 Cloudflare 地址，故该备用域未作为成功证据；正式自定义域与 Cloudflare
+控制面已完成回读。直接回滚点为 Dashboard Secret 版本 v201／Version
+`e3d838f9-0a80-4010-a3ad-cd9b1a3a3e69` 与 Container v89／
+`sha256:26f1623c40a431f364755cf193d728b3b83d82017596ff344a03ef3db1ab57c9`。本次未启动评测或
+模型调用，未部署 Pages，未改写公开快照或 R2／D1，未修改 Secret 值、Endpoint、评测配置、排期、
+DNS 或 WAF。
 
 2026-09-02：经用户明确授权，完成 Q3 CI 审计证书题的正式替换与发布。题包由
 `coding-fast-v4.10` 升至 `coding-fast-v4.11`，Q3 使用 `ci_adversarial_audit_certificate_v4`，
