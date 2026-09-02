@@ -125,7 +125,7 @@ class RunnerTest(unittest.TestCase):
         self.assertEqual(result.scorer_reason, "transaction_replay_mutants_v2 20/20")
         self.assertEqual(result.scorer_diagnostics["semantic_passed"], 20)
 
-    def test_mock_runner_supports_cache_regression_design_v2(self) -> None:
+    def test_mock_runner_supports_cache_propagation_certificate(self) -> None:
         question = next(
             item
             for item in QuestionBank(Path("questions")).load().enabled_questions
@@ -138,10 +138,10 @@ class RunnerTest(unittest.TestCase):
             use_mock_results=True,
         )
 
-        self.assertEqual(question.grader.kind, "mutation_test_design")
+        self.assertEqual(question.grader.kind, "cache_propagation_certificate")
         self.assertTrue(result.answer_ok)
-        self.assertIn('"tests"', result.answer_preview)
-        self.assertEqual(result.scorer_reason, "cache_regression_mutants_v3 20/20")
+        self.assertIn('"portfolios"', result.answer_preview)
+        self.assertEqual(result.scorer_reason, "compact_propagation_certificate_v1 20/20")
         self.assertEqual(result.scorer_diagnostics["semantic_passed"], 20)
 
     def test_mock_runner_supports_ci_adversarial_audit(self) -> None:

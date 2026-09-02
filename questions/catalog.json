@@ -1,6 +1,6 @@
 {
   "id": "coding-fast",
-  "version": "coding-fast-v4.11",
+  "version": "coding-fast-v4.12",
   "default_evaluation_profile_id": "quick",
   "evaluation_profiles": [
     {
@@ -71,14 +71,14 @@
     },
     {
       "id": "05_cache_regression_test_design",
-      "title": "Cache Regression Test Design",
+      "title": "Cache Propagation Certificate",
       "capability_id": "regression_validation",
       "capability_label": "测试设计",
       "detail_label": "缓存回归",
       "enabled": true,
       "prompt_path": "05_unified_diff_patch_applicator.prompt.md",
       "answer_path": "05_unified_diff_patch_applicator.answer.json",
-      "tags": ["test-design", "mutation-testing", "cache"]
+      "tags": ["cache-regression", "propagation-audit", "mutation-testing", "json-output"]
     }
   ]
 }

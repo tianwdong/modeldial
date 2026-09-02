@@ -43,6 +43,9 @@ LOCKED_PUBLIC_PATHS = (
     Path("scanner"),
     Path("questions"),
     Path("devtools/__init__.py"),
+    Path("devtools/frontend_v17_balanced_candidate.py"),
+    Path("devtools/frontend_v17_visual_relational_v2.py"),
+    Path("devtools/frontend_v17_visual_semantic_v3.py"),
     Path("devtools/pricing"),
 )
 
@@ -53,6 +56,9 @@ ALLOWED_CONTAINER_COPY_LINES = {
     "COPY --chown=modeldial:modeldial public/scanner /app/scanner",
     "COPY --chown=modeldial:modeldial public/questions /app/questions",
     "COPY --chown=modeldial:modeldial public/devtools/__init__.py /app/devtools/__init__.py",
+    "COPY --chown=modeldial:modeldial public/devtools/frontend_v17_balanced_candidate.py /app/devtools/frontend_v17_balanced_candidate.py",
+    "COPY --chown=modeldial:modeldial public/devtools/frontend_v17_visual_relational_v2.py /app/devtools/frontend_v17_visual_relational_v2.py",
+    "COPY --chown=modeldial:modeldial public/devtools/frontend_v17_visual_semantic_v3.py /app/devtools/frontend_v17_visual_semantic_v3.py",
     "COPY --chown=modeldial:modeldial public/devtools/pricing /app/devtools/pricing",
     "COPY --chown=modeldial:modeldial private_runtime/public_core.py /app/private_runtime/public_core.py",
     "COPY --chown=modeldial:modeldial private_runtime/verify_public_core.py /app/private_runtime/verify_public_core.py",

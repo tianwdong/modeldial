@@ -1,0 +1,1669 @@
+{
+  "portfolios": [
+    {
+      "name": "failure_weighted_suite",
+      "cases": [
+        {
+          "id": "a_boundary",
+          "duration": 3,
+          "environment": "lint",
+          "priority": 3,
+          "requires": [],
+          "files": [
+            [
+              "src/a.py",
+              "a-current"
+            ],
+            [
+              "src/b.py",
+              "b-current"
+            ],
+            [
+              "src/c.py",
+              "c-current"
+            ],
+            [
+              "src/d.py",
+              "d-current"
+            ],
+            [
+              "src/e.py",
+              "e-current"
+            ]
+          ],
+          "cache": [
+            [
+              "old/x.py",
+              "old/x.py",
+              "x-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              1,
+              0,
+              false
+            ],
+            [
+              "old/y.py",
+              "old/y.py",
+              "y-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              2,
+              2,
+              0,
+              false
+            ],
+            [
+              "old/z.py",
+              "old/z.py",
+              "z-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              3,
+              3,
+              0,
+              false
+            ],
+            [
+              "src/a.py",
+              "src/a.py",
+              "a-current",
+              "cfg-new",
+              "profile-new",
+              "opts-new",
+              5,
+              4,
+              2,
+              false
+            ],
+            [
+              "src/b.py",
+              "src/b.py",
+              "b-old",
+              "cfg-old",
+              "profile-new",
+              "opts-new",
+              9,
+              0,
+              1,
+              true
+            ],
+            [
+              "src/c.py",
+              "src/renamed-c.py",
+              "c-current",
+              "cfg-new",
+              "profile-new",
+              "opts-new",
+              9,
+              0,
+              7,
+              false
+            ]
+          ],
+          "scans": [
+            [
+              "src/a.py",
+              true,
+              2
+            ],
+            [
+              "src/b.py",
+              false,
+              0
+            ],
+            [
+              "src/c.py",
+              true,
+              6
+            ],
+            [
+              "src/d.py",
+              true,
+              4
+            ],
+            [
+              "src/e.py",
+              true,
+              3
+            ]
+          ],
+          "params": {
+            "current_day": 10,
+            "expiry_days": 5,
+            "config_hash": "cfg-new",
+            "profile_hash": "profile-new",
+            "options_key": "opts-new",
+            "force": false,
+            "warm": false,
+            "atomic": false,
+            "capacity": 7
+          },
+          "outcome": {
+            "committed": true,
+            "decisions": [
+              [
+                "src/a.py",
+                "hit"
+              ],
+              [
+                "src/b.py",
+                "corrupted"
+              ],
+              [
+                "src/c.py",
+                "file_changed"
+              ],
+              [
+                "src/d.py",
+                "not_cached"
+              ],
+              [
+                "src/e.py",
+                "not_cached"
+              ]
+            ],
+            "writes": [
+              [
+                "src/a.py",
+                "a-current",
+                10
+              ],
+              [
+                "src/c.py",
+                "c-current",
+                10
+              ],
+              [
+                "src/d.py",
+                "d-current",
+                10
+              ],
+              [
+                "src/e.py",
+                "e-current",
+                10
+              ]
+            ],
+            "kept": [
+              "old/y.py",
+              "old/z.py",
+              "src/b.py"
+            ],
+            "evicted": [
+              "old/x.py"
+            ],
+            "counts": {
+              "hits": 1,
+              "misses": 4,
+              "reasons": [
+                [
+                  "corrupted",
+                  1
+                ],
+                [
+                  "file_changed",
+                  1
+                ],
+                [
+                  "not_cached",
+                  2
+                ]
+              ]
+            },
+            "failed": [
+              "src/b.py"
+            ],
+            "reported": [
+              [
+                "src/a.py",
+                2
+              ],
+              [
+                "src/c.py",
+                6
+              ],
+              [
+                "src/d.py",
+                4
+              ],
+              [
+                "src/e.py",
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "id": "b_atomic",
+          "duration": 4,
+          "environment": "lint",
+          "priority": 5,
+          "requires": [],
+          "files": [
+            [
+              "pkg/p.py",
+              "p-current"
+            ],
+            [
+              "pkg/q.py",
+              "q-current"
+            ],
+            [
+              "pkg/r.py",
+              "r-current"
+            ],
+            [
+              "pkg/s.py",
+              "s-current"
+            ]
+          ],
+          "cache": [
+            [
+              "old/u.py",
+              "old/u.py",
+              "u-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              1,
+              0,
+              false
+            ],
+            [
+              "old/v.py",
+              "old/v.py",
+              "v-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              2,
+              2,
+              0,
+              false
+            ],
+            [
+              "old/w.py",
+              "old/w.py",
+              "w-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              3,
+              3,
+              0,
+              false
+            ],
+            [
+              "pkg/p.py",
+              "pkg/p.py",
+              "p-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              7,
+              1,
+              true
+            ],
+            [
+              "pkg/q.py",
+              "pkg/q.py",
+              "q-current",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              19,
+              8,
+              3,
+              false
+            ],
+            [
+              "pkg/s.py",
+              "pkg/s.py",
+              "s-old",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              19,
+              9,
+              2,
+              false
+            ]
+          ],
+          "scans": [
+            [
+              "pkg/p.py",
+              true,
+              8
+            ],
+            [
+              "pkg/q.py",
+              false,
+              0
+            ],
+            [
+              "pkg/r.py",
+              true,
+              5
+            ],
+            [
+              "pkg/s.py",
+              true,
+              4
+            ]
+          ],
+          "params": {
+            "current_day": 20,
+            "expiry_days": 3,
+            "config_hash": "cfg-live",
+            "profile_hash": "profile-live",
+            "options_key": "opts-live",
+            "force": true,
+            "warm": true,
+            "atomic": true,
+            "capacity": 4
+          },
+          "outcome": {
+            "committed": false,
+            "decisions": [
+              [
+                "pkg/p.py",
+                "force_rescan"
+              ],
+              [
+                "pkg/q.py",
+                "force_rescan"
+              ],
+              [
+                "pkg/r.py",
+                "force_rescan"
+              ],
+              [
+                "pkg/s.py",
+                "force_rescan"
+              ]
+            ],
+            "writes": [],
+            "kept": [
+              "old/u.py",
+              "old/v.py",
+              "old/w.py",
+              "pkg/p.py",
+              "pkg/q.py",
+              "pkg/s.py"
+            ],
+            "evicted": [],
+            "counts": {
+              "hits": 0,
+              "misses": 4,
+              "reasons": [
+                [
+                  "force_rescan",
+                  4
+                ]
+              ]
+            },
+            "failed": [
+              "pkg/q.py"
+            ],
+            "reported": []
+          }
+        },
+        {
+          "id": "c_expiry",
+          "duration": 2,
+          "environment": "unit",
+          "priority": 4,
+          "requires": [
+            "a_boundary"
+          ],
+          "files": [
+            [
+              "lib/a.py",
+              "a-current"
+            ],
+            [
+              "lib/b.py",
+              "b-current"
+            ],
+            [
+              "lib/c.py",
+              "c-current"
+            ]
+          ],
+          "cache": [
+            [
+              "lib/a.py",
+              "lib/a.py",
+              "a-current",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              5,
+              4,
+              2,
+              false
+            ],
+            [
+              "lib/b.py",
+              "lib/b.py",
+              "b-current",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              4,
+              3,
+              1,
+              false
+            ],
+            [
+              "old/u.py",
+              "old/u.py",
+              "u-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              1,
+              0,
+              false
+            ],
+            [
+              "old/v.py",
+              "old/v.py",
+              "v-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              2,
+              2,
+              0,
+              false
+            ]
+          ],
+          "scans": [
+            [
+              "lib/a.py",
+              true,
+              2
+            ],
+            [
+              "lib/b.py",
+              true,
+              5
+            ],
+            [
+              "lib/c.py",
+              true,
+              4
+            ]
+          ],
+          "params": {
+            "current_day": 10,
+            "expiry_days": 5,
+            "config_hash": "cfg-live",
+            "profile_hash": "profile-live",
+            "options_key": "opts-live",
+            "force": false,
+            "warm": false,
+            "atomic": false,
+            "capacity": 3
+          },
+          "outcome": {
+            "committed": true,
+            "decisions": [
+              [
+                "lib/a.py",
+                "hit"
+              ],
+              [
+                "lib/b.py",
+                "expired"
+              ],
+              [
+                "lib/c.py",
+                "not_cached"
+              ]
+            ],
+            "writes": [
+              [
+                "lib/a.py",
+                "a-current",
+                10
+              ],
+              [
+                "lib/b.py",
+                "b-current",
+                10
+              ],
+              [
+                "lib/c.py",
+                "c-current",
+                10
+              ]
+            ],
+            "kept": [],
+            "evicted": [
+              "old/u.py",
+              "old/v.py"
+            ],
+            "counts": {
+              "hits": 1,
+              "misses": 2,
+              "reasons": [
+                [
+                  "expired",
+                  1
+                ],
+                [
+                  "not_cached",
+                  1
+                ]
+              ]
+            },
+            "failed": [],
+            "reported": [
+              [
+                "lib/a.py",
+                2
+              ],
+              [
+                "lib/b.py",
+                5
+              ],
+              [
+                "lib/c.py",
+                4
+              ]
+            ]
+          }
+        },
+        {
+          "id": "d_warm",
+          "duration": 2,
+          "environment": "unit",
+          "priority": 2,
+          "requires": [
+            "b_atomic"
+          ],
+          "files": [
+            [
+              "tool/a.py",
+              "a-current"
+            ],
+            [
+              "tool/b.py",
+              "b-current"
+            ],
+            [
+              "tool/c.py",
+              "c-current"
+            ]
+          ],
+          "cache": [
+            [
+              "old/u.py",
+              "old/u.py",
+              "u-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              1,
+              0,
+              false
+            ],
+            [
+              "old/v.py",
+              "old/v.py",
+              "v-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              2,
+              2,
+              0,
+              false
+            ],
+            [
+              "tool/a.py",
+              "tool/a.py",
+              "a-current",
+              "cfg-live",
+              "profile-old",
+              "opts-live",
+              9,
+              2,
+              3,
+              false
+            ],
+            [
+              "tool/b.py",
+              "tool/b.py",
+              "b-current",
+              "cfg-live",
+              "profile-live",
+              "opts-old",
+              9,
+              3,
+              2,
+              false
+            ]
+          ],
+          "scans": [
+            [
+              "tool/a.py",
+              true,
+              6
+            ],
+            [
+              "tool/b.py",
+              true,
+              5
+            ],
+            [
+              "tool/c.py",
+              true,
+              4
+            ]
+          ],
+          "params": {
+            "current_day": 10,
+            "expiry_days": 5,
+            "config_hash": "cfg-live",
+            "profile_hash": "profile-live",
+            "options_key": "opts-live",
+            "force": false,
+            "warm": true,
+            "atomic": false,
+            "capacity": 3
+          },
+          "outcome": {
+            "committed": true,
+            "decisions": [
+              [
+                "tool/a.py",
+                "profile_changed"
+              ],
+              [
+                "tool/b.py",
+                "options_changed"
+              ],
+              [
+                "tool/c.py",
+                "not_cached"
+              ]
+            ],
+            "writes": [
+              [
+                "tool/a.py",
+                "a-current",
+                10
+              ],
+              [
+                "tool/b.py",
+                "b-current",
+                10
+              ],
+              [
+                "tool/c.py",
+                "c-current",
+                10
+              ]
+            ],
+            "kept": [],
+            "evicted": [
+              "old/u.py",
+              "old/v.py"
+            ],
+            "counts": {
+              "hits": 0,
+              "misses": 3,
+              "reasons": [
+                [
+                  "not_cached",
+                  1
+                ],
+                [
+                  "options_changed",
+                  1
+                ],
+                [
+                  "profile_changed",
+                  1
+                ]
+              ]
+            },
+            "failed": [],
+            "reported": []
+          }
+        }
+      ]
+    },
+    {
+      "name": "resilience_tradeoff_suite",
+      "cases": [
+        {
+          "id": "a_switch",
+          "duration": 3,
+          "environment": "unit",
+          "priority": 2,
+          "requires": [],
+          "files": [
+            [
+              "api/a.py",
+              "a-current"
+            ],
+            [
+              "api/b.py",
+              "b-current"
+            ],
+            [
+              "api/c.py",
+              "c-current"
+            ],
+            [
+              "api/d.py",
+              "d-current"
+            ]
+          ],
+          "cache": [
+            [
+              "api/a.py",
+              "api/a.py",
+              "a-current",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              8,
+              4,
+              2,
+              false
+            ],
+            [
+              "api/b.py",
+              "api/b.py",
+              "b-current",
+              "cfg-old",
+              "profile-live",
+              "opts-live",
+              8,
+              3,
+              1,
+              false
+            ],
+            [
+              "api/c.py",
+              "api/c.py",
+              "c-current",
+              "cfg-live",
+              "profile-old",
+              "opts-live",
+              8,
+              2,
+              1,
+              false
+            ],
+            [
+              "api/d.py",
+              "api/d.py",
+              "d-current",
+              "cfg-live",
+              "profile-live",
+              "opts-old",
+              8,
+              1,
+              1,
+              false
+            ],
+            [
+              "old/x.py",
+              "old/x.py",
+              "x-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              1,
+              0,
+              false
+            ],
+            [
+              "old/y.py",
+              "old/y.py",
+              "y-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              2,
+              2,
+              0,
+              false
+            ]
+          ],
+          "scans": [
+            [
+              "api/a.py",
+              true,
+              2
+            ],
+            [
+              "api/b.py",
+              true,
+              4
+            ],
+            [
+              "api/c.py",
+              true,
+              5
+            ],
+            [
+              "api/d.py",
+              true,
+              6
+            ]
+          ],
+          "params": {
+            "current_day": 10,
+            "expiry_days": 5,
+            "config_hash": "cfg-live",
+            "profile_hash": "profile-live",
+            "options_key": "opts-live",
+            "force": false,
+            "warm": false,
+            "atomic": false,
+            "capacity": 4
+          },
+          "outcome": {
+            "committed": true,
+            "decisions": [
+              [
+                "api/a.py",
+                "hit"
+              ],
+              [
+                "api/b.py",
+                "config_changed"
+              ],
+              [
+                "api/c.py",
+                "profile_changed"
+              ],
+              [
+                "api/d.py",
+                "options_changed"
+              ]
+            ],
+            "writes": [
+              [
+                "api/a.py",
+                "a-current",
+                10
+              ],
+              [
+                "api/b.py",
+                "b-current",
+                10
+              ],
+              [
+                "api/c.py",
+                "c-current",
+                10
+              ],
+              [
+                "api/d.py",
+                "d-current",
+                10
+              ]
+            ],
+            "kept": [],
+            "evicted": [
+              "old/x.py",
+              "old/y.py"
+            ],
+            "counts": {
+              "hits": 1,
+              "misses": 3,
+              "reasons": [
+                [
+                  "config_changed",
+                  1
+                ],
+                [
+                  "options_changed",
+                  1
+                ],
+                [
+                  "profile_changed",
+                  1
+                ]
+              ]
+            },
+            "failed": [],
+            "reported": [
+              [
+                "api/a.py",
+                2
+              ],
+              [
+                "api/b.py",
+                4
+              ],
+              [
+                "api/c.py",
+                5
+              ],
+              [
+                "api/d.py",
+                6
+              ]
+            ]
+          }
+        },
+        {
+          "id": "b_rollback",
+          "duration": 2,
+          "environment": "unit",
+          "priority": 5,
+          "requires": [],
+          "files": [
+            [
+              "worker/a.py",
+              "a-current"
+            ],
+            [
+              "worker/b.py",
+              "b-current"
+            ],
+            [
+              "worker/c.py",
+              "c-current"
+            ],
+            [
+              "worker/d.py",
+              "d-current"
+            ]
+          ],
+          "cache": [
+            [
+              "old/x.py",
+              "old/x.py",
+              "x-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              1,
+              0,
+              false
+            ],
+            [
+              "old/y.py",
+              "old/y.py",
+              "y-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              2,
+              2,
+              0,
+              false
+            ],
+            [
+              "worker/a.py",
+              "worker/a.py",
+              "a-old",
+              "cfg-old",
+              "profile-live",
+              "opts-live",
+              8,
+              2,
+              1,
+              true
+            ],
+            [
+              "worker/b.py",
+              "worker/b.py",
+              "b-old",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              8,
+              3,
+              1,
+              false
+            ]
+          ],
+          "scans": [
+            [
+              "worker/a.py",
+              true,
+              4
+            ],
+            [
+              "worker/b.py",
+              false,
+              0
+            ],
+            [
+              "worker/c.py",
+              true,
+              5
+            ],
+            [
+              "worker/d.py",
+              true,
+              3
+            ]
+          ],
+          "params": {
+            "current_day": 10,
+            "expiry_days": 5,
+            "config_hash": "cfg-live",
+            "profile_hash": "profile-live",
+            "options_key": "opts-live",
+            "force": false,
+            "warm": false,
+            "atomic": true,
+            "capacity": 4
+          },
+          "outcome": {
+            "committed": false,
+            "decisions": [
+              [
+                "worker/a.py",
+                "corrupted"
+              ],
+              [
+                "worker/b.py",
+                "file_changed"
+              ],
+              [
+                "worker/c.py",
+                "not_cached"
+              ],
+              [
+                "worker/d.py",
+                "not_cached"
+              ]
+            ],
+            "writes": [],
+            "kept": [
+              "old/x.py",
+              "old/y.py",
+              "worker/a.py",
+              "worker/b.py"
+            ],
+            "evicted": [],
+            "counts": {
+              "hits": 0,
+              "misses": 4,
+              "reasons": [
+                [
+                  "corrupted",
+                  1
+                ],
+                [
+                  "file_changed",
+                  1
+                ],
+                [
+                  "not_cached",
+                  2
+                ]
+              ]
+            },
+            "failed": [
+              "worker/b.py"
+            ],
+            "reported": [
+              [
+                "worker/a.py",
+                4
+              ],
+              [
+                "worker/c.py",
+                5
+              ],
+              [
+                "worker/d.py",
+                3
+              ]
+            ]
+          }
+        },
+        {
+          "id": "c_partial",
+          "duration": 4,
+          "environment": "integration",
+          "priority": 4,
+          "requires": [
+            "a_switch"
+          ],
+          "files": [
+            [
+              "worker/e.py",
+              "e-current"
+            ],
+            [
+              "worker/f.py",
+              "f-current"
+            ],
+            [
+              "worker/g.py",
+              "g-current"
+            ]
+          ],
+          "cache": [
+            [
+              "old/u.py",
+              "old/u.py",
+              "u-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              1,
+              0,
+              false
+            ],
+            [
+              "old/v.py",
+              "old/v.py",
+              "v-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              2,
+              2,
+              0,
+              false
+            ],
+            [
+              "worker/e.py",
+              "worker/e.py",
+              "e-old",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              8,
+              2,
+              2,
+              true
+            ],
+            [
+              "worker/f.py",
+              "worker/f.py",
+              "f-old",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              8,
+              3,
+              1,
+              true
+            ]
+          ],
+          "scans": [
+            [
+              "worker/e.py",
+              false,
+              0
+            ],
+            [
+              "worker/f.py",
+              true,
+              7
+            ],
+            [
+              "worker/g.py",
+              true,
+              4
+            ]
+          ],
+          "params": {
+            "current_day": 10,
+            "expiry_days": 5,
+            "config_hash": "cfg-live",
+            "profile_hash": "profile-live",
+            "options_key": "opts-live",
+            "force": false,
+            "warm": true,
+            "atomic": false,
+            "capacity": 3
+          },
+          "outcome": {
+            "committed": true,
+            "decisions": [
+              [
+                "worker/e.py",
+                "corrupted"
+              ],
+              [
+                "worker/f.py",
+                "corrupted"
+              ],
+              [
+                "worker/g.py",
+                "not_cached"
+              ]
+            ],
+            "writes": [
+              [
+                "worker/f.py",
+                "f-current",
+                10
+              ],
+              [
+                "worker/g.py",
+                "g-current",
+                10
+              ]
+            ],
+            "kept": [
+              "worker/e.py"
+            ],
+            "evicted": [
+              "old/u.py",
+              "old/v.py"
+            ],
+            "counts": {
+              "hits": 0,
+              "misses": 3,
+              "reasons": [
+                [
+                  "corrupted",
+                  2
+                ],
+                [
+                  "not_cached",
+                  1
+                ]
+              ]
+            },
+            "failed": [
+              "worker/e.py"
+            ],
+            "reported": []
+          }
+        },
+        {
+          "id": "d_expiry",
+          "duration": 2,
+          "environment": "integration",
+          "priority": 3,
+          "requires": [
+            "b_rollback"
+          ],
+          "files": [
+            [
+              "qa/a.py",
+              "a-current"
+            ],
+            [
+              "qa/b.py",
+              "b-current"
+            ],
+            [
+              "qa/c.py",
+              "c-current"
+            ]
+          ],
+          "cache": [
+            [
+              "old/u.py",
+              "old/u.py",
+              "u-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              1,
+              1,
+              0,
+              false
+            ],
+            [
+              "old/v.py",
+              "old/v.py",
+              "v-old",
+              "cfg-old",
+              "profile-old",
+              "opts-old",
+              2,
+              2,
+              0,
+              false
+            ],
+            [
+              "qa/a.py",
+              "qa/a.py",
+              "a-current",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              5,
+              4,
+              3,
+              false
+            ],
+            [
+              "qa/b.py",
+              "qa/b.py",
+              "b-current",
+              "cfg-live",
+              "profile-live",
+              "opts-live",
+              4,
+              3,
+              2,
+              false
+            ]
+          ],
+          "scans": [
+            [
+              "qa/a.py",
+              true,
+              3
+            ],
+            [
+              "qa/b.py",
+              true,
+              6
+            ],
+            [
+              "qa/c.py",
+              true,
+              4
+            ]
+          ],
+          "params": {
+            "current_day": 10,
+            "expiry_days": 5,
+            "config_hash": "cfg-live",
+            "profile_hash": "profile-live",
+            "options_key": "opts-live",
+            "force": false,
+            "warm": false,
+            "atomic": false,
+            "capacity": 3
+          },
+          "outcome": {
+            "committed": true,
+            "decisions": [
+              [
+                "qa/a.py",
+                "hit"
+              ],
+              [
+                "qa/b.py",
+                "expired"
+              ],
+              [
+                "qa/c.py",
+                "not_cached"
+              ]
+            ],
+            "writes": [
+              [
+                "qa/a.py",
+                "a-current",
+                10
+              ],
+              [
+                "qa/b.py",
+                "b-current",
+                10
+              ],
+              [
+                "qa/c.py",
+                "c-current",
+                10
+              ]
+            ],
+            "kept": [],
+            "evicted": [
+              "old/u.py",
+              "old/v.py"
+            ],
+            "counts": {
+              "hits": 1,
+              "misses": 2,
+              "reasons": [
+                [
+                  "expired",
+                  1
+                ],
+                [
+                  "not_cached",
+                  1
+                ]
+              ]
+            },
+            "failed": [],
+            "reported": [
+              [
+                "qa/a.py",
+                3
+              ],
+              [
+                "qa/b.py",
+                6
+              ],
+              [
+                "qa/c.py",
+                4
+              ]
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "audit": [
+    {
+      "step": "transaction_split",
+      "outcome": {
+        "committed": false,
+        "decisions": [
+          [
+            "src/a.py",
+            "hit"
+          ],
+          [
+            "src/b.py",
+            "corrupted"
+          ],
+          [
+            "src/c.py",
+            "file_changed"
+          ],
+          [
+            "src/d.py",
+            "not_cached"
+          ]
+        ],
+        "writes": [],
+        "kept": [
+          "legacy/x.py",
+          "legacy/y.py",
+          "src/a.py",
+          "src/b.py",
+          "src/c.py"
+        ],
+        "evicted": [],
+        "counts": {
+          "hits": 1,
+          "misses": 3,
+          "reasons": [
+            [
+              "corrupted",
+              1
+            ],
+            [
+              "file_changed",
+              1
+            ],
+            [
+              "not_cached",
+              1
+            ]
+          ]
+        },
+        "failed": [
+          "src/b.py"
+        ],
+        "reported": [
+          [
+            "src/a.py",
+            2
+          ],
+          [
+            "src/c.py",
+            6
+          ],
+          [
+            "src/d.py",
+            4
+          ]
+        ]
+      }
+    },
+    {
+      "step": "branch_followup",
+      "outcome": {
+        "committed": true,
+        "decisions": [
+          [
+            "src/b.py",
+            "corrupted"
+          ],
+          [
+            "src/d.py",
+            "not_cached"
+          ],
+          [
+            "src/e.py",
+            "not_cached"
+          ]
+        ],
+        "writes": [
+          [
+            "src/b.py",
+            "b-v1",
+            11
+          ],
+          [
+            "src/d.py",
+            "d-v1",
+            11
+          ],
+          [
+            "src/e.py",
+            "e-v1",
+            11
+          ]
+        ],
+        "kept": [
+          "legacy/x.py",
+          "legacy/y.py",
+          "src/a.py"
+        ],
+        "evicted": [
+          "src/c.py"
+        ],
+        "counts": {
+          "hits": 0,
+          "misses": 3,
+          "reasons": [
+            [
+              "corrupted",
+              1
+            ],
+            [
+              "not_cached",
+              2
+            ]
+          ]
+        },
+        "failed": [],
+        "reported": [
+          [
+            "src/b.py",
+            5
+          ],
+          [
+            "src/d.py",
+            9
+          ],
+          [
+            "src/e.py",
+            3
+          ]
+        ]
+      }
+    },
+    {
+      "step": "eviction_tail",
+      "outcome": {
+        "committed": true,
+        "decisions": [
+          [
+            "src/d.py",
+            "hit"
+          ],
+          [
+            "src/e.py",
+            "hit"
+          ],
+          [
+            "src/f.py",
+            "not_cached"
+          ]
+        ],
+        "writes": [
+          [
+            "src/d.py",
+            "d-v1",
+            12
+          ],
+          [
+            "src/e.py",
+            "e-v1",
+            12
+          ],
+          [
+            "src/f.py",
+            "f-v1",
+            12
+          ]
+        ],
+        "kept": [
+          "src/a.py",
+          "src/b.py"
+        ],
+        "evicted": [
+          "legacy/x.py",
+          "legacy/y.py"
+        ],
+        "counts": {
+          "hits": 2,
+          "misses": 1,
+          "reasons": [
+            [
+              "not_cached",
+              1
+            ]
+          ]
+        },
+        "failed": [],
+        "reported": []
+      }
+    }
+  ]
+}

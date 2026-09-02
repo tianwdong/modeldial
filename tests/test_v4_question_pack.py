@@ -19,7 +19,7 @@ class V4QuestionPackTest(unittest.TestCase):
         self.bank = QuestionBank(PROJECT_ROOT / "questions").load()
 
     def test_current_pack_is_five_native_twenty_point_questions(self) -> None:
-        self.assertEqual(self.bank.metadata.question_pack_version, "coding-fast-v4.11")
+        self.assertEqual(self.bank.metadata.question_pack_version, "coding-fast-v4.12")
         self.assertEqual(self.bank.question_count, 5)
         self.assertEqual(
             [question.grader.payload["max_score"] for question in self.bank.questions],
@@ -85,8 +85,8 @@ class V4QuestionPackTest(unittest.TestCase):
                     20,
                 ),
                 "05_cache_regression_test_design": (
-                    "mutation_test_design",
-                    "cache_regression_mutants_v3",
+                    "cache_propagation_certificate",
+                    "compact_propagation_certificate_v1",
                     20,
                 ),
             },

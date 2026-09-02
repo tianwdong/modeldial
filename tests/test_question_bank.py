@@ -34,7 +34,7 @@ class QuestionBankTest(unittest.TestCase):
     def test_builtin_question_pack_contains_five_peer_questions(self) -> None:
         bank = QuestionBank(Path("questions")).load()
 
-        self.assertEqual(bank.metadata.question_pack_version, "coding-fast-v4.11")
+        self.assertEqual(bank.metadata.question_pack_version, "coding-fast-v4.12")
         self.assertEqual(
             bank.enabled_question_ids,
             [
@@ -49,8 +49,9 @@ class QuestionBankTest(unittest.TestCase):
         q5 = {question.id: question for question in bank.questions}["05_cache_regression_test_design"]
         self.assertTrue(q5.enabled)
         self.assertEqual(q5.capability_label, "测试设计")
-        self.assertEqual(q5.grader.kind, "mutation_test_design")
-        self.assertEqual(q5.grader.payload["test_suite"], "cache_regression_mutants_v3")
+        self.assertEqual(q5.title, "Cache Propagation Certificate")
+        self.assertEqual(q5.grader.kind, "cache_propagation_certificate")
+        self.assertEqual(q5.grader.payload["test_suite"], "compact_propagation_certificate_v1")
         self.assertEqual(q5.grader.payload["max_score"], 20)
         self.assertEqual(q5.grader.payload["pass_threshold"], 20)
 
@@ -123,21 +124,20 @@ class QuestionBankTest(unittest.TestCase):
         self.assertEqual(q4.grader.payload["max_score"], 20)
         self.assertEqual(q4.grader.payload["pass_threshold"], 20)
 
-    def test_cache_regression_test_design_prompt_is_mutation_testing_task(self) -> None:
+    def test_cache_regression_prompt_is_compact_propagation_certificate_task(self) -> None:
         bank = QuestionBank(Path("questions")).load()
         q5 = {question.id: question for question in bank.questions}["05_cache_regression_test_design"]
 
-        self.assertIn("You are designing regression tests", q5.prompt)
-        self.assertIn("Return only JSON test inputs.", q5.prompt)
-        self.assertIn("Create 1 through 3 compact tests", q5.prompt)
-        self.assertIn("Prefer tests", q5.prompt)
-        self.assertIn("Bug report", q5.prompt)
-        self.assertIn("20 independent cache regression failure modes", q5.prompt)
-        self.assertIn('"tests"', q5.prompt)
+        self.assertIn("Design exactly two cache-regression portfolios", q5.prompt)
+        self.assertIn("one fixed three-step propagated audit", q5.prompt)
+        self.assertIn("canonicalizes", q5.prompt)
+        self.assertIn('"portfolios"', q5.prompt)
+        self.assertIn('"audit"', q5.prompt)
+        self.assertIn("Fixed audit input", q5.prompt)
+        self.assertNotIn("priority_config_before_corrupted", q5.prompt)
+        self.assertNotIn("final_cache", q5.prompt)
         self.assertNotIn("*** Begin Patch", q5.prompt)
         self.assertNotIn("SEARCH/REPLACE", q5.prompt)
-        self.assertNotIn("The intended behavior is:", q5.prompt)
-        self.assertNotIn("If cache_expiry_days == 0, all existing cache entries are expired.", q5.prompt)
 
     def test_load_exposes_pack_metadata_and_enabled_question_ids(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:

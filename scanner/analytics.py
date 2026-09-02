@@ -8,7 +8,10 @@ from typing import Iterable
 
 from .candidate_evidence import build_candidate_evidence
 from .costing import current_pricing_snapshot_id, estimate_reference_cost
-from .graders import mutation_test_design_facets
+from .graders import (
+    cache_propagation_certificate_facets,
+    mutation_test_design_facets,
+)
 from .legacy_scan_compat import (
     SCAN_PHASE,
     metadata_question_count,
@@ -1786,9 +1789,14 @@ def _question_status(item: ScanResult) -> str:
 def _score_facets(results: list[ScanResult]) -> list[dict[str, object]]:
     combined: dict[str, dict[str, object]] = {}
     for item in results:
-        if item.grader_kind != "mutation_test_design":
+        diagnostics = dict(item.scorer_diagnostics or {})
+        if item.grader_kind == "mutation_test_design":
+            facets = mutation_test_design_facets(diagnostics)
+        elif item.grader_kind == "cache_propagation_certificate":
+            facets = cache_propagation_certificate_facets(diagnostics)
+        else:
             continue
-        for facet in mutation_test_design_facets(dict(item.scorer_diagnostics or {})):
+        for facet in facets:
             facet_id = str(facet["id"])
             aggregate = combined.setdefault(
                 facet_id,

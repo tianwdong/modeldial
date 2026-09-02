@@ -52,6 +52,8 @@ def grade_answer(text: str, grader: dict[str, object]) -> GradeResult:
         return _grade_ci_optimality_certificate(text, grader)
     if kind == "ci_adversarial_audit":
         return _grade_ci_adversarial_audit(text, grader)
+    if kind == "cache_propagation_certificate":
+        return _grade_cache_propagation_certificate(text, grader)
     if kind == "transaction_regression_design":
         return _grade_transaction_regression_design(text, grader)
     if kind == "session_bundle_test_design":
@@ -1274,6 +1276,91 @@ def _grade_ci_adversarial_audit(
             "facets": payload.get("categories", {}),
             "certificate_facets": payload.get("certificate_facets", []),
             "score_details": payload.get("score_details", []),
+            "failure_summary": failure_summary,
+        },
+    )
+
+
+def _grade_cache_propagation_certificate(
+    text: str,
+    grader: dict[str, object],
+) -> GradeResult:
+    test_suite = str(grader.get("test_suite") or "")
+    if test_suite != "compact_propagation_certificate_v1":
+        raise ValueError("unknown_test_suite")
+
+    from .cache_propagation_certificate_grader import (
+        BEHAVIOR_GROUPS,
+        BEHAVIOR_MUTANTS,
+        grade_response,
+    )
+
+    payload = grade_response(text)
+    grade_state = str(payload.get("status") or "schema_error")
+    max_score = int(payload.get("max_score") or 20)
+    pass_threshold = int(grader.get("pass_threshold", max_score))
+    failure_summary = str(payload.get("failure_summary") or "")
+    if grade_state != "scored":
+        summary = f"{test_suite} {grade_state}"
+        if failure_summary:
+            summary += f"; {failure_summary}"
+        return GradeResult(
+            ok=False,
+            summary=summary,
+            score=None,
+            max_score=max_score,
+            diagnostics={
+                "status": grade_state,
+                "grade_state": grade_state,
+                "test_suite": test_suite,
+                "configured_max_score": max_score,
+                "failure_summary": failure_summary,
+                "score_details": [],
+            },
+        )
+
+    score = int(payload["score"])
+    checks = [item for item in payload.get("checks", []) if isinstance(item, dict)]
+    failed = [item for item in checks if not bool(item.get("passed"))]
+    category_by_check = {
+        check_id: group
+        for group, check_ids in BEHAVIOR_GROUPS.items()
+        for check_id in check_ids
+    }
+    survived = [mutant for mutant in BEHAVIOR_MUTANTS if mutant in {str(item.get("id")) for item in failed}]
+    status = "passed" if score >= pass_threshold else "semantic_failed"
+    summary = f"{test_suite} {score}/{max_score}"
+    if survived:
+        summary += f"; survived={','.join(survived[:4])}"
+    return GradeResult(
+        ok=score >= pass_threshold,
+        summary=summary,
+        score=score,
+        max_score=max_score,
+        failure_details=[
+            {
+                "case_id": str(item.get("id", "")),
+                "label": str(item.get("id", "")),
+                "category": category_by_check.get(str(item.get("id", "")), "certificate"),
+                "category_label": category_by_check.get(str(item.get("id", "")), "certificate"),
+            }
+            for item in failed
+        ],
+        diagnostics={
+            "status": status,
+            "grade_state": grade_state,
+            "test_suite": test_suite,
+            "semantic_passed": score,
+            "semantic_total": max_score,
+            "killed_mutants": [mutant for mutant in BEHAVIOR_MUTANTS if mutant not in survived],
+            "survived_mutants": survived,
+            "killed_by_test": payload.get("killed_by_evidence", {}),
+            "facets": payload.get("facets", {}),
+            "certificate_facets": payload.get("certificate_facets", {}),
+            "score_details": checks,
+            "invalid_cases": payload.get("invalid_cases", []),
+            "blocked_by_certificate": payload.get("blocked_by_certificate", {}),
+            "blocked_by_interaction": payload.get("blocked_by_interaction", {}),
             "failure_summary": failure_summary,
         },
     )
@@ -3044,6 +3131,40 @@ def mutation_test_design_facets(diagnostics: dict[str, object]) -> list[dict[str
         for category, label in _MUTATION_CACHE_TEST_CATEGORY_LABELS.items()
         if counts[category]["total"] > 0
     ]
+
+
+def cache_propagation_certificate_facets(
+    diagnostics: dict[str, object],
+) -> list[dict[str, object]]:
+    labels = {
+        "invalidation": "失效判定",
+        "state": "缓存状态",
+        "transaction": "事务提交",
+        "eviction": "容量淘汰",
+        "metrics": "指标报告",
+        "certificate": "传播证书",
+    }
+    raw_facets = diagnostics.get("facets")
+    if not isinstance(raw_facets, dict):
+        return []
+    facets: list[dict[str, object]] = []
+    for facet_id, label in labels.items():
+        raw = raw_facets.get(facet_id)
+        if not isinstance(raw, dict):
+            continue
+        passed = raw.get("passed")
+        total = raw.get("total")
+        if not _is_plain_int(passed) or not _is_plain_int(total):
+            continue
+        facets.append(
+            {
+                "id": facet_id,
+                "label": label,
+                "passed": int(passed),
+                "total": int(total),
+            }
+        )
+    return facets
 
 
 def _base_cache_entry(**overrides: object) -> dict[str, object]:

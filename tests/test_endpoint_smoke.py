@@ -26,6 +26,16 @@ def _q1_gold_response() -> str:
     ).read_text(encoding="utf-8")
 
 
+def _q5_gold_response() -> str:
+    gold_path = (
+        Path(__file__).resolve().parent
+        / "fixtures"
+        / "cache_propagation_certificate_v1_gold.json"
+    )
+    payload = json.loads(gold_path.read_text(encoding="utf-8"))
+    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+
+
 class _EndpointHandler(BaseHTTPRequestHandler):
     requests: list[tuple[str, str | None]] = []
 
@@ -59,6 +69,8 @@ class _EndpointHandler(BaseHTTPRequestHandler):
             return "OK"
         if "session-bundle system" in prompt and '"op": "replay"' in prompt:
             return _q1_gold_response()
+        if "Design exactly two cache-regression portfolios" in prompt:
+            return _q5_gold_response()
         if "black bag containing candies" in prompt:
             return "21"
         if any(

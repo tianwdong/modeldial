@@ -283,6 +283,22 @@ def _run_mock_target(
                 "survived_mutants": [],
             },
         )
+    elif question.grader.kind == "cache_propagation_certificate":
+        answer_preview = '{"portfolios":[],"audit":[]}'
+        grade_result = GradeResult(
+            ok=True,
+            summary=f"{configured_test_suite} {configured_max_score}/{configured_max_score}",
+            score=configured_max_score,
+            max_score=configured_max_score,
+            diagnostics={
+                "test_suite": configured_test_suite,
+                "semantic_passed": configured_max_score,
+                "semantic_total": configured_max_score,
+                "status": "passed",
+                "grade_state": "scored",
+                "survived_mutants": [],
+            },
+        )
     elif question.grader.kind == "ci_adversarial_audit":
         test_suite = str(
             question.grader.payload.get("test_suite") or "ci_adversarial_audit_v1"
@@ -513,6 +529,13 @@ def _run_live_target(
         if grade_diagnostics.get("status") == "grader_unavailable":
             failure_summary = str(grade_diagnostics.get("failure_summary") or "unknown")
             grader_error_message = f"grader_unavailable: {failure_summary}"
+        elif grade_result.score is None and grade_diagnostics.get("status") in {
+            "format_error",
+            "schema_error",
+        }:
+            grade_state = str(grade_diagnostics["status"])
+            failure_summary = str(grade_diagnostics.get("failure_summary") or "unknown")
+            grader_error_message = f"unscored_answer:{grade_state}: {failure_summary}"
         answer_preview = preview(text)
         _log(
             f"live.success target={target.model_id}/{target.scan_profile} "
