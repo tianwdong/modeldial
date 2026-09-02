@@ -1,0 +1,51 @@
+{
+  "schema_version": "frontend_v17_balanced_progress_contract_v1",
+  "candidate_id": "case_stream_explorer_v17_balanced_progress_v1",
+  "benchmark_ref": "frontend-case-stream-explorer-v17-balanced-progress@v1",
+  "source_benchmark_ref": "frontend-case-stream-explorer-v17@v2",
+  "score_precision": 6,
+  "total_points": 100,
+  "layers": {
+    "behavior": {
+      "points": 33,
+      "dimensions": {
+        "query_state": {"points": 3, "source_max_points": 14},
+        "virtual_keyboard": {"points": 3, "source_max_points": 12},
+        "selection_async": {"points": 22, "source_max_points": 16},
+        "responsive_layout": {"points": 2, "source_max_points": 9},
+        "state_distinction": {"points": 1, "source_max_points": 2},
+        "stability": {"points": 2, "source_max_points": 2}
+      }
+    },
+    "workflow": {
+      "points": 22,
+      "dimensions": {
+        "browse_continuity": {"points": 10, "source_max_points": 10},
+        "transaction_correctness": {"points": 10, "source_max_points": 10},
+        "responsive_inspector": {"points": 2, "source_max_points": 10}
+      }
+    },
+    "visual": {
+      "points": 45,
+      "progress_exponent": 2,
+      "source_points": 15,
+      "checks": {
+        "V03": 3,
+        "V04": 2,
+        "V05": 2,
+        "V06": 2,
+        "V07": 2,
+        "V08": 2,
+        "V09": 2
+      }
+    }
+  },
+  "display_mapping": {
+    "starter_raw": 14.565476190476192,
+    "starter_display": 20,
+    "reference_raw": 100,
+    "reference_display": 100,
+    "above_starter_exponent": 0.5
+  },
+  "ranking_policy": "Complete source evidence retains every earned behavior, workflow, and squared screenshot-progress point. No all-or-nothing workflow gate is applied. Raw and display scores are both preserved."
+}

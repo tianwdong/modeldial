@@ -1,0 +1,13 @@
+{
+  "schema_version": "frontend_v17_deterministic_reference_manifest_v1",
+  "render_environment_sha256": "sha256:9698b19328a88b77efc8324d6c9a4fd2f7aafe836853c196d9fa3f1e8525db23",
+  "states": [
+    {"id": "default_desktop", "filename": "default_desktop.png", "width": 1440, "height": 900, "sha256": "sha256:069fcb3010bd5fbd016672c4b8a447ca3b79cf0dcd074c2082bea08747fe0878"},
+    {"id": "default_tablet", "filename": "default_tablet.png", "width": 768, "height": 1024, "sha256": "sha256:7f4371b639ecf6699bfa27c6c2d576949ee1c6c91cdd768ec88ee578240f535e"},
+    {"id": "default_mobile", "filename": "default_mobile.png", "width": 390, "height": 844, "sha256": "sha256:0edfc10c7b13aac20fc13a6fa6d6449e819502c71c8f4ff7fa8f59bafb1d5464"},
+    {"id": "selected_saving", "filename": "selected_saving.png", "width": 1440, "height": 900, "sha256": "sha256:f3a2d16c9fbf79a45239385e4739d554bd2cd95e7be2e91177a76db8524037f0"},
+    {"id": "failure", "filename": "failure.png", "width": 1440, "height": 900, "sha256": "sha256:0fd038cbbafd30d31580226444f173382caf7d64f1d5f2c689dd4425d42fd408"},
+    {"id": "desktop_inspector", "filename": "desktop_inspector.png", "width": 1440, "height": 900, "sha256": "sha256:4707945bff15000cdadee5c0a9f2a239df33e3d5fe45360a2d9a724ffb1fcc17"},
+    {"id": "mobile_inspector", "filename": "mobile_inspector.png", "width": 390, "height": 844, "sha256": "sha256:0562b7f4b9aff6e1ab346076773c3ba9f871ac1f6d70d473bbbbf2225e74d7a5"}
+  ]
+}

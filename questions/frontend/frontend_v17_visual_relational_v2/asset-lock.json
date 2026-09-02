@@ -1,0 +1,58 @@
+{
+  "schema_version": "frontend_v17_visual_relational_v2_asset_lock_v1",
+  "candidate_id": "case_stream_explorer_v17_visual_relational_v2",
+  "assets": {
+    "spec": {
+      "path": "docs/frontend-v17-visual-relational-v2-spec.md",
+      "sha256": "sha256:d8134676cfd2182b868c8fa9ce5086cf19b09e38d65474ea9b679e36ed87aa2e"
+    },
+    "scorer": {
+      "path": "devtools/frontend_v17_visual_relational_v2.py",
+      "sha256": "sha256:2d0bdd78bcd5911d89ce7b16d660c59e3de336b89ba3b110df5c5ca0e560c088"
+    },
+    "image_metrics": {
+      "path": "scanner/frontend_image_metrics.py",
+      "sha256": "sha256:922c813f06b05fc29aba612d2db098cde1710ec59dcd65942ec9834863b1f538"
+    },
+    "balanced_adapter": {
+      "path": "devtools/frontend_v17_balanced_candidate.py",
+      "sha256": "sha256:206caf416fc116f4251e1033dd92e4db758bbf49ddcbc6b6da7aff383174462b"
+    },
+    "balanced_contract": {
+      "path": "questions/frontend/frontend_v17_balanced_v1/score-contract.json",
+      "sha256": "sha256:329a2808d5513242619e8ca4fc371c1b8d93264ecb242cb8a9a1480f32a65b36"
+    },
+    "score_contract": {
+      "path": "questions/frontend/frontend_v17_visual_relational_v2/score-contract.json",
+      "sha256": "sha256:ae3ca9f2bd8df80a07d962d4337b6271627fc01e2e4959b12e4a8daed91ce62d"
+    },
+    "calibration_fixtures": {
+      "path": "questions/frontend/frontend_v17_visual_relational_v2/calibration-fixtures.json",
+      "sha256": "sha256:a3624d79e630761049f2fcfeea673220df42793276f8b3482646942891d92493"
+    },
+    "regrade_manifest": {
+      "path": "questions/frontend/frontend_v17_visual_relational_v2/regrade-manifest.json",
+      "sha256": "sha256:586cf2e677dac584ebfab35e608701284f7896637e13303c0ae2a7a43f12cb83"
+    },
+    "readme": {
+      "path": "questions/frontend/frontend_v17_visual_relational_v2/README.md",
+      "sha256": "sha256:de4423d3a16a40c7d662f606b84522497753f9e8fea0f51dbab2169e7d7f77dd"
+    },
+    "source_prompt": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/prompt.md",
+      "sha256": "sha256:fad7572c0bbfaf358ff491ea72d535504497039db865ce333df152c53e42b4cf"
+    },
+    "source_starter": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/starter.html",
+      "sha256": "sha256:c302de3bfd237e38f0594604a1cd35f8fbd1ebdf35bc4bb5373d0e6b5124b6fd"
+    },
+    "source_asset_lock": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/asset-lock.json",
+      "sha256": "sha256:e3a0339faf02b2ccbcef48c01c98a10e0a2e190ed980f1150413b66ed8eae3cb"
+    },
+    "positive_reference_html": {
+      "path": "questions/frontend/frontend_v20_pilot/case_stream_workspace_v20/reference.html",
+      "sha256": "sha256:df999f3591c8a9c06371237d27edac8ab562ada3a27237e7d052d22077bd5e88"
+    }
+  }
+}

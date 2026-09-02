@@ -1,0 +1,81 @@
+{
+  "schema_version": "frontend_v17_deterministic_asset_lock_v1",
+  "assets": {
+    "prompt": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/prompt.md",
+      "sha256": "sha256:fad7572c0bbfaf358ff491ea72d535504497039db865ce333df152c53e42b4cf"
+    },
+    "starter": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/starter.html",
+      "sha256": "sha256:c302de3bfd237e38f0594604a1cd35f8fbd1ebdf35bc4bb5373d0e6b5124b6fd"
+    },
+    "score_contract": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/score-contract.json",
+      "sha256": "sha256:dd213df1544324e26935c1b256b84a75b499a8a9af2f145c2fb8347087e6cefd"
+    },
+    "browser_scorer": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/browser_score.js",
+      "sha256": "sha256:4d8a04a907a39535f519e2a374ce27caa0e891ffef215ee46cdfb4385b3f09ff"
+    },
+    "trace_scorer": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/trace_score.js",
+      "sha256": "sha256:6b824cf7639ceed53d467f556753c979084c03a321b0805c2729ca0f7e6f0c40"
+    },
+    "visual_evidence": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/visual_evidence.js",
+      "sha256": "sha256:2718eceafa45e0576017e162c144fb5379ece7a2036843862bf782392741c4fb"
+    },
+    "visual_rules": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/visual-rules.json",
+      "sha256": "sha256:143d2076ad20d2c1a600672b89c120c648642cbc1e55aa949f3ad3f543bf0437"
+    },
+    "render_environment": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/render-environment.json",
+      "sha256": "sha256:9698b19328a88b77efc8324d6c9a4fd2f7aafe836853c196d9fa3f1e8525db23"
+    },
+    "reference_manifest": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/reference/manifest.json",
+      "sha256": "sha256:697093e35df5107d0cdfe98239e10c5b2cabdc35f4eb2b799ec2921f2c9935b5"
+    },
+    "reference_default_desktop": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/reference/default_desktop.png",
+      "sha256": "sha256:069fcb3010bd5fbd016672c4b8a447ca3b79cf0dcd074c2082bea08747fe0878"
+    },
+    "reference_default_tablet": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/reference/default_tablet.png",
+      "sha256": "sha256:7f4371b639ecf6699bfa27c6c2d576949ee1c6c91cdd768ec88ee578240f535e"
+    },
+    "reference_default_mobile": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/reference/default_mobile.png",
+      "sha256": "sha256:0edfc10c7b13aac20fc13a6fa6d6449e819502c71c8f4ff7fa8f59bafb1d5464"
+    },
+    "reference_selected_saving": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/reference/selected_saving.png",
+      "sha256": "sha256:f3a2d16c9fbf79a45239385e4739d554bd2cd95e7be2e91177a76db8524037f0"
+    },
+    "reference_failure": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/reference/failure.png",
+      "sha256": "sha256:0fd038cbbafd30d31580226444f173382caf7d64f1d5f2c689dd4425d42fd408"
+    },
+    "reference_desktop_inspector": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/reference/desktop_inspector.png",
+      "sha256": "sha256:4707945bff15000cdadee5c0a9f2a239df33e3d5fe45360a2d9a724ffb1fcc17"
+    },
+    "reference_mobile_inspector": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/reference/mobile_inspector.png",
+      "sha256": "sha256:0562b7f4b9aff6e1ab346076773c3ba9f871ac1f6d70d473bbbbf2225e74d7a5"
+    },
+    "deterministic_runtime": {
+      "path": "scanner/frontend_deterministic_evaluation.py",
+      "sha256": "sha256:33f729fd979f3e61d6ec731dde865111bcdc628aa95a034d8d27f28a1c440b5f"
+    },
+    "image_metrics_runtime": {
+      "path": "scanner/frontend_image_metrics.py",
+      "sha256": "sha256:922c813f06b05fc29aba612d2db098cde1710ec59dcd65942ec9834863b1f538"
+    },
+    "legacy_helper_runtime": {
+      "path": "scanner/frontend_evaluation.py",
+      "sha256": "sha256:29f742d03148739793b51b07d257c9774e5ddf2f2365bfea053cf4625f6e15d4"
+    }
+  }
+}

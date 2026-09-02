@@ -1,0 +1,34 @@
+{
+  "schema_version": "frontend_v17_visual_semantic_v3_pre_holdout_freeze_v1",
+  "candidate_id": "case_stream_explorer_v17_visual_semantic_v3",
+  "frozen_at": "2026-09-02",
+  "model_outputs_used_for_anchors": false,
+  "holdout_results_read_after_freeze": true,
+  "allow_post_holdout_tuning": false,
+  "assets": {
+    "spec": {
+      "path": "docs/frontend-v17-visual-semantic-v3-spec.md",
+      "sha256": "sha256:34efda5144734f235ad48f19643f4c2434e1f4f23a18246db2acd17e2a23ed19"
+    },
+    "scorer": {
+      "path": "devtools/frontend_v17_visual_semantic_v3.py",
+      "sha256": "sha256:3e2b7c0238b39f01649c1fceb3fb87fd3eb62b4b05369de902c8ca93b2c783a2"
+    },
+    "calibration_fixtures": {
+      "path": "questions/frontend/frontend_v17_visual_semantic_v3/calibration-fixtures.json",
+      "sha256": "sha256:94d8438a25f173fa5b777f0ca7bd5e924aceac5045f5ff9575879527f7ca8c81"
+    },
+    "score_contract": {
+      "path": "questions/frontend/frontend_v17_visual_semantic_v3/score-contract.json",
+      "sha256": "sha256:934cb75bbff22f3259b95783c2515a370feb960e7f0cb86a6c9ea000f3bfc98a"
+    },
+    "calibration_report": {
+      "path": "artifacts/frontend-v17-visual-semantic-v3-calibration/20260902-derive-r1/calibration-report.json",
+      "sha256": "sha256:7ba3292ab65e6bdd470c7d38757602d54066e26875ea49ca960de785ebe0273a"
+    },
+    "verification_report": {
+      "path": "artifacts/frontend-v17-visual-semantic-v3-calibration/20260902-derive-r1/verification-report.json",
+      "sha256": "sha256:3f5fba7a3afc78bcbc458f3372c4eb03657244c0c49d26967423fb0d249da3d7"
+    }
+  }
+}

@@ -1,0 +1,239 @@
+{
+  "schema_version": "frontend_v17_visual_semantic_v3_publication_manifest_v1",
+  "candidate_id": "case_stream_explorer_v17_visual_semantic_v3",
+  "frozen_at": "2026-09-02",
+  "public_axis_ref": "frontend-case-stream-explorer-v17@v1",
+  "scoring_contract_ref": "frontend-case-stream-explorer-v17-visual-semantic@v3",
+  "source_benchmark_ref": "frontend-case-stream-explorer-v17@v2",
+  "scoring_contract_sha256": "sha256:934cb75bbff22f3259b95783c2515a370feb960e7f0cb86a6c9ea000f3bfc98a",
+  "regrade_manifest": {
+    "path": "questions/frontend/frontend_v17_visual_semantic_v3/regrade-manifest.json",
+    "sha256": "sha256:918c03ce9860056b5b2f28b8201af8966fdc5d2d1d23532b1d8f4cdc3d4caaf8"
+  },
+  "publication_policy": {
+    "score_display_decimals": 1,
+    "score_display_rounding": "decimal_half_up",
+    "ranking_precision": "unrounded_display_score",
+    "published_total_score": "unrounded_display_score",
+    "component_score_space": "raw_points_before_display_mapping",
+    "multi_sample_aggregation": "median_each_raw_component_then_apply_display_mapping_once",
+    "elapsed_aggregation": "median_then_round_to_nearest_millisecond",
+    "legacy_projection": "automatic_score_and_visual_score_are_null_total_score_remains_available"
+  },
+  "component_maximums": {
+    "behavior": 33,
+    "workflow": 22,
+    "visual": 45
+  },
+  "valid_sample_ranking": [
+    "Claude:claude-fable-5-1:high",
+    "kimi:k3:high",
+    "Claude:claude-opus-5:high",
+    "cloudflare-reference:gpt-5.6-sol:high",
+    "GEMINI:gemini-3.7-flash-high:default",
+    "cloudflare-reference:gpt-5.6-luna:high"
+  ],
+  "entries": [
+    {
+      "candidate_id": "Claude:claude-fable-5-1:high",
+      "connection_id": "Claude",
+      "model_id": "claude-fable-5-1",
+      "reasoning_effort": "high",
+      "request_effort": "high",
+      "status": "complete",
+      "sample_count": 1,
+      "aggregation": "single",
+      "raw_score": 73.425613,
+      "display_mapping_input_score": 73.425613,
+      "display_score": 72.038391,
+      "display_score_text": "72.0",
+      "score_components": [
+        { "component_id": "behavior", "score": 32.071429, "max_score": 33 },
+        { "component_id": "workflow", "score": 2.0, "max_score": 22 },
+        { "component_id": "visual", "score": 39.354184, "max_score": 45 }
+      ],
+      "elapsed_ms": 642000,
+      "estimated_api_cost_usd": null,
+      "cost_coverage": "unknown",
+      "evidence": [
+        {
+          "sample_id": "fable-high-1",
+          "regrade_result_path": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1/fable-high-1.json",
+          "regrade_result_sha256": "sha256:48934961ff681f8024e10c93517db1457badc484984a569b34bcac5cfdec147b",
+          "generation_result_path": "artifacts/frontend-v17-balanced-fable-live/20260902-claude-fable-5-1-high-r1/runs/claude-fable-5-1/sample-1/result.json",
+          "generation_result_sha256": "sha256:180782c3e9790bc89f96f2eb996214087c5d6a5df0d9c07da37c78b341f06cc1"
+        }
+      ]
+    },
+    {
+      "candidate_id": "kimi:k3:high",
+      "connection_id": "kimi",
+      "model_id": "k3",
+      "reasoning_effort": "high",
+      "request_effort": "high",
+      "status": "complete",
+      "sample_count": 1,
+      "aggregation": "single",
+      "raw_score": 72.218239,
+      "display_mapping_input_score": 72.218239,
+      "display_score": 70.400918,
+      "display_score_text": "70.4",
+      "score_components": [
+        { "component_id": "behavior", "score": 28.529762, "max_score": 33 },
+        { "component_id": "workflow", "score": 0.0, "max_score": 22 },
+        { "component_id": "visual", "score": 43.688477, "max_score": 45 }
+      ],
+      "elapsed_ms": 1051545,
+      "estimated_api_cost_usd": null,
+      "cost_coverage": "unknown",
+      "evidence": [
+        {
+          "sample_id": "k3-high-1",
+          "regrade_result_path": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1/k3-high-1.json",
+          "regrade_result_sha256": "sha256:7b7f00f1757f47bef03cbacfd37ddf7e7cbb8950ec206631bb2ead527f8619e0",
+          "generation_result_path": "artifacts/frontend-v17-deterministic-live/20260901-k3-high-v2-r1/runs/k3/sample-1/result.json",
+          "generation_result_sha256": "sha256:4a9183db08796c49c72413e5208d1402c7b01af712d526db75a7d304846b49d2"
+        }
+      ]
+    },
+    {
+      "candidate_id": "Claude:claude-opus-5:high",
+      "connection_id": "Claude",
+      "model_id": "claude-opus-5",
+      "reasoning_effort": "high",
+      "request_effort": "high",
+      "status": "complete",
+      "sample_count": 1,
+      "aggregation": "single",
+      "raw_score": 71.277969,
+      "display_mapping_input_score": 71.277969,
+      "display_score": 69.087879,
+      "display_score_text": "69.1",
+      "score_components": [
+        { "component_id": "behavior", "score": 32.571429, "max_score": 33 },
+        { "component_id": "workflow", "score": 2.0, "max_score": 22 },
+        { "component_id": "visual", "score": 36.70654, "max_score": 45 }
+      ],
+      "elapsed_ms": 793909,
+      "estimated_api_cost_usd": null,
+      "cost_coverage": "unknown",
+      "evidence": [
+        {
+          "sample_id": "opus-high-valid-1",
+          "regrade_result_path": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1/opus-high-valid-1.json",
+          "regrade_result_sha256": "sha256:d6810360bed00e855646ae7d08daa3468889a1c4cc124f8a6087ce71e63d38e5",
+          "generation_result_path": "artifacts/frontend-v17-balanced-opus-live/20260902-opus-high-sample-2-retry/runs/claude-opus-5/sample-1/result.json",
+          "generation_result_sha256": "sha256:322a3ae15f4f3d5ba7609c04c585fd4c877fd9cf585d25e43ffb9bd620c180cc"
+        }
+      ]
+    },
+    {
+      "candidate_id": "cloudflare-reference:gpt-5.6-sol:high",
+      "connection_id": "cloudflare-reference",
+      "model_id": "gpt-5.6-sol",
+      "reasoning_effort": "high",
+      "request_effort": "high",
+      "status": "complete",
+      "sample_count": 2,
+      "aggregation": "median_raw_then_display",
+      "raw_score": 68.208647,
+      "display_mapping_input_score": 68.2086465,
+      "display_score": 64.533087,
+      "display_score_text": "64.5",
+      "score_components": [
+        { "component_id": "behavior", "score": 26.5625, "max_score": 33 },
+        { "component_id": "workflow", "score": 2.0, "max_score": 22 },
+        { "component_id": "visual", "score": 39.6461465, "max_score": 45 }
+      ],
+      "elapsed_ms": 419650,
+      "estimated_api_cost_usd": null,
+      "cost_coverage": "unknown",
+      "evidence": [
+        {
+          "sample_id": "sol-high-1",
+          "regrade_result_path": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1/sol-high-1.json",
+          "regrade_result_sha256": "sha256:0002cb6a513cb274b93fc7dc1673946e02a04c7d9666f05355b3bffef9fdb359",
+          "generation_result_path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-sol/sample-1/result.json",
+          "generation_result_sha256": "sha256:a9556b2575006b13a0688acd94f3726dc2d29e5ac7c8fc68b71d2d8441872989"
+        },
+        {
+          "sample_id": "sol-high-2",
+          "regrade_result_path": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1/sol-high-2.json",
+          "regrade_result_sha256": "sha256:ded01fac278ad336a93310f8fd1b785aaeccdef4feac86c222b5f15671118f2c",
+          "generation_result_path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-sol/sample-2/result.json",
+          "generation_result_sha256": "sha256:1dfc9528337a97b45cf1654b8c1aa0c88f2deece64212a4e47b01e4cdedbb82d"
+        }
+      ]
+    },
+    {
+      "candidate_id": "GEMINI:gemini-3.7-flash-high:default",
+      "connection_id": "GEMINI",
+      "model_id": "gemini-3.7-flash-high",
+      "reasoning_effort": "default",
+      "request_effort": "high",
+      "effort_identity_source": "model_id_suffix",
+      "status": "complete",
+      "sample_count": 1,
+      "aggregation": "single",
+      "raw_score": 68.076038,
+      "display_mapping_input_score": 68.076038,
+      "display_score": 64.325754,
+      "display_score_text": "64.3",
+      "score_components": [
+        { "component_id": "behavior", "score": 28.60119, "max_score": 33 },
+        { "component_id": "workflow", "score": 0.0, "max_score": 22 },
+        { "component_id": "visual", "score": 39.474848, "max_score": 45 }
+      ],
+      "elapsed_ms": 75965,
+      "estimated_api_cost_usd": null,
+      "cost_coverage": "unknown",
+      "evidence": [
+        {
+          "sample_id": "gemini-high-1",
+          "regrade_result_path": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1/gemini-high-1.json",
+          "regrade_result_sha256": "sha256:2163981dc23a59963e17bf997df4cb52bd3ad924e25b88488ba521a7ccab3441",
+          "generation_result_path": "artifacts/frontend-v17-deterministic-live/20260901-gemini-3.7-flash-high-v2-r2/runs/gemini-3.7-flash-high/sample-1/result.json",
+          "generation_result_sha256": "sha256:e27e6f88b34e86bafbc03c10363f3f621e8c02cebcae4274695fac4db1d3613e"
+        }
+      ]
+    },
+    {
+      "candidate_id": "cloudflare-reference:gpt-5.6-luna:high",
+      "connection_id": "cloudflare-reference",
+      "model_id": "gpt-5.6-luna",
+      "reasoning_effort": "high",
+      "request_effort": "high",
+      "status": "complete",
+      "sample_count": 2,
+      "aggregation": "median_raw_then_display",
+      "raw_score": 58.547655,
+      "display_mapping_input_score": 58.547655,
+      "display_score": 45.317677,
+      "display_score_text": "45.3",
+      "score_components": [
+        { "component_id": "behavior", "score": 21.921627, "max_score": 33 },
+        { "component_id": "workflow", "score": 1.0, "max_score": 22 },
+        { "component_id": "visual", "score": 35.626028, "max_score": 45 }
+      ],
+      "elapsed_ms": 380448,
+      "estimated_api_cost_usd": null,
+      "cost_coverage": "unknown",
+      "evidence": [
+        {
+          "sample_id": "luna-high-1",
+          "regrade_result_path": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1/luna-high-1.json",
+          "regrade_result_sha256": "sha256:b5fcd6f632147413e917180f3be8611a1e5b861a94e60def3602721273938a20",
+          "generation_result_path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-luna/sample-1/result.json",
+          "generation_result_sha256": "sha256:4dc46b2105534d7b16a25b2dcce8da6b4d9b10cd8b676f06c4318323b726c428"
+        },
+        {
+          "sample_id": "luna-high-2",
+          "regrade_result_path": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1/luna-high-2.json",
+          "regrade_result_sha256": "sha256:bdb1484b10ddf9a88eca45957248cab6126a0116f67a2ba688869ebbbdce4db8",
+          "generation_result_path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-luna/sample-2/result.json",
+          "generation_result_sha256": "sha256:f7fe1141725fc27e890028c56040a342cec6d556301efca1979effe4bf3e7e79"
+        }
+      ]
+    }
+  ]
+}

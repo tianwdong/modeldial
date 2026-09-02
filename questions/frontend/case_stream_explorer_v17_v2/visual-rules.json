@@ -1,0 +1,16 @@
+{
+  "schema_version": "frontend_v17_deterministic_visual_rules_v1",
+  "block_size": 4,
+  "edge_threshold": 12,
+  "edge_tolerance_blocks": 1,
+  "weights": {"ssim": 0.45, "color": 0.35, "edge": 0.20},
+  "rules": [
+    {"id": "V03", "state": "default_desktop", "points": 3, "crop": [30, 122, 1380, 775], "starter_similarity": 0.900751},
+    {"id": "V04", "state": "default_tablet", "points": 2, "crop": [12, 110, 744, 900], "starter_similarity": 0.887296},
+    {"id": "V05", "state": "default_mobile", "points": 2, "crop": [0, 0, 390, 844], "starter_similarity": 0.579893},
+    {"id": "V06", "state": "selected_saving", "points": 2, "crop": [30, 493, 1039, 120], "starter_similarity": 0.938339},
+    {"id": "V07", "state": "failure", "points": 2, "crop": [1080, 493, 330, 405], "starter_similarity": 0.585358},
+    {"id": "V08", "state": "desktop_inspector", "points": 2, "crop": [1080, 493, 330, 405], "starter_similarity": 0.444384},
+    {"id": "V09", "state": "mobile_inspector", "points": 2, "crop": [0, 0, 390, 844], "starter_similarity": 0.485351}
+  ]
+}

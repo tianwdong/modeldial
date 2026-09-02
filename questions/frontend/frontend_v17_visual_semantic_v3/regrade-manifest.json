@@ -1,0 +1,145 @@
+{
+  "schema_version": "frontend_v17_visual_semantic_v3_regrade_manifest_v1",
+  "candidate_id": "case_stream_explorer_v17_visual_semantic_v3",
+  "contract_sha256": "sha256:934cb75bbff22f3259b95783c2515a370feb960e7f0cb86a6c9ea000f3bfc98a",
+  "pre_holdout_freeze": "questions/frontend/frontend_v17_visual_semantic_v3/pre-holdout-freeze.json",
+  "model_calls": false,
+  "allow_post_holdout_tuning": false,
+  "results_root": "artifacts/frontend-v17-visual-semantic-v3-regrade/20260902-v1",
+  "group_medians": {
+    "sol": {
+      "sample_count": 2,
+      "raw_score": 68.208647,
+      "display_score": 64.533087,
+      "official_score": 65
+    },
+    "luna": {
+      "sample_count": 2,
+      "raw_score": 58.547655,
+      "display_score": 45.317677,
+      "official_score": 45
+    }
+  },
+  "valid_sample_ranking": [
+    "fable-high-1",
+    "k3-high-1",
+    "opus-high-valid-1",
+    "sol-median",
+    "gemini-high-1",
+    "luna-median"
+  ],
+  "determinism_check": {
+    "sample": "k3-high-1",
+    "repeat_count": 3,
+    "byte_identical": true,
+    "result_files": [
+      "k3-high-1.json",
+      "k3-high-1-repeat-2.json",
+      "k3-high-1-repeat-3.json"
+    ],
+    "result_sha256": "sha256:7b7f00f1757f47bef03cbacfd37ddf7e7cbb8950ec206631bb2ead527f8619e0"
+  },
+  "results": [
+    {
+      "id": "k3-high-1",
+      "model_group": "k3",
+      "source_score_path": "artifacts/frontend-v17-deterministic-live/20260901-k3-high-v2-r1/runs/k3/sample-1/score-repeat-1/automatic-score.json",
+      "source_score_sha256": "sha256:788f564609d4e229cb59b306074fb9c80e92cceabd4dc36fa47e7fbe12c147cf",
+      "result_sha256": "sha256:7b7f00f1757f47bef03cbacfd37ddf7e7cbb8950ec206631bb2ead527f8619e0",
+      "raw_score": 72.218239,
+      "display_score": 70.400918,
+      "official_score": 70,
+      "visual_score": 43.688477
+    },
+    {
+      "id": "gemini-high-1",
+      "model_group": "gemini",
+      "source_score_path": "artifacts/frontend-v17-deterministic-live/20260901-gemini-3.7-flash-high-v2-r2/runs/gemini-3.7-flash-high/sample-1/score-repeat-1/automatic-score.json",
+      "source_score_sha256": "sha256:d0a5bc4492e83f803c004b759c8bec0b91a165d3bea3aa7b57832bc7143a4cb8",
+      "result_sha256": "sha256:2163981dc23a59963e17bf997df4cb52bd3ad924e25b88488ba521a7ccab3441",
+      "raw_score": 68.076038,
+      "display_score": 64.325754,
+      "official_score": 64,
+      "visual_score": 39.474848
+    },
+    {
+      "id": "sol-high-1",
+      "model_group": "sol",
+      "source_score_path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-sol/sample-1/score-repeat-1/score.json",
+      "source_score_sha256": "sha256:cb83c67199a089d744444e157047de85611878c4af82fa25b7970b948991996d",
+      "result_sha256": "sha256:0002cb6a513cb274b93fc7dc1673946e02a04c7d9666f05355b3bffef9fdb359",
+      "raw_score": 70.281287,
+      "display_score": 67.656583,
+      "official_score": 68,
+      "visual_score": 39.906287
+    },
+    {
+      "id": "sol-high-2",
+      "model_group": "sol",
+      "source_score_path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-sol/sample-2/score-repeat-1/score.json",
+      "source_score_sha256": "sha256:5dbd4a9cd063cd486ef090629dc07ee90fd91725d249472baabd4d5c45469fe0",
+      "result_sha256": "sha256:ded01fac278ad336a93310f8fd1b785aaeccdef4feac86c222b5f15671118f2c",
+      "raw_score": 66.136006,
+      "display_score": 61.173315,
+      "official_score": 61,
+      "visual_score": 39.386006
+    },
+    {
+      "id": "luna-high-1",
+      "model_group": "luna",
+      "source_score_path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-luna/sample-1/score-repeat-1/score.json",
+      "source_score_sha256": "sha256:439629cefc17b50d4a727c71ea2fea2cbcc03a7a007239e889fc6c06163cdfa0",
+      "result_sha256": "sha256:b5fcd6f632147413e917180f3be8611a1e5b861a94e60def3602721273938a20",
+      "raw_score": 51.621587,
+      "display_score": 19.142516,
+      "official_score": 19,
+      "visual_score": 31.528333
+    },
+    {
+      "id": "luna-high-2",
+      "model_group": "luna",
+      "source_score_path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-luna/sample-2/score-repeat-1/score.json",
+      "source_score_sha256": "sha256:64c52c30de259a2586db74773429fe60b2c200a3eaae596284e1300e492c49bd",
+      "result_sha256": "sha256:bdb1484b10ddf9a88eca45957248cab6126a0116f67a2ba688869ebbbdce4db8",
+      "raw_score": 65.473723,
+      "display_score": 60.040358,
+      "official_score": 60,
+      "visual_score": 39.723723
+    },
+    {
+      "id": "opus-high-implementation-failure-1",
+      "model_group": "opus",
+      "classification": "implementation_failure",
+      "source_score_path": "artifacts/frontend-v17-deterministic-live/20260902-opus5-high-v3-holdout-r2-128k/runs/claude-opus-5/sample-1/score-repeat-1/automatic-score.json",
+      "source_score_sha256": "sha256:81b9a5d181130455b36d032fe679e2a4f16c46355dd26453c22cc4d3bb53b68d",
+      "result_sha256": "sha256:864e86506d824ef53a6bb6e8388f8509d204085fa8eef78d51fd9e041ddeb26f",
+      "raw_score": 31.57646,
+      "display_score": 11.709305,
+      "official_score": 12,
+      "visual_score": 26.251063
+    },
+    {
+      "id": "opus-high-valid-1",
+      "model_group": "opus",
+      "classification": "valid_sample",
+      "source_score_path": "artifacts/frontend-v17-balanced-opus-live/20260902-opus-high-sample-2-retry/runs/claude-opus-5/sample-1/score-repeat-1/automatic-score.json",
+      "source_score_sha256": "sha256:e7e896c07df283bc55aa45acf69c11a847945e640e985285e1abd740c5102b6d",
+      "result_sha256": "sha256:d6810360bed00e855646ae7d08daa3468889a1c4cc124f8a6087ce71e63d38e5",
+      "raw_score": 71.277969,
+      "display_score": 69.087879,
+      "official_score": 69,
+      "visual_score": 36.70654
+    },
+    {
+      "id": "fable-high-1",
+      "model_group": "fable",
+      "source_score_path": "artifacts/frontend-v17-balanced-fable-live/20260902-claude-fable-5-1-high-r1/runs/claude-fable-5-1/sample-1/score-repeat-1/automatic-score.json",
+      "source_score_sha256": "sha256:53ecb3df3e44624676fd3853e41cdbc8f968fb8b69073e3e9b60cd1019581565",
+      "result_sha256": "sha256:48934961ff681f8024e10c93517db1457badc484984a569b34bcac5cfdec147b",
+      "raw_score": 73.425613,
+      "display_score": 72.038391,
+      "official_score": 72,
+      "visual_score": 39.354184
+    }
+  ]
+}

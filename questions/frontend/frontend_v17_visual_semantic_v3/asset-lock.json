@@ -1,0 +1,70 @@
+{
+  "schema_version": "frontend_v17_visual_semantic_v3_asset_lock_v1",
+  "candidate_id": "case_stream_explorer_v17_visual_semantic_v3",
+  "assets": {
+    "spec": {
+      "path": "docs/frontend-v17-visual-semantic-v3-spec.md",
+      "sha256": "sha256:34efda5144734f235ad48f19643f4c2434e1f4f23a18246db2acd17e2a23ed19"
+    },
+    "scorer": {
+      "path": "devtools/frontend_v17_visual_semantic_v3.py",
+      "sha256": "sha256:3e2b7c0238b39f01649c1fceb3fb87fd3eb62b4b05369de902c8ca93b2c783a2"
+    },
+    "visual_v2_dependency": {
+      "path": "devtools/frontend_v17_visual_relational_v2.py",
+      "sha256": "sha256:2d0bdd78bcd5911d89ce7b16d660c59e3de336b89ba3b110df5c5ca0e560c088"
+    },
+    "image_metrics": {
+      "path": "scanner/frontend_image_metrics.py",
+      "sha256": "sha256:922c813f06b05fc29aba612d2db098cde1710ec59dcd65942ec9834863b1f538"
+    },
+    "balanced_adapter": {
+      "path": "devtools/frontend_v17_balanced_candidate.py",
+      "sha256": "sha256:206caf416fc116f4251e1033dd92e4db758bbf49ddcbc6b6da7aff383174462b"
+    },
+    "balanced_contract": {
+      "path": "questions/frontend/frontend_v17_balanced_v1/score-contract.json",
+      "sha256": "sha256:329a2808d5513242619e8ca4fc371c1b8d93264ecb242cb8a9a1480f32a65b36"
+    },
+    "score_contract": {
+      "path": "questions/frontend/frontend_v17_visual_semantic_v3/score-contract.json",
+      "sha256": "sha256:934cb75bbff22f3259b95783c2515a370feb960e7f0cb86a6c9ea000f3bfc98a"
+    },
+    "calibration_fixtures": {
+      "path": "questions/frontend/frontend_v17_visual_semantic_v3/calibration-fixtures.json",
+      "sha256": "sha256:94d8438a25f173fa5b777f0ca7bd5e924aceac5045f5ff9575879527f7ca8c81"
+    },
+    "pre_holdout_freeze": {
+      "path": "questions/frontend/frontend_v17_visual_semantic_v3/pre-holdout-freeze.json",
+      "sha256": "sha256:aea21e668d0b28e4ea1688f247e821f5573500c82c3a03ca878efedf094d670e"
+    },
+    "regrade_manifest": {
+      "path": "questions/frontend/frontend_v17_visual_semantic_v3/regrade-manifest.json",
+      "sha256": "sha256:918c03ce9860056b5b2f28b8201af8966fdc5d2d1d23532b1d8f4cdc3d4caaf8"
+    },
+    "publication_manifest": {
+      "path": "questions/frontend/frontend_v17_visual_semantic_v3/publication-manifest.json",
+      "sha256": "sha256:cf4d5c010abbc58e464b1e9a6720d2a43015813ef3bd525cc457f6b742f21b06"
+    },
+    "readme": {
+      "path": "questions/frontend/frontend_v17_visual_semantic_v3/README.md",
+      "sha256": "sha256:4ede5399ab62829319d14f0108c99ada5fc3273a841a91f2cefa481014fdffd4"
+    },
+    "source_prompt": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/prompt.md",
+      "sha256": "sha256:fad7572c0bbfaf358ff491ea72d535504497039db865ce333df152c53e42b4cf"
+    },
+    "source_starter": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/starter.html",
+      "sha256": "sha256:c302de3bfd237e38f0594604a1cd35f8fbd1ebdf35bc4bb5373d0e6b5124b6fd"
+    },
+    "source_asset_lock": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/asset-lock.json",
+      "sha256": "sha256:e3a0339faf02b2ccbcef48c01c98a10e0a2e190ed980f1150413b66ed8eae3cb"
+    },
+    "positive_reference_html": {
+      "path": "questions/frontend/frontend_v20_pilot/case_stream_workspace_v20/reference.html",
+      "sha256": "sha256:df999f3591c8a9c06371237d27edac8ab562ada3a27237e7d052d22077bd5e88"
+    }
+  }
+}

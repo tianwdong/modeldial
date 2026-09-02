@@ -1,0 +1,218 @@
+{
+  "schema_version": "frontend_v17_visual_relational_v2_contract_v1",
+  "candidate_id": "case_stream_explorer_v17_visual_relational_v2",
+  "benchmark_ref": "frontend-case-stream-explorer-v17-visual-relational@v2",
+  "source_benchmark_ref": "frontend-case-stream-explorer-v17@v2",
+  "total_points": 100,
+  "behavior_points": 33,
+  "workflow_points": 22,
+  "visual_points": 45,
+  "behavior_dimensions": {
+    "query_state": {"points": 3, "source_max_points": 14},
+    "virtual_keyboard": {"points": 3, "source_max_points": 12},
+    "selection_async": {"points": 22, "source_max_points": 16},
+    "responsive_layout": {"points": 2, "source_max_points": 9},
+    "state_distinction": {"points": 1, "source_max_points": 2},
+    "stability": {"points": 2, "source_max_points": 2}
+  },
+  "workflow_dimensions": {
+    "browse_continuity": {"points": 10, "source_max_points": 10},
+    "transaction_correctness": {"points": 10, "source_max_points": 10},
+    "responsive_inspector": {"points": 2, "source_max_points": 10}
+  },
+  "visual_atoms": {
+    "state_saving": 4,
+    "state_failure": 4,
+    "state_desktop_inspector": 3,
+    "state_mobile_inspector": 4,
+    "responsive_desktop": 4,
+    "responsive_tablet": 3,
+    "responsive_mobile": 3,
+    "responsive_reflow": 2,
+    "hierarchy_contrast": 4,
+    "hierarchy_occupancy": 3,
+    "hierarchy_scale": 3,
+    "structure_default_desktop": 2,
+    "structure_default_tablet": 1,
+    "structure_default_mobile": 1,
+    "structure_selected_saving": 1,
+    "structure_failure": 1,
+    "structure_desktop_inspector": 1,
+    "structure_mobile_inspector": 1
+  },
+  "positive_pack_ids": [
+    "reference",
+    "compact_density",
+    "soft_surface",
+    "wide_inspector"
+  ],
+  "feature_config": {
+    "state": {
+      "block_size": 8,
+      "crops": {
+        "state_saving": [30, 493, 1039, 120],
+        "state_failure": [1080, 493, 330, 405],
+        "state_desktop_inspector": [1080, 493, 330, 405],
+        "state_mobile_inspector": [0, 0, 390, 844]
+      },
+      "rgb_change_threshold": 12,
+      "edge_threshold": 8,
+      "rgb_weight": 0.7,
+      "edge_weight": 0.3
+    },
+    "responsive": {
+      "interior_seam": {
+        "block_size": 4,
+        "crop_y_fraction": 0.46,
+        "crop_height_fraction": 0.44,
+        "x_fraction": [0.42, 0.9],
+        "luma_threshold": 3
+      },
+      "mobile_containment": {
+        "block_size": 2,
+        "crop_y_fraction": 0.08,
+        "crop_height_fraction": 0.9,
+        "x_fraction": [0.86, 0.99],
+        "luma_threshold": 3
+      },
+      "reflow_formula": "geometric_mean(desktop,tablet,mobile)"
+    },
+    "hierarchy": {
+      "block_size": 16,
+      "background_delta": 8,
+      "luma_percentiles": [0.1, 0.98],
+      "heading_y_pixels": [10, 80],
+      "heading_x_fraction": 0.58,
+      "heading_luma_threshold": 150,
+      "heading_gap_bridge_pixels": 2,
+      "heading_scale_divisor": 32
+    },
+    "structure": {
+      "block_size": 8,
+      "edge_threshold": 10,
+      "edge_tolerance_blocks": 1,
+      "weights": {"ssim": 0.35, "color": 0.0, "edge": 0.65}
+    },
+    "structure_formula": "0.35*grayscale_ssim + 0.65*edge_f1",
+    "state_curve": "linear_positive_floor_mutant_ceiling",
+    "llm_judge": false
+  },
+  "anchors": {
+    "state_saving": {
+      "positive_floor": 0.301988,
+      "mutant_ceiling": 0.047082,
+      "directed_mutant": "saving_flattened",
+      "margin": 0.254906
+    },
+    "state_failure": {
+      "positive_floor": 0.293468,
+      "mutant_ceiling": 0.224824,
+      "directed_mutant": "failure_hidden",
+      "margin": 0.068644
+    },
+    "state_desktop_inspector": {
+      "positive_floor": 0.320141,
+      "mutant_ceiling": 0.027296,
+      "directed_mutant": "desktop_inspector_collapsed",
+      "margin": 0.292845
+    },
+    "state_mobile_inspector": {
+      "positive_floor": 0.529095,
+      "mutant_ceiling": 0.124344,
+      "directed_mutant": "mobile_inspector_hidden",
+      "margin": 0.404751
+    },
+    "responsive_desktop": {
+      "positive_floor": 0.777778,
+      "mutant_ceiling": 0.333333,
+      "directed_mutant": "desktop_panel_removed",
+      "margin": 0.444445
+    },
+    "responsive_tablet": {
+      "positive_floor": 0.876106,
+      "mutant_ceiling": 0.371681,
+      "directed_mutant": "tablet_panel_removed",
+      "margin": 0.504425
+    },
+    "responsive_mobile": {
+      "positive_floor": 0.886842,
+      "mutant_ceiling": 0.113158,
+      "directed_mutant": "mobile_fixed_width",
+      "margin": 0.773684
+    },
+    "responsive_reflow": {
+      "positive_floor": 0.849091,
+      "mutant_ceiling": 0.0,
+      "directed_mutant": "responsive_reflow_removed",
+      "margin": 0.849091
+    },
+    "hierarchy_contrast": {
+      "positive_floor": 0.264498,
+      "mutant_ceiling": 0.054389,
+      "directed_mutant": "low_contrast",
+      "margin": 0.210109
+    },
+    "hierarchy_occupancy": {
+      "positive_floor": 0.621436,
+      "mutant_ceiling": 0.022569,
+      "directed_mutant": "blank_content",
+      "margin": 0.598867
+    },
+    "hierarchy_scale": {
+      "positive_floor": 0.697917,
+      "mutant_ceiling": 0.3125,
+      "directed_mutant": "flat_hierarchy",
+      "margin": 0.385417
+    },
+    "structure_default_desktop": {
+      "positive_floor": 1.0,
+      "mutant_ceiling": 0.194323,
+      "directed_mutant": "scrambled_structure",
+      "margin": 0.805677
+    },
+    "structure_default_tablet": {
+      "positive_floor": 1.0,
+      "mutant_ceiling": 0.200341,
+      "directed_mutant": "scrambled_structure",
+      "margin": 0.799659
+    },
+    "structure_default_mobile": {
+      "positive_floor": 1.0,
+      "mutant_ceiling": 0.357541,
+      "directed_mutant": "scrambled_structure",
+      "margin": 0.642459
+    },
+    "structure_selected_saving": {
+      "positive_floor": 1.0,
+      "mutant_ceiling": 0.106396,
+      "directed_mutant": "scrambled_structure",
+      "margin": 0.893604
+    },
+    "structure_failure": {
+      "positive_floor": 1.0,
+      "mutant_ceiling": 0.184432,
+      "directed_mutant": "scrambled_structure",
+      "margin": 0.815568
+    },
+    "structure_desktop_inspector": {
+      "positive_floor": 1.0,
+      "mutant_ceiling": 0.1745,
+      "directed_mutant": "scrambled_structure",
+      "margin": 0.8255
+    },
+    "structure_mobile_inspector": {
+      "positive_floor": 1.0,
+      "mutant_ceiling": 0.262608,
+      "directed_mutant": "scrambled_structure",
+      "margin": 0.737392
+    }
+  },
+  "display_mapping": {
+    "starter_raw": 53.480638,
+    "starter_display": 20,
+    "reference_raw": 100,
+    "reference_display": 100,
+    "above_starter_exponent": 0.5
+  },
+  "ranking_policy": "Every behavior, workflow, and visual atom retains independently earned points. No all-or-nothing gate is applied."
+}

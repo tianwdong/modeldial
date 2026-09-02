@@ -1,0 +1,84 @@
+{
+  "schema_version": "frontend_v17_balanced_progress_calibration_manifest_v1",
+  "candidate_id": "case_stream_explorer_v17_balanced_progress_v1",
+  "no_model_reruns": true,
+  "fixtures": [
+    {
+      "id": "k3-high-1",
+      "model_group": "k3",
+      "path": "artifacts/frontend-v17-deterministic-live/20260901-k3-high-v2-r1/runs/k3/sample-1/score-repeat-1/automatic-score.json",
+      "sha256": "sha256:788f564609d4e229cb59b306074fb9c80e92cceabd4dc36fa47e7fbe12c147cf",
+      "expected_raw": 35.211317,
+      "expected_display": 59.326887
+    },
+    {
+      "id": "gemini-high-1",
+      "model_group": "gemini",
+      "path": "artifacts/frontend-v17-deterministic-live/20260901-gemini-3.7-flash-high-v2-r2/runs/gemini-3.7-flash-high/sample-1/score-repeat-1/automatic-score.json",
+      "sha256": "sha256:d0a5bc4492e83f803c004b759c8bec0b91a165d3bea3aa7b57832bc7143a4cb8",
+      "expected_raw": 28.710296,
+      "expected_display": 52.551574
+    },
+    {
+      "id": "sol-high-1",
+      "model_group": "sol",
+      "path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-sol/sample-1/score-repeat-1/score.json",
+      "sha256": "sha256:cb83c67199a089d744444e157047de85611878c4af82fa25b7970b948991996d",
+      "expected_raw": 31.482854,
+      "expected_display": 55.599165
+    },
+    {
+      "id": "sol-high-2",
+      "model_group": "sol",
+      "path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-sol/sample-2/score-repeat-1/score.json",
+      "sha256": "sha256:5dbd4a9cd063cd486ef090629dc07ee90fd91725d249472baabd4d5c45469fe0",
+      "expected_raw": 27.228591,
+      "expected_display": 50.799492
+    },
+    {
+      "id": "luna-high-1",
+      "model_group": "luna",
+      "path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-luna/sample-1/score-repeat-1/score.json",
+      "sha256": "sha256:439629cefc17b50d4a727c71ea2fea2cbcc03a7a007239e889fc6c06163cdfa0",
+      "expected_raw": 20.121799,
+      "expected_display": 40.401731
+    },
+    {
+      "id": "luna-high-2",
+      "model_group": "luna",
+      "path": "artifacts/frontend-v17-integrated-live/20260901-luna-sol-high-r1/runs/gpt-5.6-luna/sample-2/score-repeat-1/score.json",
+      "sha256": "sha256:64c52c30de259a2586db74773429fe60b2c200a3eaae596284e1300e492c49bd",
+      "expected_raw": 27.078624,
+      "expected_display": 50.616573
+    },
+    {
+      "id": "starter",
+      "model_group": "anchor",
+      "path": "artifacts/frontend-v17-integrated-calibration/latest/starter/score.json",
+      "sha256": "sha256:92a8d75062c88d1d6a744dc319877d02423c5add9ccc0d4a03689193a66590c0",
+      "expected_raw": 14.565476,
+      "expected_display": 20.0
+    },
+    {
+      "id": "reference",
+      "model_group": "anchor",
+      "path": "artifacts/frontend-v17-integrated-calibration/latest/reference-1/score.json",
+      "sha256": "sha256:b6979b0ac5dd46e12ae013c93023c078a8fbbedc98d4ea9fd8de4131ff39cf7e",
+      "expected_raw": 100.0,
+      "expected_display": 100.0
+    },
+    {
+      "id": "opus-high-existing-1",
+      "model_group": "opus_existing_holdout",
+      "path": "artifacts/frontend-v17-deterministic-live/20260902-opus5-high-v3-holdout-r2-128k/runs/claude-opus-5/sample-1/score-repeat-1/automatic-score.json",
+      "sha256": "sha256:81b9a5d181130455b36d032fe679e2a4f16c46355dd26453c22cc4d3bb53b68d",
+      "expected_raw": 5.325397,
+      "expected_display": 7.312356,
+      "classification": "implementation_failure"
+    }
+  ],
+  "expected_group_medians": {
+    "sol": {"raw": 29.355723, "display": 53.199329},
+    "luna": {"raw": 23.600212, "display": 45.509152}
+  }
+}

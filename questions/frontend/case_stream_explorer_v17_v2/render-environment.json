@@ -1,0 +1,16 @@
+{
+  "schema_version": "frontend_v21_render_environment_v1",
+  "browser_channel": "chrome",
+  "browser_version": "152.0.7977.65",
+  "locale": "en-US",
+  "timezone_id": "UTC",
+  "device_scale_factor": 1,
+  "reduced_motion": "reduce",
+  "color_scheme": "light",
+  "screenshot": {
+    "full_page": false,
+    "animations": "disabled",
+    "caret": "hide",
+    "png_schema": "8-bit non-interlaced RGB"
+  }
+}

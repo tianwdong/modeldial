@@ -1,0 +1,42 @@
+{
+  "schema_version": "frontend_v17_balanced_progress_asset_lock_v1",
+  "candidate_id": "case_stream_explorer_v17_balanced_progress_v1",
+  "assets": {
+    "spec": {
+      "path": "docs/frontend-v17-balanced-progress-v1-spec.md",
+      "sha256": "sha256:982474285faa397c099fb64a903e32e36a00d423d518af2e674ec02d28671236"
+    },
+    "adapter": {
+      "path": "devtools/frontend_v17_balanced_candidate.py",
+      "sha256": "sha256:206caf416fc116f4251e1033dd92e4db758bbf49ddcbc6b6da7aff383174462b"
+    },
+    "score_contract": {
+      "path": "questions/frontend/frontend_v17_balanced_v1/score-contract.json",
+      "sha256": "sha256:329a2808d5513242619e8ca4fc371c1b8d93264ecb242cb8a9a1480f32a65b36"
+    },
+    "calibration_manifest": {
+      "path": "questions/frontend/frontend_v17_balanced_v1/calibration-manifest.json",
+      "sha256": "sha256:a12df5f90eebdbdfc8aec0969dab7850f414575bb5217ca6439665e1dca6fc47"
+    },
+    "live_profile": {
+      "path": "questions/frontend/frontend_v17_balanced_v1/live-profile.json",
+      "sha256": "sha256:56e41898c81c5a0ef25d2c03b8ef507f9092dc401a45b19eda615181d47e0aad"
+    },
+    "readme": {
+      "path": "questions/frontend/frontend_v17_balanced_v1/README.md",
+      "sha256": "sha256:f06ba182859ade3b0d1b21ac666c3954c09281747f14cad5a790332cb6e93e30"
+    },
+    "source_prompt": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/prompt.md",
+      "sha256": "sha256:fad7572c0bbfaf358ff491ea72d535504497039db865ce333df152c53e42b4cf"
+    },
+    "source_starter": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/starter.html",
+      "sha256": "sha256:c302de3bfd237e38f0594604a1cd35f8fbd1ebdf35bc4bb5373d0e6b5124b6fd"
+    },
+    "source_asset_lock": {
+      "path": "questions/frontend/case_stream_explorer_v17_v2/asset-lock.json",
+      "sha256": "sha256:e3a0339faf02b2ccbcef48c01c98a10e0a2e190ed980f1150413b66ed8eae3cb"
+    }
+  }
+}

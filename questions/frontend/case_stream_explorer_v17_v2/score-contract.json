@@ -1,0 +1,503 @@
+{
+  "schema_version": "frontend_score_contract_v17_deterministic_v1",
+  "candidate_id": "frontend-case-stream-explorer-v17",
+  "benchmark_ref": "frontend-case-stream-explorer-v17@v2",
+  "total_points": 100,
+  "behavior_points": 55,
+  "workflow_points": 30,
+  "visual_points": 15,
+  "llm_visual_judge": false,
+  "trace_contract": {
+    "source_ids": [
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "C05",
+      "C06"
+    ],
+    "scored_individually": false
+  },
+  "workflows": [
+    {
+      "id": "W01",
+      "dimension_id": "browse_continuity",
+      "points": 10,
+      "requires_all": [
+        "C01",
+        "C02"
+      ],
+      "description": "URL, history, virtual geometry, focus, and scroll complete one coherent browse workflow."
+    },
+    {
+      "id": "W02",
+      "dimension_id": "transaction_correctness",
+      "points": 10,
+      "requires_all": [
+        "C03",
+        "C04",
+        "C05"
+      ],
+      "description": "Selection identity, monotonic revisions, out-of-order success, and partial rollback complete one coherent transaction workflow."
+    },
+    {
+      "id": "W03",
+      "dimension_id": "responsive_inspector",
+      "points": 10,
+      "requires_all": [
+        "C06"
+      ],
+      "description": "Desktop and mobile inspector transitions preserve geometry, focus, and overflow invariants."
+    }
+  ],
+  "visual_progress": {
+    "mode": "starter_anchored_linear_progress",
+    "formula": "clamp((candidate_similarity - starter_similarity) / (1 - starter_similarity), 0, 1)",
+    "score_precision": 6
+  },
+  "dimensions": [
+    {
+      "id": "query_state",
+      "points": 14,
+      "checks": [
+        {
+          "id": "Q01a",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q01",
+          "description": "Injected totals and matching metrics render."
+        },
+        {
+          "id": "Q01b",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q01",
+          "description": "Dynamic team and status facets render."
+        },
+        {
+          "id": "Q01c",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q01",
+          "description": "Rows and initial empty inspector render."
+        },
+        {
+          "id": "Q02a",
+          "points": 2,
+          "mode": "browser",
+          "source": "Q02",
+          "description": "Unicode-normalized multi-token search matches."
+        },
+        {
+          "id": "Q02b",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q02",
+          "description": "Missing query renders the empty state."
+        },
+        {
+          "id": "Q02c",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q02",
+          "description": "Clearing search restores all results."
+        },
+        {
+          "id": "Q03a",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q03",
+          "description": "Team and status facets compose."
+        },
+        {
+          "id": "Q03b",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q03",
+          "description": "Priority and recent sorts are deterministic."
+        },
+        {
+          "id": "Q03c",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q03",
+          "description": "Owner and ID sorts are deterministic."
+        },
+        {
+          "id": "Q04a",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q04",
+          "description": "Initial URL state and unrelated parameters restore."
+        },
+        {
+          "id": "Q04b",
+          "points": 1,
+          "mode": "browser",
+          "source": "Q04",
+          "description": "Changed view writes canonical URL state."
+        },
+        {
+          "id": "Q04c",
+          "points": 2,
+          "mode": "browser",
+          "source": "Q04",
+          "description": "Popstate restores controls, focus, and scroll."
+        }
+      ]
+    },
+    {
+      "id": "virtual_keyboard",
+      "points": 12,
+      "checks": [
+        {
+          "id": "L01a",
+          "points": 1,
+          "mode": "browser",
+          "source": "L01",
+          "description": "Virtual spacer has the exact total height."
+        },
+        {
+          "id": "L01b",
+          "points": 1,
+          "mode": "browser",
+          "source": "L01",
+          "description": "Initial rendered window is bounded."
+        },
+        {
+          "id": "L01c",
+          "points": 2,
+          "mode": "browser",
+          "source": "L01",
+          "description": "Rendered row geometry and ARIA positions are exact."
+        },
+        {
+          "id": "L02a",
+          "points": 1,
+          "mode": "browser",
+          "source": "L02",
+          "description": "Middle scroll renders the expected overscan slice."
+        },
+        {
+          "id": "L02b",
+          "points": 1,
+          "mode": "browser",
+          "source": "L02",
+          "description": "End scroll renders the expected final slice."
+        },
+        {
+          "id": "L02c",
+          "points": 2,
+          "mode": "browser",
+          "source": "L02",
+          "description": "Scrolled windows stay bounded and preserve geometry."
+        },
+        {
+          "id": "L03a",
+          "points": 1,
+          "mode": "browser",
+          "source": "L03",
+          "description": "Home, End, and page keys reach the expected rows."
+        },
+        {
+          "id": "L03b",
+          "points": 2,
+          "mode": "browser",
+          "source": "L03",
+          "description": "Keyboard navigation keeps one focused active row."
+        },
+        {
+          "id": "L03c",
+          "points": 1,
+          "mode": "browser",
+          "source": "L03",
+          "description": "Keyboard navigation preserves ARIA positions."
+        }
+      ]
+    },
+    {
+      "id": "selection_async",
+      "points": 16,
+      "checks": [
+        {
+          "id": "S01a",
+          "points": 1,
+          "mode": "browser",
+          "source": "S01",
+          "description": "Shift range survives a hidden query."
+        },
+        {
+          "id": "S01b",
+          "points": 2,
+          "mode": "browser",
+          "source": "S01",
+          "description": "Selection persists through restore, sort, and scroll."
+        },
+        {
+          "id": "S01c",
+          "points": 1,
+          "mode": "browser",
+          "source": "S01",
+          "description": "Inspector close restores focus without losing selection."
+        },
+        {
+          "id": "S02a",
+          "points": 1,
+          "mode": "browser",
+          "source": "S02",
+          "description": "Bulk update is immediately optimistic."
+        },
+        {
+          "id": "S02b",
+          "points": 1,
+          "mode": "browser",
+          "source": "S02",
+          "description": "Successful state and selection remain after settlement."
+        },
+        {
+          "id": "S02c",
+          "points": 2,
+          "mode": "browser",
+          "source": "S02",
+          "description": "One revisioned save is issued per selected case."
+        },
+        {
+          "id": "S03a",
+          "points": 1,
+          "mode": "browser",
+          "source": "S03",
+          "description": "The latest intent remains visible after out-of-order settlement."
+        },
+        {
+          "id": "S03b",
+          "points": 2,
+          "mode": "browser",
+          "source": "S03",
+          "description": "Per-case revisions and statuses are independently ordered."
+        },
+        {
+          "id": "S04a",
+          "points": 1,
+          "mode": "browser",
+          "source": "S04",
+          "description": "Mixed failure emits the exact single alert."
+        },
+        {
+          "id": "S04b",
+          "points": 1,
+          "mode": "browser",
+          "source": "S04",
+          "description": "Successful case keeps the optimistic result."
+        },
+        {
+          "id": "S04c",
+          "points": 2,
+          "mode": "browser",
+          "source": "S04",
+          "description": "Only the rejected case is restored."
+        },
+        {
+          "id": "S04d",
+          "points": 1,
+          "mode": "browser",
+          "source": "S04",
+          "description": "Mixed update sends exactly two saves."
+        }
+      ]
+    },
+    {
+      "id": "responsive_layout",
+      "points": 9,
+      "checks": [
+        {
+          "id": "R01a",
+          "points": 1,
+          "mode": "browser",
+          "source": "R01",
+          "description": "Desktop workspace uses two visible columns."
+        },
+        {
+          "id": "R01b",
+          "points": 1,
+          "mode": "browser",
+          "source": "R01",
+          "description": "Desktop list and inspector remain useful."
+        },
+        {
+          "id": "R01c",
+          "points": 1,
+          "mode": "browser",
+          "source": "R01",
+          "description": "Desktop document has no horizontal overflow."
+        },
+        {
+          "id": "R02a",
+          "points": 1,
+          "mode": "browser",
+          "source": "R02",
+          "description": "Tablet controls wrap and results scroll internally."
+        },
+        {
+          "id": "R02b",
+          "points": 1,
+          "mode": "browser",
+          "source": "R02",
+          "description": "Tablet facets scroll without document overflow."
+        },
+        {
+          "id": "R03a",
+          "points": 1,
+          "mode": "browser",
+          "source": "R03",
+          "description": "Mobile facets and rows remain reachable."
+        },
+        {
+          "id": "R03b",
+          "points": 1,
+          "mode": "browser",
+          "source": "R03",
+          "description": "Mobile target opens a full-viewport sheet."
+        },
+        {
+          "id": "R03c",
+          "points": 2,
+          "mode": "browser",
+          "source": "R03",
+          "description": "Mobile close restores focus without overflow."
+        }
+      ]
+    },
+    {
+      "id": "state_distinction",
+      "points": 2,
+      "checks": [
+        {
+          "id": "D01",
+          "points": 1,
+          "mode": "browser",
+          "source": "V01",
+          "description": "Canvas, results, rows, and inspector use distinct surfaces."
+        },
+        {
+          "id": "D02",
+          "points": 1,
+          "mode": "browser",
+          "source": "V02",
+          "description": "Focus, active, selected, saving, status, and priority states differ."
+        }
+      ]
+    },
+    {
+      "id": "stability",
+      "points": 2,
+      "checks": [
+        {
+          "id": "A01a",
+          "points": 1,
+          "mode": "browser",
+          "source": "A01",
+          "description": "Representative use emits no errors or external requests."
+        },
+        {
+          "id": "A01b",
+          "points": 1,
+          "mode": "browser",
+          "source": "A01",
+          "description": "One polite live status remains and reduced motion is respected."
+        }
+      ]
+    },
+    {
+      "id": "browse_continuity",
+      "points": 10,
+      "checks": [
+        {
+          "id": "W01",
+          "points": 10,
+          "mode": "workflow",
+          "description": "Complete browse continuity workflow."
+        }
+      ]
+    },
+    {
+      "id": "transaction_correctness",
+      "points": 10,
+      "checks": [
+        {
+          "id": "W02",
+          "points": 10,
+          "mode": "workflow",
+          "description": "Complete transaction correctness workflow."
+        }
+      ]
+    },
+    {
+      "id": "responsive_inspector",
+      "points": 10,
+      "checks": [
+        {
+          "id": "W03",
+          "points": 10,
+          "mode": "workflow",
+          "description": "Complete responsive inspector workflow."
+        }
+      ]
+    },
+    {
+      "id": "direct_screenshot_progress",
+      "points": 15,
+      "checks": [
+        {
+          "id": "V03",
+          "points": 3,
+          "mode": "screenshot",
+          "description": "Desktop initial viewport moves from the starter toward the frozen target."
+        },
+        {
+          "id": "V04",
+          "points": 2,
+          "mode": "screenshot",
+          "description": "Tablet initial viewport moves from the starter toward the frozen target."
+        },
+        {
+          "id": "V05",
+          "points": 2,
+          "mode": "screenshot",
+          "description": "Mobile initial viewport moves from the starter toward the frozen target."
+        },
+        {
+          "id": "V06",
+          "points": 2,
+          "mode": "screenshot",
+          "description": "Optimistic saving viewport moves from the starter toward the frozen target state."
+        },
+        {
+          "id": "V07",
+          "points": 2,
+          "mode": "screenshot",
+          "description": "Failure viewport moves from the starter toward the frozen target state."
+        },
+        {
+          "id": "V08",
+          "points": 2,
+          "mode": "screenshot",
+          "description": "Desktop inspector viewport moves from the starter toward the frozen target state."
+        },
+        {
+          "id": "V09",
+          "points": 2,
+          "mode": "screenshot",
+          "description": "Mobile inspector viewport moves from the starter toward the frozen target state."
+        }
+      ]
+    }
+  ],
+  "validity": {
+    "invalid_when": [
+      "app_shell_not_rendered",
+      "initial_fixture_not_rendered_with_runtime_error",
+      "render_environment_drift"
+    ],
+    "ranking_policy": "Invalid output retains diagnostic evidence but ranks zero; otherwise every earned behavior, complete workflow, and screenshot progress point is retained."
+  }
+}
