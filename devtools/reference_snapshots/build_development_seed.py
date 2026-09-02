@@ -27,6 +27,53 @@ SEED_PUBLISHED_AT = (
     "2000-01-04T00:00:00Z",
 )
 SEED_ENTRY_COUNTS = (12, 13, 15, 18)
+SEED_QUESTION_SEMANTICS = (
+    {
+        "id": "01_session_bundle_repair",
+        "short_label": "Q1",
+        "title": "Black-box Regression Audit",
+        "capability_id": "black_box_regression_testing",
+        "capability_label": "契约测试",
+        "detail_label": "边界场景",
+        "ordinal": 1,
+    },
+    {
+        "id": "02_code_counterexample_maxgap",
+        "short_label": "Q2",
+        "title": "Retry Planner Counterexamples",
+        "capability_id": "debug_counterexample",
+        "capability_label": "反例构造",
+        "detail_label": "重试调度",
+        "ordinal": 2,
+    },
+    {
+        "id": "03_ci_optimality_certificate",
+        "short_label": "Q3",
+        "title": "CI Adversarial Audit",
+        "capability_id": "ci_plan_audit",
+        "capability_label": "方案审计",
+        "detail_label": "对抗场景",
+        "ordinal": 3,
+    },
+    {
+        "id": "04_transaction_regression_design",
+        "short_label": "Q4",
+        "title": "Transaction Regression Design",
+        "capability_id": "state_machine_testing",
+        "capability_label": "状态机",
+        "detail_label": "事务回归",
+        "ordinal": 4,
+    },
+    {
+        "id": "05_cache_regression_test_design",
+        "short_label": "Q5",
+        "title": "Cache Regression Test Design",
+        "capability_id": "regression_validation",
+        "capability_label": "测试设计",
+        "detail_label": "缓存回归",
+        "ordinal": 5,
+    },
+)
 SEED_CANDIDATES = (
     ("codex-local-default:gpt-5.6-sol:ultra", "gpt-5.6-sol", "ultra"),
     ("codex-local-default:gpt-5.6-sol:xhigh", "gpt-5.6-sol", "xhigh"),
@@ -113,23 +160,7 @@ def build_seed_snapshots() -> list[dict[str, object]]:
 
 
 def _seed_question_semantics() -> list[dict[str, object]]:
-    catalog = _read_json_object(PROJECT_ROOT / "questions" / "catalog.json")
-    questions = catalog.get("questions")
-    if not isinstance(questions, list):
-        raise ValueError("question catalog is missing questions")
-    return [
-        {
-            "id": str(question["id"]),
-            "ordinal": ordinal,
-            "short_label": f"Q{ordinal}",
-            "title": str(question["title"]),
-            "capability_id": str(question["capability_id"]),
-            "capability_label": str(question["capability_label"]),
-            "detail_label": str(question["detail_label"]),
-        }
-        for ordinal, question in enumerate(questions, start=1)
-        if isinstance(question, Mapping)
-    ]
+    return [dict(question) for question in SEED_QUESTION_SEMANTICS]
 
 
 def _build_synthetic_entry(
@@ -279,13 +310,6 @@ def _is_completed_model_call(item: ScanResult) -> bool:
     if terminal_state:
         return terminal_state in {"completed_response", "completed_turn"}
     return item.error_message is None
-
-
-def _read_json_object(path: Path) -> dict[str, object]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise ValueError(f"JSON file must contain an object: {path}")
-    return payload
 
 
 def _write_json_atomic(path: Path, payload: Mapping[str, object]) -> None:
