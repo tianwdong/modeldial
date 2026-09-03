@@ -68,7 +68,7 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("def run_codex_prompt(", runtime_source)
         self.assertIn("def resolve_codex_executable(", runtime_source)
 
-    def test_mock_runner_supports_session_bundle_test_design(self) -> None:
+    def test_mock_runner_supports_session_bundle_relation_repair(self) -> None:
         question = next(
             item
             for item in QuestionBank(Path("questions")).load().enabled_questions
@@ -81,10 +81,13 @@ class RunnerTest(unittest.TestCase):
             use_mock_results=True,
         )
 
-        self.assertEqual(question.grader.kind, "session_bundle_test_design")
+        self.assertEqual(question.grader.kind, "session_bundle_relation_repair")
         self.assertTrue(result.answer_ok)
-        self.assertIn('"tests"', result.answer_preview)
-        self.assertEqual(result.scorer_reason, "session_bundle_scenarios_v1 20/20")
+        self.assertIn('"replace"', result.answer_preview)
+        self.assertEqual(
+            result.scorer_reason,
+            "session_bundle_relation_repair_v1 20/20",
+        )
         self.assertEqual(result.scorer_diagnostics["semantic_passed"], 20)
 
     def test_mock_runner_supports_retry_counterexample_design(self) -> None:

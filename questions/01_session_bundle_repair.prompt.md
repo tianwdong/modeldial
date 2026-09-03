@@ -1,164 +1,61 @@
-Do not use external tools.
-Do not run code.
+Without tools or code, repair a fixed 18-relation black-box regression suite for a session-bundle
+system. Some selected relation oracles are false or add no defect coverage. Replace only the choices
+you believe should change. Return one JSON object only; no explanation.
 
-You are designing a compact black-box regression suite for a session-bundle system. The grader
-compares one reference implementation with 20 independently scored behaviors. A behavior may be
-represented by several plausible deviations; it earns one point only when your checks distinguish
-every deviation assigned to it.
+Answer schema
 
-Create 1 through 3 named tests. Each test contains 1 through 8 independent steps. Every step also
-contains 1 through 12 checks. The grader first runs a step on the reference implementation. The step
-is eligible only when every submitted check matches that observation. It then evaluates the same
-eligible step against the behavioral deviations. Only differences on checked fields count. The
-maximum score is 20.
+    {"replace":[["OLD_ID","NEW_ID"]]}
 
-Return only one JSON object. Do not include an explanation.
+Each pair removes one currently selected proposal ID (left) and includes one alternative proposal ID
+(right) in the final suite. Use at most six pairs. Old IDs and new IDs cannot repeat; use only the
+listed banks. An empty list keeps the starting suite. Malformed or out-of-bank edits are invalid.
+Scoring considers both the validity of retained relations and the distinct incorrect behaviors
+detected by the final suite.
+For coverage, treat each incorrect behavior as one broken contract guarantee with unrelated
+guarantees still correct; a useful relation witnesses that broken guarantee itself.
 
-Top-level schema
+Draft notation: `b` is the base input and overlaying `d` produces intervention `i`. Operators are
+`=` and `!=`. Cross-execution relations compare the same observation path. Same-execution relations
+may compare `faults.<fault>.filesystem` with `before.filesystem`, or
+`durability.temporary_fsync` with `durability.parent_fsync_attempted`.
 
-    {
-      "tests": [
-        {
-          "name": "unique non-empty name",
-          "steps": [ ... ]
-        }
-      ]
-    }
+Draft executions
 
-Unknown fields, duplicate names, duplicate list choices, invalid types, or out-of-range values make
-the whole answer invalid.
+{"x":[{"n":"e1","b":{"op":"save","target":"existing"},"d":{"target":"missing"}},{"n":"e2","b":{"op":"save","target":"missing","metadata_features":[]},"d":{"metadata_features":["mutates_during_iteration","nested_mapping"]}},{"n":"e3","b":{"op":"save","target":"missing","event_features":[],"event_count":3},"d":{"event_features":["mutates_after_yield"]}},{"n":"e4","b":{"op":"save","target":"missing","event_count":1000},"d":{"event_count":1001}},{"n":"e5","b":{"op":"save","target":"existing","overwrite":true,"faults":["validation","iteration","serialization","member_size","replace"]},"d":{"faults":[]}},{"n":"e6","b":{"op":"save","target":"missing","race_create":false},"d":{"race_create":true}},{"n":"e7","b":{"op":"save","target":"missing","mapping_order":"ab"},"d":{"mapping_order":"ba"}},{"n":"e8","b":{"op":"save","target":"missing","clock":19800101},"d":{"clock":20260902}},{"n":"e9","b":{"op":"replay","recorded_success":[true],"actual_results":["failure"],"stop_on_error":true,"store_history":true},"d":{"recorded_success":[false]}},{"n":"e10","b":{"op":"replay","recorded_success":[true,true],"actual_results":["failure","success"],"stop_on_error":true,"store_history":true},"d":{"stop_on_error":false}},{"n":"e11","b":{"op":"replay","recorded_success":[true,true],"actual_results":["success","success"],"stop_on_error":false,"store_history":false},"d":{"store_history":true}}]}
 
-Save steps
+Starting 18 proposals
 
-A save step must contain `"op": "save"` and `target`. All other fields are optional and use the
-defaults shown here.
+{"proposals":[{"id":"p02","n":"e1","r":["b.status","!=","i.status"]},{"id":"p06","n":"e2","r":["b.metadata_snapshot","!=","i.metadata_snapshot"]},{"id":"p05","n":"e2","r":["b.status","=","i.status"]},{"id":"p09","n":"e3","r":["b.status","=","i.status"]},{"id":"p11","n":"e4","r":["b.events_consumed","=","i.events_consumed"]},{"id":"p14","n":"e5","r":["b.faults.validation.filesystem","=","b.before.filesystem"]},{"id":"p15","n":"e5","r":["b.faults.iteration.filesystem","=","b.before.filesystem"]},{"id":"p16","n":"e5","r":["b.faults.serialization.filesystem","=","b.before.filesystem"]},{"id":"p17","n":"e5","r":["b.faults.member_size.filesystem","=","b.before.filesystem"]},{"id":"p19","n":"e5","r":["b.status","!=","i.status"]},{"id":"p20","n":"e6","r":["b.status","!=","i.status"]},{"id":"p23","n":"e7","r":["b.archive.mapping_order","=","i.archive.mapping_order"]},{"id":"p24","n":"e7","r":["b.status","=","i.status"]},{"id":"p27","n":"e8","r":["b.archive.timestamp","=","i.archive.timestamp"]},{"id":"p29","n":"e9","r":["b.outcomes","=","i.outcomes"]},{"id":"p30","n":"e9","r":["b.final_execution_count","=","i.final_execution_count"]},{"id":"p32","n":"e10","r":["b.outcomes","!=","i.outcomes"]},{"id":"p37","n":"e11","r":["b.final_execution_count","!=","i.final_execution_count"]}]}
 
-    {
-      "op": "save",
-      "target": "missing",
-      "overwrite": false,
-      "race_create": false,
-      "metadata_features": [],
-      "event_features": [],
-      "event_count": 1,
-      "faults": [],
-      "mapping_order": "ab",
-      "clock": 19800101,
-      "directory_fsync": "ok",
-      "checks": [
-        {"path": "status", "equals": "ok"}
-      ]
-    }
+Alternative proposals
 
-- `target` is `missing` or `existing`. An existing target contains bytes named `old`.
-- `metadata_features` may contain `mutates_during_iteration` and `nested_mapping`.
-- `event_features` may contain `mutates_after_yield`.
-- `event_count` is an integer from 0 through 1001. At most 1000 events are accepted.
-- `faults` may contain any of `validation`, `iteration`, `serialization`, `member_size`, and
-  `replace`. Each listed fault is observed as an independent failing save using the same initial
-  target and overwrite setting. Cleanup behavior depends on the failing phase and surrounding input;
-  repeating one default fault matrix for only an existing and a missing target does not exercise
-  every path.
-- `mapping_order` is `ab` or `ba` for two logically equivalent mappings.
-- `clock` is an integer from 0 through 99999999 representing the wall-clock date visible to the
-  implementation.
-- `directory_fsync` is `ok` or `unsupported`.
+{"proposals":[{"id":"p01","n":"e1","r":["b.events_consumed","!=","i.events_consumed"]},{"id":"p03","n":"e1","r":["b.target","!=","i.target"]},{"id":"p04","n":"e2","r":["b.metadata_snapshot","=","i.metadata_snapshot"]},{"id":"p07","n":"e2","r":["b.nested_snapshot","=","i.nested_snapshot"]},{"id":"p08","n":"e3","r":["b.event_snapshot","=","i.event_snapshot"]},{"id":"p12","n":"e4","r":["b.status","!=","i.status"]},{"id":"p18","n":"e5","r":["b.faults.replace.filesystem","=","b.before.filesystem"]},{"id":"p22","n":"e6","r":["b.target","!=","i.target"]},{"id":"p25","n":"e7","r":["b.durability.temporary_fsync","=","b.durability.parent_fsync_attempted"]},{"id":"p33","n":"e10","r":["b.call_start_counts","!=","i.call_start_counts"]},{"id":"p35","n":"e11","r":["b.store_history_calls","!=","i.store_history_calls"]},{"id":"p36","n":"e11","r":["b.call_start_counts","!=","i.call_start_counts"]}]}
 
-Checks use dot-separated object paths. A path can select a complete list or object, but does not use
-array indexes. Check values must be exact JSON values. Duplicate check paths are invalid.
+Save contract
 
-Correct save contract
+Omitted save fields default to `overwrite:false`, `race_create:false`, empty feature/fault arrays,
+`event_count:1`, `mapping_order:"ab"`, `clock:19800101`, `directory_fsync:"ok"`. An existing
+target initially contains bytes `old`.
 
-1. When a target exists and overwrite is false, reject before consuming events. With overwrite true,
-   every failure before commit preserves the old target. A missing target remains missing. No failed
-   save leaves a temporary file.
-2. Snapshot metadata before consuming events, snapshot every event when it is yielded, and recursively
-   normalize nested mapping values. Once 1000 events are known, do not consume another one.
-3. When overwrite is false, a target created by another writer immediately before commit wins; do not
-   replace it.
-4. Equivalent mappings have canonical `ab` encoding. Archive members are ordered metadata.json then
-   events.jsonl and use timestamp 1980-01-01 regardless of `clock`.
-5. Fsync the complete temporary archive before commit. After a successful commit, attempt to fsync the
-   parent directory. An unsupported parent-directory fsync does not turn the commit into failure.
+- No-overwrite to an existing target rejects before consuming events. Pre-commit failures preserve
+  an old target or leave a missing target missing, with no temporary file.
+- Metadata is snapshotted before consumption, each event when yielded, and nested mappings are
+  recursively normalized. At most 1000 events are accepted without consuming an extra event.
+- A racing writer before no-overwrite commit wins. Mapping encoding is canonical. Archive members
+  are `metadata.json` then `events.jsonl`, timestamped `19800101` regardless of `clock`.
+- The temporary archive is fsynced before commit. A successful commit fsyncs its parent directory
+  when possible; unsupported parent fsync does not turn success into failure.
 
-Save observations
+Save observations are `status`, `events_consumed`, `target`, `temporary_exists`,
+`metadata_snapshot`, `event_snapshot`, `nested_snapshot`, `faults.<fault>.*`, `before.*`,
+`archive.*`, `candidate_archive.*`, `durability.*`. `before.filesystem` records target identity and
+temporary state before execution; each `faults.<fault>.filesystem` records them after that failure.
+There is no aggregate fault observation. Stable and correct pre-mutation snapshots compare equal;
+late mutated capture differs.
 
-- Rejecting an existing target reports `status: "FileExistsError"`, `events_consumed: 0`, the
-  unchanged `target: "old"`, and `temporary_exists: false`.
-- A normal successful save reports `status: "ok"`, consumed count, `target: "archive"`, and
-  `temporary_exists: false`. Its snapshot fields are exact: `metadata_snapshot` is `before` when
-  `mutates_during_iteration` is enabled and otherwise `stable`; `event_snapshot` is `before` when
-  `mutates_after_yield` is enabled and otherwise `stable`; `nested_snapshot` is `normalized` when
-  `nested_mapping` is enabled and otherwise `absent`.
-- An event-limit rejection reports `status: "event_limit_error"` and `events_consumed: 1000`.
-- If the initial existing-target rejection and event-limit checks pass and faults are requested,
-  `status` is `fault_matrix`. Each fault is available below `faults.<fault>` with `status`, `target`,
-  and `temporary_exists`. The correct result preserves `old` or `missing` and leaves no temporary
-  file. An existing target with `overwrite: false` still returns the earlier `FileExistsError`
-  observation instead of a fault matrix.
-- A losing no-overwrite race reports `status: "FileExistsError"` and `target: "rival"`.
-- A built archive exposes `archive.mapping_order`, `archive.member_order`, and `archive.timestamp`.
-  The correct values are `"ab"`, `["metadata.json","events.jsonl"]`, and `19800101`.
-- Durability fields are `durability.temporary_fsync`, `durability.parent_fsync_attempted`, and
-  `durability.parent_fsync_error_ignored`.
+Replay contract
 
-Replay steps
-
-A replay step must contain exactly these five fields:
-
-    {
-      "op": "replay",
-      "recorded_success": [true, true],
-      "actual_results": ["failure", "success"],
-      "stop_on_error": true,
-      "store_history": false,
-      "checks": [
-        {"path": "outcomes", "equals": [{"seq": 1, "success": false}]}
-      ]
-    }
-
-- Both arrays must have the same length from 1 through 4.
-- Every actual result is `success`, `failure`, or `raise`.
-- The shell starts with execution_count 40 and each call increments it before returning or raising.
-
-Correct replay contract
-
-1. Report the shell's actual result, not the success value stored in the bundle.
-2. Stop after an actual failure only when stop_on_error is true. With false, continue.
-3. Forward store_history to every shell call.
-4. When store_history is false, restore execution_count to 40 after every call and after exceptions.
-   Covering replay thoroughly requires both directions of disagreement between recorded and actual
-   success, both stop_on_error values, both store_history values, and an exception path.
-
-Replay observations are `status` (`ok` or `RuntimeError`), `outcomes` (a list of `{seq, success}`),
-`store_history_calls`, `call_start_counts`, and `final_execution_count`. `call_start_counts` records
-the execution count immediately before each shell call: the first value is 40; later values are
-41, 42, ... when history is stored, and return to 40 before every call when history is not stored.
-
-The 20 independently scored behaviors cover rejection priority, snapshot timing, recursive mapping,
-event limits, five failure paths, commit races, deterministic archives, durability, actual replay
-results, stopping, history forwarding, and history restoration. Exercise meaningful combinations:
-one value per field may not cover every deviation within a behavior. A compact set of interacting
-steps is stronger than many redundant happy paths.
-
-Partial example
-
-    {
-      "tests": [
-        {
-          "name": "existing_target",
-          "steps": [
-            {
-              "op": "save",
-              "target": "existing",
-              "overwrite": false,
-              "event_count": 2,
-              "checks": [
-                {"path": "status", "equals": "FileExistsError"},
-                {"path": "events_consumed", "equals": 0}
-              ]
-            }
-          ]
-        }
-      ]
-    }
+The shell starts at count 40 and increments before return or raise. Report actual, not recorded,
+results. Stop after actual failure only with `stop_on_error`. Forward `store_history`; when false,
+restore 40 after every call and exception. Replay observations are `status`, `outcomes`,
+`store_history_calls`, `call_start_counts`, `final_execution_count`.
