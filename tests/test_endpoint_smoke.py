@@ -19,13 +19,11 @@ from tests.question_pack_fixtures import DEFAULT_EVALUATION_COUNT
 
 
 def _q1_gold_response() -> str:
-    gold_path = (
+    return (
         Path(__file__).resolve().parent
         / "fixtures"
-        / "session_bundle_relation_repair_v1_gold.json"
-    )
-    payload = json.loads(gold_path.read_text(encoding="utf-8"))
-    return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+        / "session_bundle_scenario_gold.json"
+    ).read_text(encoding="utf-8")
 
 
 def _q5_gold_response() -> str:
@@ -69,7 +67,7 @@ class _EndpointHandler(BaseHTTPRequestHandler):
     def _answer_for(prompt: str) -> str:
         if prompt == "Reply with only OK.":
             return "OK"
-        if "repair a fixed 18-relation black-box regression suite" in prompt:
+        if "session-bundle system" in prompt and '"op": "replay"' in prompt:
             return _q1_gold_response()
         if "Design exactly two cache-regression portfolios" in prompt:
             return _q5_gold_response()

@@ -58,8 +58,6 @@ def grade_answer(text: str, grader: dict[str, object]) -> GradeResult:
         return _grade_transaction_regression_design(text, grader)
     if kind == "session_bundle_test_design":
         return _grade_session_bundle_test_design(text, grader)
-    if kind == "session_bundle_relation_repair":
-        return _grade_session_bundle_relation_repair(text, grader)
     if kind == "expression_24":
         ok = _check_expression_24(text, grader)
         return GradeResult(ok=ok, summary="expression_24")
@@ -1763,84 +1761,6 @@ def _grade_session_bundle_test_design(
             "score_details": payload.get("score_details", []),
             "eligible_steps": payload.get("eligible_steps", 0),
             "invalid_steps": payload.get("invalid_steps", []),
-            "failure_summary": failure_summary,
-        },
-    )
-
-
-def _grade_session_bundle_relation_repair(
-    text: str,
-    grader: dict[str, object],
-) -> GradeResult:
-    test_suite = str(grader.get("test_suite") or "")
-    if test_suite != "session_bundle_relation_repair_v1":
-        raise ValueError("unknown_test_suite")
-
-    from .session_bundle_relation_repair_grader import grade_response
-
-    payload = grade_response(text)
-    grade_state = str(payload.get("status") or "invalid_submission")
-    max_score = int(payload.get("max_score") or 20)
-    pass_threshold = int(grader.get("pass_threshold", max_score))
-    failure_summary = str(payload.get("failure_summary") or "")
-    if grade_state != "scored":
-        summary = f"{test_suite} {grade_state}"
-        if failure_summary:
-            summary += f"; {failure_summary}"
-        return GradeResult(
-            ok=False,
-            summary=summary,
-            score=None,
-            max_score=max_score,
-            diagnostics={
-                "status": grade_state,
-                "grade_state": grade_state,
-                "test_suite": test_suite,
-                "configured_max_score": max_score,
-                "failure_summary": failure_summary,
-                "score_details": [],
-            },
-        )
-
-    score = int(payload["score"])
-    checks = [item for item in payload.get("root_causes", []) if isinstance(item, dict)]
-    failed = [item for item in checks if not bool(item.get("passed"))]
-    status = "passed" if score >= pass_threshold else "semantic_failed"
-    summary = f"{test_suite} {score}/{max_score}"
-    if failed:
-        summary += "; failed=" + ",".join(str(item.get("id", "")) for item in failed[:4])
-    return GradeResult(
-        ok=score >= pass_threshold,
-        summary=summary,
-        score=score,
-        max_score=max_score,
-        failure_details=[
-            {
-                "case_id": str(item.get("id", "")),
-                "label": str(item.get("label", "")),
-                "category": str(item.get("category", "")),
-                "category_label": str(item.get("category", "")),
-            }
-            for item in failed
-        ],
-        diagnostics={
-            "status": status,
-            "grade_state": grade_state,
-            "test_suite": test_suite,
-            "semantic_passed": score,
-            "semantic_total": max_score,
-            "coverage_score": payload.get("coverage_score"),
-            "validity_penalty": payload.get("validity_penalty"),
-            "validity_metrics": payload.get("validity_metrics", {}),
-            "canonical_root_score": payload.get("canonical_root_score"),
-            "coverage_metrics": payload.get("coverage_metrics", {}),
-            "facets": payload.get("categories", {}),
-            "score_details": checks,
-            "invalid_relations": payload.get("invalid_relations", []),
-            "experiment_reports": payload.get("experiment_reports", []),
-            "repairs": payload.get("repairs", []),
-            "final_selection": payload.get("final_selection", {}),
-            "budget": payload.get("budget", {}),
             "failure_summary": failure_summary,
         },
     )

@@ -34,7 +34,7 @@ class QuestionBankTest(unittest.TestCase):
     def test_builtin_question_pack_contains_five_peer_questions(self) -> None:
         bank = QuestionBank(Path("questions")).load()
 
-        self.assertEqual(bank.metadata.question_pack_version, "coding-fast-v4.13")
+        self.assertEqual(bank.metadata.question_pack_version, "coding-fast-v4.12")
         self.assertEqual(
             bank.enabled_question_ids,
             [
@@ -57,23 +57,21 @@ class QuestionBankTest(unittest.TestCase):
 
         by_id = {question.id: question for question in bank.questions}
         q1 = by_id["01_session_bundle_repair"]
-        self.assertIn("repair a fixed 18-relation black-box regression suite", q1.prompt)
-        self.assertIn('"replace"', q1.prompt)
-        self.assertIn("Starting 18 proposals", q1.prompt)
-        self.assertIn("Alternative proposals", q1.prompt)
-        self.assertIn("broken contract guarantee", q1.prompt)
-        self.assertIn("Return one JSON object only", q1.prompt)
+        self.assertIn("designing a compact black-box regression suite", q1.prompt)
+        self.assertIn("Create 1 through 3 named tests", q1.prompt)
+        self.assertIn('"tests"', q1.prompt)
+        self.assertIn('"op": "save"', q1.prompt)
+        self.assertIn('"op": "replay"', q1.prompt)
+        self.assertIn("20 independently scored behaviors", q1.prompt)
+        self.assertIn("Return only one JSON object", q1.prompt)
         self.assertNotIn("SEARCH/REPLACE", q1.prompt)
         self.assertNotIn("sandbox", q1.prompt.lower())
         self.assertNotIn("test_session_store.py", q1.prompt)
         self.assertEqual(q1.capability_id, "black_box_regression_testing")
         self.assertEqual(q1.capability_label, "契约测试")
         self.assertEqual(q1.detail_label, "边界场景")
-        self.assertEqual(q1.grader.kind, "session_bundle_relation_repair")
-        self.assertEqual(
-            q1.grader.payload["test_suite"],
-            "session_bundle_relation_repair_v1",
-        )
+        self.assertEqual(q1.grader.kind, "session_bundle_test_design")
+        self.assertEqual(q1.grader.payload["test_suite"], "session_bundle_scenarios_v1")
         self.assertEqual(q1.grader.payload["max_score"], 20)
         self.assertEqual(q1.grader.payload["pass_threshold"], 20)
         self.assertIn("contract-test-design", q1.tags)

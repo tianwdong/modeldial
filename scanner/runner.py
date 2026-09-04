@@ -72,6 +72,8 @@ def _endpoint_execution_trace(
     terminal_state: str,
     started_at_utc: str,
     response_id: str | None = None,
+    response_model: str | None = None,
+    stop_reason: str | None = None,
     error_category: str | None = None,
     error_diagnostics: dict[str, object] | None = None,
 ) -> dict[str, object]:
@@ -86,6 +88,10 @@ def _endpoint_execution_trace(
     }
     if response_id:
         trace["response_id"] = response_id
+    if response_model:
+        trace["response_model"] = response_model
+    if stop_reason:
+        trace["stop_reason"] = stop_reason
     if error_category:
         trace["endpoint_error_category"] = error_category
     if error_diagnostics:
@@ -156,25 +162,7 @@ def _run_mock_target(
     answer_preview, reasoning_tokens = preset
     configured_max_score = int(question.grader.payload.get("max_score") or 10)
     configured_test_suite = str(question.grader.payload.get("test_suite") or "")
-    if question.grader.kind == "session_bundle_relation_repair":
-        answer_preview = (
-            '{"replace":[["p02","p01"],["p06","p04"],["p09","p08"],'
-            '["p19","p18"],["p24","p25"],["p30","p35"]]}'
-        )
-        grade_result = GradeResult(
-            ok=True,
-            summary=f"{configured_test_suite} {configured_max_score}/{configured_max_score}",
-            score=configured_max_score,
-            max_score=configured_max_score,
-            diagnostics={
-                "semantic_passed": configured_max_score,
-                "semantic_total": configured_max_score,
-                "status": "passed",
-                "grade_state": "scored",
-                "validity_penalty": 0,
-            },
-        )
-    elif question.grader.kind == "session_bundle_test_design":
+    if question.grader.kind == "session_bundle_test_design":
         answer_preview = '{"tests":[{"name":"mock","steps":[{"op":"save","target":"missing"}]}]}'
         grade_result = GradeResult(
             ok=True,
@@ -454,6 +442,8 @@ def _run_live_target(
                 terminal_state="completed_response",
                 started_at_utc=execution_started_at_utc,
                 response_id=endpoint_result.response_id,
+                response_model=endpoint_result.response_model,
+                stop_reason=endpoint_result.stop_reason,
             )
             cost_estimate = estimate_reference_cost(
                 target.model_id,

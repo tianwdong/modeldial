@@ -19,7 +19,7 @@ class V4QuestionPackTest(unittest.TestCase):
         self.bank = QuestionBank(PROJECT_ROOT / "questions").load()
 
     def test_current_pack_is_five_native_twenty_point_questions(self) -> None:
-        self.assertEqual(self.bank.metadata.question_pack_version, "coding-fast-v4.13")
+        self.assertEqual(self.bank.metadata.question_pack_version, "coding-fast-v4.12")
         self.assertEqual(self.bank.question_count, 5)
         self.assertEqual(
             [question.grader.payload["max_score"] for question in self.bank.questions],
@@ -65,8 +65,8 @@ class V4QuestionPackTest(unittest.TestCase):
             contracts,
             {
                 "01_session_bundle_repair": (
-                    "session_bundle_relation_repair",
-                    "session_bundle_relation_repair_v1",
+                    "session_bundle_test_design",
+                    "session_bundle_scenarios_v1",
                     20,
                 ),
                 "02_code_counterexample_maxgap": (
@@ -92,16 +92,17 @@ class V4QuestionPackTest(unittest.TestCase):
             },
         )
 
-    def test_q1_prompt_exposes_the_frozen_relation_repair_contract(self) -> None:
+    def test_q1_prompt_names_every_snapshot_observation_path(self) -> None:
         prompt = self.bank.questions[0].prompt
 
-        self.assertIn("Without tools or code", prompt)
-        self.assertIn("Use at most six pairs", prompt)
-        self.assertIn("Starting 18 proposals", prompt)
-        self.assertIn("Alternative proposals", prompt)
-        self.assertIn("No-overwrite to an existing target", prompt)
-        self.assertIn("The shell starts at count 40", prompt)
-        self.assertNotIn('[["p02","p01"]]', prompt)
+        self.assertIn("Do not use external tools.", prompt)
+        self.assertIn("Do not run code.", prompt)
+        self.assertIn("`metadata_snapshot` is `before`", prompt)
+        self.assertIn("`event_snapshot` is `before`", prompt)
+        self.assertIn("`nested_snapshot` is `normalized`", prompt)
+        self.assertIn("instead of a fault matrix", prompt)
+        self.assertIn("the first value is 40", prompt)
+        self.assertIn("Cleanup behavior depends on the failing phase", prompt)
 
     def test_prompts_use_behavior_language_instead_of_grader_gaming_instructions(self) -> None:
         for question in self.bank.questions:

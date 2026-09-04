@@ -1,6 +1,6 @@
 {
   "id": "coding-fast",
-  "version": "coding-fast-v4.13",
+  "version": "coding-fast-v4.12",
   "default_evaluation_profile_id": "quick",
   "evaluation_profiles": [
     {

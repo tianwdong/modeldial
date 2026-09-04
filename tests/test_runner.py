@@ -68,7 +68,7 @@ class RunnerTest(unittest.TestCase):
         self.assertIn("def run_codex_prompt(", runtime_source)
         self.assertIn("def resolve_codex_executable(", runtime_source)
 
-    def test_mock_runner_supports_session_bundle_relation_repair(self) -> None:
+    def test_mock_runner_supports_session_bundle_test_design(self) -> None:
         question = next(
             item
             for item in QuestionBank(Path("questions")).load().enabled_questions
@@ -81,13 +81,10 @@ class RunnerTest(unittest.TestCase):
             use_mock_results=True,
         )
 
-        self.assertEqual(question.grader.kind, "session_bundle_relation_repair")
+        self.assertEqual(question.grader.kind, "session_bundle_test_design")
         self.assertTrue(result.answer_ok)
-        self.assertIn('"replace"', result.answer_preview)
-        self.assertEqual(
-            result.scorer_reason,
-            "session_bundle_relation_repair_v1 20/20",
-        )
+        self.assertIn('"tests"', result.answer_preview)
+        self.assertEqual(result.scorer_reason, "session_bundle_scenarios_v1 20/20")
         self.assertEqual(result.scorer_diagnostics["semantic_passed"], 20)
 
     def test_mock_runner_supports_retry_counterexample_design(self) -> None:
@@ -561,6 +558,9 @@ class RunnerTest(unittest.TestCase):
             reasoning_tokens=24,
             cached_input_tokens=400,
             cache_write_input_tokens=200,
+            response_id="response-api-test",
+            response_model="gpt-5.6-terra-20260831",
+            stop_reason="stop",
         )
         secret_store_mock.return_value.resolve.return_value = "api-secret"
         target = ResolvedScanTarget(
@@ -610,6 +610,11 @@ class RunnerTest(unittest.TestCase):
             result.execution_trace["request_header"],
             "X-Modeldial-Evaluation-ID",
         )
+        self.assertEqual(
+            result.execution_trace["response_model"],
+            "gpt-5.6-terra-20260831",
+        )
+        self.assertEqual(result.execution_trace["stop_reason"], "stop")
         self.assertTrue(
             str(result.execution_trace["route_fingerprint"]).startswith(
                 "route-v1:sha256:"
