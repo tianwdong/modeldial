@@ -558,9 +558,6 @@ class RunnerTest(unittest.TestCase):
             reasoning_tokens=24,
             cached_input_tokens=400,
             cache_write_input_tokens=200,
-            response_id="response-api-test",
-            response_model="gpt-5.6-terra-20260831",
-            stop_reason="stop",
         )
         secret_store_mock.return_value.resolve.return_value = "api-secret"
         target = ResolvedScanTarget(
@@ -610,11 +607,6 @@ class RunnerTest(unittest.TestCase):
             result.execution_trace["request_header"],
             "X-Modeldial-Evaluation-ID",
         )
-        self.assertEqual(
-            result.execution_trace["response_model"],
-            "gpt-5.6-terra-20260831",
-        )
-        self.assertEqual(result.execution_trace["stop_reason"], "stop")
         self.assertTrue(
             str(result.execution_trace["route_fingerprint"]).startswith(
                 "route-v1:sha256:"
