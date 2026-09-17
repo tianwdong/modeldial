@@ -429,13 +429,22 @@ struct BridgeRecommendationPrimaryBenefitV2: Decodable {
     let gainPoints: Double?
 }
 
+struct BridgeReferenceEntrySource: Decodable {
+    let batchId: String
+    let questionPackVersion: String
+    let graderVersion: String
+    let scoreBaselineId: String
+}
+
 struct BridgeReferenceSnapshotProvenance: Decodable {
     let kind: String?
     let publicOfficialSnapshot: Bool?
+    let entrySources: [String: BridgeReferenceEntrySource]?
 
     private enum CodingKeys: String, CodingKey {
         case kind
         case publicOfficialSnapshot
+        case entrySources
     }
 
     init(from decoder: Decoder) throws {
@@ -444,6 +453,9 @@ struct BridgeReferenceSnapshotProvenance: Decodable {
         publicOfficialSnapshot = try container.decodeIfPresent(
             Bool.self,
             forKey: .publicOfficialSnapshot
+        )
+        entrySources = try container.decodeIfPresent(
+            [String: BridgeReferenceEntrySource].self, forKey: .entrySources
         )
     }
 }
@@ -516,6 +528,10 @@ struct BridgeReferenceSnapshot: Decodable, Identifiable {
     let provenance: BridgeReferenceSnapshotProvenance?
 
     var id: String { batchId }
+
+    func entrySource(for configurationId: String) -> BridgeReferenceEntrySource? {
+        provenance?.entrySources?[configurationId]
+    }
 
     var isPublicOfficialSnapshot: Bool {
         kind == "first_party_snapshot"

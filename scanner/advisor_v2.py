@@ -281,6 +281,9 @@ def _result_reasons(
     row_grader = str(row.get("grader_version") or "")
     if not source_grader or row_grader != source_grader:
         reasons.append("grader_version_mismatch")
+    source_baseline = source.get("score_baseline_id")
+    if source_baseline and row.get("score_baseline_id") != source_baseline:
+        reasons.append("score_baseline_mismatch")
     if not _is_complete(row):
         reasons.append("incomplete_result")
     if bool(row.get("hard_failure", False)):

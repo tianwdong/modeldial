@@ -347,7 +347,8 @@ mkdir -p "$BACKEND_DIR/scripts"
 for script_name in "${RUNTIME_SCRIPT_NAMES[@]}"; do
   cp "scripts/$script_name" "$BACKEND_DIR/scripts/$script_name"
 done
-cp -R "questions" "$BACKEND_DIR/questions"
+python_runtime_env "$BUILD_PYTHON" "build-support/copy-question-resources.py" \
+  "questions" "$BACKEND_DIR/questions"
 python_runtime_env "$PYINSTALLER_PYTHON" -m PyInstaller \
   --noconfirm \
   --clean \

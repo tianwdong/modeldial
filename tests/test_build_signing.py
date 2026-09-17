@@ -250,7 +250,9 @@ class BuildSigningTest(unittest.TestCase):
             "verify_glance_resolver.sh",
         ):
             self.assertNotIn(f'"{development_script}"', self.source)
-        self.assertIn('cp -R "questions" "$BACKEND_DIR/questions"', self.source)
+        self.assertIn('"build-support/copy-question-resources.py"', self.source)
+        self.assertIn('"questions" "$BACKEND_DIR/questions"', self.source)
+        self.assertNotIn('cp -R "questions" "$BACKEND_DIR/questions"', self.source)
         self.assertIn(
             'find "$BACKEND_DIR" -type f -name \'.DS_Store\' -delete',
             self.source,

@@ -6,6 +6,7 @@ import json
 import math
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 import threading
 from typing import Mapping, Sequence
@@ -390,6 +391,9 @@ def validate_reference_snapshot(
             published_configuration_ids=seen_ids,
         )
 
+    for entry in entries:
+        _reference_entry_scoring_context(snapshot, entry)
+
     if snapshot.get("leaderboard_projection") is not None:
         _validate_reference_snapshot_leaderboard_projection(
             snapshot,
@@ -664,6 +668,16 @@ def build_reference_snapshot_pairwise_comparisons(
                 baseline,
                 candidate,
             )
+            baseline_context = _reference_entry_scoring_context(snapshot, baseline)
+            candidate_context = _reference_entry_scoring_context(snapshot, candidate)
+            if any(
+                baseline_context.get(key) != candidate_context.get(key)
+                for key in (
+                    "question_pack_version", "grader_version",
+                    "score_baseline_id", "question_ids",
+                )
+            ):
+                comparison_status = "scoring_identity_mismatch"
             is_comparable = comparison_status == "comparable"
             baseline_score = _optional_reference_number(
                 baseline.get("score"),
@@ -903,6 +917,7 @@ def reference_snapshot_to_advisor_source(
         "published_at": str(validated["published_at"]),
         "question_pack_version": str(validated["question_pack_version"]),
         "grader_version": str(validated["grader_version"]),
+        "score_baseline_id": str(validated["score_baseline_id"]),
         "rows": rows,
     }
 
@@ -922,6 +937,7 @@ def _entry_to_advisor_row(
     entry: Mapping[str, object],
     snapshot: Mapping[str, object],
 ) -> dict[str, object]:
+    context = _reference_entry_scoring_context(snapshot, entry)
     raw_model_configuration = entry.get("model_configuration")
     model_configuration = (
         raw_model_configuration
@@ -952,8 +968,9 @@ def _entry_to_advisor_row(
         ),
         "complete": len(question_results) == 5,
         "hard_failure": int(entry.get("hard_failure_count") or 0) > 0,
-        "question_pack_version": str(snapshot["question_pack_version"]),
-        "grader_version": str(snapshot["grader_version"]),
+        "question_pack_version": str(context["question_pack_version"]),
+        "grader_version": str(context["grader_version"]),
+        "score_baseline_id": str(context["score_baseline_id"]),
         "route_fingerprint": entry.get("route_fingerprint"),
         "overall_score": entry.get("score"),
         "elapsed_seconds": float(entry.get("elapsed_ms") or 0) / 1000,
@@ -1871,6 +1888,79 @@ def _validate_reference_snapshot_leaderboard_projection(
         _validate_leaderboard_trend(snapshot, entry, row.get("trend"))
 
 
+def _reference_entry_scoring_context(
+    snapshot: Mapping[str, object],
+    entry: Mapping[str, object],
+) -> Mapping[str, object]:
+    """Read the publisher's per-entry identity without rewriting hashed content.
+
+    Older incremental releases have only incremental_sources and retain the
+    board's scoring identity. New releases declare every entry's source identity.
+    Publication identity and evaluation identity must not be conflated.
+    """
+    provenance = snapshot.get("provenance")
+    if not isinstance(provenance, Mapping) or "entry_sources" not in provenance:
+        return snapshot
+    sources = provenance["entry_sources"]
+    if not isinstance(sources, Mapping):
+        raise ValueError("reference snapshot entry sources are invalid")
+    source = sources.get(_required_text(entry, "model_configuration_id"))
+    if not isinstance(source, Mapping):
+        raise ValueError("reference snapshot entry source is missing")
+    identity: dict[str, object] = {
+        key: _required_text(source, key)
+        for key in (
+            "batch_id",
+            "question_pack_version",
+            "grader_version",
+            "score_baseline_id",
+        )
+    }
+    question_ids = source.get("question_ids")
+    if (
+        not isinstance(question_ids, list)
+        or not question_ids
+        or any(not isinstance(item, str) or not item for item in question_ids)
+        or len(question_ids) != len(set(question_ids))
+        or set(question_ids) != set(entry.get("question_scores", {}))
+    ):
+        raise ValueError("reference snapshot entry source questions are invalid")
+    identity["question_ids"] = question_ids
+    if identity["batch_id"] == snapshot.get("batch_id") and any(
+        value != snapshot.get(key) for key, value in identity.items()
+    ):
+        raise ValueError("reference snapshot current entry source identity mismatch")
+    return {**snapshot, **identity}
+
+
+def _reference_entry_is_inherited(
+    snapshot: Mapping[str, object], entry: Mapping[str, object]
+) -> bool:
+    provenance = snapshot.get("provenance")
+    if not _is_official_reference_snapshot(snapshot) or not isinstance(
+        provenance, Mapping
+    ):
+        return False
+    sources = provenance.get("incremental_sources", [])
+    for source in _mapping_items(sources):
+        ids = source.get("candidate_ids")
+        if not isinstance(ids, list) or any(not isinstance(item, str) for item in ids):
+            raise ValueError("reference snapshot incremental candidates are invalid")
+        if entry.get("model_configuration_id") not in ids:
+            continue
+        path = _required_text(source, "path")
+        if (
+            not path.startswith("public/reference-snapshots/archive/")
+            or not path.endswith(".json")
+            or any(part in {"", ".", ".."} for part in path.split("/"))
+            or "\\" in path
+            or not _is_sha256(_required_text(source, "batch_sha256"))
+        ):
+            raise ValueError("reference snapshot incremental source is invalid")
+        return True
+    return False
+
+
 def _validate_leaderboard_trend(
     snapshot: Mapping[str, object],
     entry: Mapping[str, object],
@@ -1878,10 +1968,11 @@ def _validate_leaderboard_trend(
 ) -> None:
     if not isinstance(value, Mapping):
         raise ValueError("leaderboard projection trend is required")
+    context = _reference_entry_scoring_context(snapshot, entry)
     compatibility_key = value.get("compatibility_key")
     if compatibility_key not in {
-        _leaderboard_compatibility_key(snapshot, entry),
-        _legacy_leaderboard_compatibility_key(snapshot, entry),
+        _leaderboard_compatibility_key(context, entry),
+        _legacy_leaderboard_compatibility_key(context, entry),
     }:
         raise ValueError("leaderboard projection trend compatibility is invalid")
     points = _mapping_items(value.get("points"))
@@ -1908,10 +1999,36 @@ def _validate_leaderboard_trend(
     if identities != sorted(identities):
         raise ValueError("leaderboard projection trend order is invalid")
     current = points[-1]
+    publication_matches = (
+        current.get("batch_id") == snapshot.get("batch_id")
+        and current.get("published_at") == snapshot.get("published_at")
+    )
+    if not publication_matches:
+        # Inherited trends are observations, not new runs at every publication.
+        # Transitive inheritance can end before even the immediate source batch.
+        inherited = _reference_entry_is_inherited(snapshot, entry)
+        try:
+            observed = datetime.fromisoformat(
+                str(current.get("published_at")).replace("Z", "+00:00")
+            )
+            published = datetime.fromisoformat(
+                str(snapshot.get("published_at")).replace("Z", "+00:00")
+            )
+            historical = (
+                observed.tzinfo is not None
+                and published.tzinfo is not None
+                and observed <= published
+            )
+        except (TypeError, ValueError):
+            historical = False
+        if (
+            not inherited
+            or not historical
+            or current.get("batch_id") == snapshot.get("batch_id")
+        ):
+            raise ValueError("leaderboard projection trend does not end at current row")
     if (
-        current.get("batch_id") != snapshot.get("batch_id")
-        or current.get("published_at") != snapshot.get("published_at")
-        or abs(
+        abs(
             _bounded_number(current.get("score"), 0, 100)
             - _bounded_number(entry.get("score"), 0, 100)
         )

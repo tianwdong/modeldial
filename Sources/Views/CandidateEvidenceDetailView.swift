@@ -151,6 +151,10 @@ struct OfficialCandidateEvidenceDetailView: View {
     let questions: [BridgeReferenceLeaderboardQuestion]
     let onDismiss: () -> Void
 
+    private var entrySource: BridgeReferenceEntrySource? {
+        sourceSnapshot.entrySource(for: entry.modelConfigurationId)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             evidenceHeader
@@ -185,9 +189,9 @@ struct OfficialCandidateEvidenceDetailView: View {
 
                     evidenceSection {
                         Text("证据版本").font(Typography.sectionTitle)
-                        evidenceRow("题包", sourceSnapshot.questionPackVersion)
-                        evidenceRow("评分器", sourceSnapshot.graderVersion)
-                        evidenceRow("批次", sourceSnapshot.batchId)
+                        evidenceRow("题包", entrySource?.questionPackVersion ?? sourceSnapshot.questionPackVersion)
+                        evidenceRow("评分器", entrySource?.graderVersion ?? sourceSnapshot.graderVersion)
+                        evidenceRow("批次", entrySource?.batchId ?? sourceSnapshot.batchId)
                     }
 
                     evidenceSection {

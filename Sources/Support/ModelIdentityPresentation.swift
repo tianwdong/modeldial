@@ -65,10 +65,11 @@ enum ModelIdentityPresentation {
         }
         switch normalized {
         case "codex": return "openai"
-        case "claude-code": return "anthropic"
-        case "grok-build": return "xai"
+        case "claude-code", "claude": return "anthropic"
+        case "grok-build", "grok-api": return "xai"
         case "gemini", "google": return "google"
-        case "z-ai", "zhipu": return "zhipu"
+        case "z-ai", "zhipu", "glm": return "zhipu"
+        case "kimi": return "moonshot"
         case "openai", "anthropic", "deepseek", "xai", "openrouter",
              "moonshot", "minimax", "vercel-ai-gateway":
             return normalized
@@ -86,7 +87,8 @@ enum ModelIdentityPresentation {
         guard provider == nil
                 || provider == "custom"
                 || provider == "custom_endpoint"
-                || provider == "unknown" else {
+                || provider == "unknown"
+                || provider == "cloudflare-reference" else {
             return provider
         }
         let modelIdentity = [familyID, model]

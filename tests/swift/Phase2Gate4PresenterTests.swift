@@ -696,6 +696,37 @@ private func verifyProviderLogoPresentation() {
         ) == "custom_endpoint",
         "unknown models should preserve the generic-route fallback"
     )
+    for (model, brand) in [("gpt-6-astra", "openai"), ("claude-opus-5", "anthropic")] {
+        let provider = ModelIdentityPresentation.providerBrandID(
+            providerID: "cloudflare-reference", model: model
+        )
+        expect(provider == brand, "official runner channels should use the actual model brand")
+        expect(
+            ModelIdentityPresentation.providerLogoResourceName(for: provider) == "\(brand)-lobe",
+            "official runner rows should resolve to bundled logo resources"
+        )
+    }
+    expect(
+        ModelIdentityPresentation.providerBrandID(
+            providerID: "cloudflare-reference", model: "private-model"
+        ) == "cloudflare-reference",
+        "an unknown official model must not be mislabeled as OpenAI"
+    )
+    for (alias, resource) in [
+        ("Claude", "anthropic-lobe"), ("grok-api", "xai-lobe"),
+        ("kimi", "moonshot-lobe"), ("glm", "zhipu-lobe"),
+    ] {
+        expect(
+            ModelIdentityPresentation.providerLogoResourceName(for: alias) == resource,
+            "published provider aliases should retain their existing brand assets"
+        )
+    }
+    expect(
+        ModelIdentityPresentation.providerBrandID(
+            providerID: "openrouter", model: "gpt-6-astra"
+        ) == "openrouter",
+        "explicit branded provider routes must not be overridden"
+    )
     expect(
         ModelIdentityPresentation.providerMonogram(for: "custom_endpoint") == "CE",
         "unknown providers should retain a stable monogram"
